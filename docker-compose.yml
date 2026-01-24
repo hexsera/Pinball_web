@@ -1,0 +1,89 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./acme.json:/acme.json
+    environment:
+      - CF_API_EMAIL=hexsera78049@gmail.com
+      - CF_DNS_API_TOKEN=WPJroeKGR9_QA6eRkPsuraTJG2sXEvCfO_QRPVxF
+    networks:
+      - web
+
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-server
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - html-data-volume:/etc/nginx/html
+    restart: always
+    labels:
+      - "traefik.enable=true"                                          # Traefik이 이 컨테이너 관리
+      - "traefik.http.routers.nginx.rule=Host(`hexsera.com`)"         # 도메인 규칙
+      - "traefik.http.routers.nginx.entrypoints=websecure"            # HTTPS 사용
+      - "traefik.http.routers.nginx.tls.certresolver=cloudflare"      # 인증서 발급자
+      - "traefik.http.services.nginx.loadbalancer.server.port=80"     # Nginx 내부 포트
+    
+    networks:
+      - web
+
+
+  fastapi:
+      build: ./fastapi
+      container_name: fastapi-server
+      restart: always
+      working_dir: /code
+      volumes:
+        - ./fastapi:/code
+      ports:
+        - "8000:8000"
+      depends_on:
+        - mysql
+        #  condition: service_healthy
+      networks:
+        - web
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.fastapi.rule=Host(`hexsera.com`) && PathPrefix(`/api`)"
+        - "traefik.http.routers.fastapi.entrypoints=websecure"
+        - "traefik.http.routers.fastapi.tls.certresolver=cloudflare"
+        - "traefik.http.services.fastapi.loadbalancer.server.port=8000"
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-server
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: hexrootpoint
+      MYSQL_DATABASE: hexdb
+      MYSQL_USER: hexsera
+      MYSQL_PASSWORD: hexpoint
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "hexsera", "-phexpoint"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - web
+
+
+networks:
+  web:
+    external: false
+
+volumes:
+  html-data-volume:
+  mysql-data:

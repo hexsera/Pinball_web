@@ -1,0 +1,30 @@
+pi:
+  dashboard: true  # Traefik 대시보드 활성화
+
+entryPoints:
+  web:
+    address: ":80"     # HTTP 진입점
+    http:
+      redirections:
+        entryPoint:
+          to: websecure     # HTTP를 HTTPS로 자동 리다이렉트
+          scheme: https
+
+  websecure:
+    address: ":443"    # HTTPS 진입점
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"  # Docker 컨테이너 자동 감지
+    exposedByDefault: false                  # 기본적으로 모든 컨테이너 노출 안 함
+
+certificatesResolvers:
+  cloudflare:
+    acme:
+      email: hexsera78049@gmail.com         # Let's Encrypt 알림 이메일
+      storage: /acme.json                    # 인증서 저장 위치
+      dnsChallenge:
+        provider: cloudflare                 # Cloudflare DNS Challenge 사용
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
