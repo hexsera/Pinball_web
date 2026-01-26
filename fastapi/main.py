@@ -102,6 +102,19 @@ class ScoreResponse(BaseModel):
     score: int
 
 
+class FriendRequestRequest(BaseModel):
+    """친구 추가 요청 스키마"""
+    id: int
+    requester_id: int
+
+
+class FriendRequestResponse(BaseModel):
+    """친구 추가 응답 스키마"""
+    message: str
+    id: int
+    requester_id: int
+
+
 @app.get("/api/")
 def health_check():
     return {"status": "ok", "message": "FastAPI is running"}
@@ -294,4 +307,19 @@ def create_score(score_request: ScoreCreateRequest):
         message="Score received",
         user_id=score_request.user_id,
         score=score_request.score
+    )
+
+
+@app.post("/api/friend-requests", response_model=FriendRequestResponse)
+def create_friend_request(request: FriendRequestRequest):
+    """친구 추가 요청을 받는 엔드포인트 (콘솔 출력만)"""
+
+    # 콘솔에 출력
+    print(f"요청 받음, {request.id} -> {request.requester_id}")
+
+    # 응답 반환
+    return FriendRequestResponse(
+        message="Friend request received",
+        id=request.id,
+        requester_id=request.requester_id
     )
