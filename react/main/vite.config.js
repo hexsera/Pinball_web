@@ -11,4 +11,15 @@ export default defineConfig({
   // React 플러그인을 사용한다고 설정합니다
   // 이렇게 하면 Vite가 React 파일을 이해할 수 있습니다
   plugins: [react()],
+  // 개발 서버 설정
+  server: {
+    // API 요청을 FastAPI 서버로 프록시 설정
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',  // FastAPI 서버 주소
+        changeOrigin: true,                // Host 헤더를 target URL로 변경 (CORS 회피)
+        secure: false,                     // HTTPS 인증서 검증 비활성화 (로컬 개발용)
+      }
+    }
+  }
 });
