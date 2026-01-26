@@ -39,6 +39,7 @@ import {
 import { useAuth } from './AuthContext';
 
 import Pinball from './Pinball';
+import UserInfo from './UserInfo';
 
 const drawerWidth = 260;
 
@@ -51,8 +52,9 @@ function Maindashboard() {
   const [menuIndex, setMenuIndex] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarMenu, setAvatarMenu] = useState(false);
-  
+
   const [showPinball, setShowPinball] = useState(false);
+  const [showUserInfo, setShowUserInfo] = useState(false);
 
   // 기기 유형 감지
   useEffect(() => {
@@ -98,11 +100,13 @@ function Maindashboard() {
     if (itemtext == '메인페이지')
     {
         setShowPinball(false);
+        setShowUserInfo(false);
     }
 
     if (itemtext == '게임하기')
     {
       setShowPinball(true);
+      setShowUserInfo(false);
     }
 
     if (itemtext == '친구')
@@ -114,7 +118,7 @@ function Maindashboard() {
     }
     if (itemtext == '소식')
     {
-      
+
     }
     if (itemtext == '통계')
     {
@@ -128,6 +132,11 @@ function Maindashboard() {
       if (isLoggedIn == false)
       {
         navigate('/login')
+      }
+      else
+      {
+        setShowPinball(false);
+        setShowUserInfo(true);
       }
     }
   }
@@ -420,9 +429,7 @@ function Maindashboard() {
       >
       <Toolbar />
       <Container maxWidth="xl">
-        {showPinball ?
-        <Pinball/>:
-        mainele}
+        {showPinball ? <Pinball /> : showUserInfo ? <UserInfo /> : mainele}
       </Container>
       </Box>
     </Box>

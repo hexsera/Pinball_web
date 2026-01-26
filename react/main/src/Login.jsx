@@ -25,7 +25,7 @@ function Login() {
       // 로그인 성공
       if (response.status === 200) {
         console.log('로그인 성공:', response.data);
-        login({ id: response.data.id, name: response.data.nickname });
+        login({ id: response.data.user_id, name: response.data.nickname });
         setLoginError(false);
         navigate('/');
       }

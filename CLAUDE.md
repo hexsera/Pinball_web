@@ -60,13 +60,18 @@ docker run --rm -v html-data-volume:/data -v $(pwd):/backup alpine tar xzf /back
 - **Login.jsx**: 로그인 페이지 (FastAPI 연동, axios 기반 인증)
 - **Register.jsx**: 회원가입 페이지 (단계별 폼, FastAPI POST /api/v1/users)
 - **Pinball.jsx**: Matter.js 물리 엔진 핀볼 게임 (플리퍼, 각도 제한, 배경음악, 모바일 터치 입력, Flexbox 중앙 정렬)
-- **UserManage.jsx**: 회원정보 관리 페이지 (조회/수정/삭제) - 예정
+- **UserInfo.jsx**: 회원정보 페이지 (조회/수정/삭제)
 - **admin/AdminPage.jsx**: Admin 메인 페이지 (사이드바, 헤더, 메인 조합)
 - **admin/AdminSidebar.jsx**: Admin 사이드바 (270px, 임시 이미지)
 - **admin/AdminHeader.jsx**: Admin 헤더 (상단 고정)
 - **admin/AdminMain.jsx**: Admin 메인 콘텐츠 영역 (임시 이미지)
 
-라우팅: `/` → Dashboard, `/login` → Login, `/Register` → Register, `/Pinball_test` → Pinball (독립 페이지), `/admin` → AdminPage, `/UserManage` → UserManage (예정)
+라우팅: `/` → Dashboard, `/login` → Login, `/Register` → Register, `/Pinball_test` → Pinball (독립 페이지), `/admin` → AdminPage
+
+**Dashboard 내 UserInfo 통합**:
+- 사이드바 '계정' 클릭 → Dashboard 메인 영역에 UserInfo 컴포넌트 표시 (URL 변경 없음)
+- 로그인 상태가 아니면 /login으로 리다이렉트
+- showUserInfo 상태로 조건부 렌더링
 
 **Dashboard 내 Pinball 통합**:
 - 사이드바 '게임하기' 클릭 → Dashboard 메인 영역에 Pinball 컴포넌트 표시 (URL 변경 없음)
@@ -440,6 +445,17 @@ def update_user(
 - axios POST /api/v1/login
 - 성공: AuthContext의 login() 호출, 메인페이지 이동
 - 실패: loginError 상태로 Alert 표시
+- **중요**: FastAPI LoginResponse는 `user_id` 필드를 반환하므로 `response.data.user_id` 사용
+- localStorage에 `{ id: user_id, name: nickname }` 형식으로 저장
+
+### React 회원정보 (UserInfo.jsx)
+- 3개 섹션: 회원 정보 영역, 회원 수정 영역, 회원 탈퇴 영역
+- useEffect로 FastAPI GET /api/v1/users/{user_id} 호출하여 회원 정보 조회
+- axios 헤더에 X-API-Key: "hexsera-secret-api-key-2026" 포함
+- console.log로 API 호출 상태 디버깅 (시작/성공/실패)
+- user.id가 undefined이면 fetchUserInfo() 호출 안 됨 (`if (user && user.id)` 조건)
+- 표시 항목: 이메일, 닉네임, 생년월일
+- 색상 체계: Dashboard와 동일 (#F9FAFB 배경, #ffffff 카드, #e5e7eb 보더)
 
 ### Admin 페이지 (admin/)
 
@@ -601,6 +617,13 @@ if (leftFlipper.angle > LEFT_FLIPPER_MAX_ANGLE) {
 - admin-메인페이지.md: Admin 메인 페이지 구현 (사이드바, 헤더, 메인)
 - admin-임시이미지-추가.md: Admin 페이지 임시 이미지 추가
 
+**회원정보 페이지 관련**:
+- 회원정보-페이지.md: 회원정보 페이지 PRD (조회/수정/삭제)
+- 회원정보-페이지-실행계획.md: 회원정보 페이지 실행 계획
+- 회원정보-표시항목-확장.md: 이메일, 닉네임, 생년월일 표시 PRD
+- 회원정보-API-연동.md: FastAPI GET /api/v1/users/{user_id} 연동 PRD
+- undefined-user-id-문제.md: user.id가 undefined일 때 문제 분석
+
 **학습 문서**:
 - env-파일-보안-관리.md: .env 파일에 민감한 정보를 저장하는 이유와 관리 방법
 - env-파일이란.md: .env 파일의 일반적인 개념과 역할 설명
@@ -615,6 +638,7 @@ if (leftFlipper.angle > LEFT_FLIPPER_MAX_ANGLE) {
 - 2026-01-23_업무일지.md: Data Seeding 구현 작업 일지 (Admin 계정 자동 생성)
 - 2026-01-23_업무일지2.md: Dashboard 내 Pinball 통합 및 가운데 정렬 작업 일지
 - 2026-01-24_업무일지.md: Pinball 배경이미지 크기 조정 작업 일지 (MUI Box sx 방식)
+- 2026-01-25_업무일지.md: UserInfo.jsx API 연동 및 Login.jsx 버그 수정 작업 일지
 
 ## 알려진 이슈
 
@@ -861,12 +885,22 @@ docker exec mysql-server mysql -u hexsera -phexpoint hexdb -e "SELECT id, email,
 - ✅ transformOrigin을 'top center'로 변경하여 중앙 기준 스케일 조정
 - ✅ '게임하기' 클릭 시 Dashboard 메인 영역에 Pinball 표시
 - ✅ '메인페이지' 클릭 시 기존 Dashboard 콘텐츠로 복귀
+- ✅ Dashboard 내 UserInfo 통합 (URL 변경 없이 메인 영역에 표시)
+- ✅ '계정' 클릭 시 Dashboard 메인 영역에 UserInfo 표시
 
 ### React / Pinball
 - ✅ Pinball 배경이미지 크기 조정 (MUI Box sx 방식)
 - ✅ Matter.js Render background를 'transparent'로 변경
 - ✅ Box 컴포넌트에 backgroundImage, backgroundSize: '100% 100%' 적용
 - ✅ 배경이미지가 캔버스 전체(700×1200)를 채우도록 구현
+
+### React / UserInfo
+- ✅ UserInfo.jsx 생성 (회원 정보 조회/수정/삭제)
+- ✅ FastAPI GET /api/v1/users/{user_id} API 연동
+- ✅ X-API-Key 헤더 인증 구현
+- ✅ console.log 디버깅 구현
+- ✅ Login.jsx 버그 수정 (response.data.id → response.data.user_id)
+- ✅ undefined user.id 문제 분석 문서 작성
 
 ## 다음 작업 (예정)
 
@@ -877,8 +911,11 @@ docker exec mysql-server mysql -u hexsera -phexpoint hexdb -e "SELECT id, email,
 - API Key 환경변수화 (.env)
 
 ### React
+- UserInfo.jsx: 회원 정보 수정 기능 구현 (PUT /api/v1/users/{user_id})
+- UserInfo.jsx: 회원 탈퇴 기능 구현 (DELETE /api/v1/users/{user_id})
+- API Key를 프론트엔드에서 제거하고 백엔드 전용 API로 변경
+- 회원 정보 CRUD용 별도 엔드포인트 생성 (인증 토큰 기반)
 - Register.jsx: POST /api/v1/register 연동 (상태 코드 201 확인)
-- Login.jsx: POST /api/v1/login 연동
 - Pinball.jsx 스크롤 문제 해결 (Box에 height 명시)
 - Dashboard 사이드바 접기 기능 구현 (모바일 대응)
 - Pinball 충돌 효과음 추가
