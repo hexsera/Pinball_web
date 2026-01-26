@@ -89,6 +89,19 @@ class DeleteResponse(BaseModel):
     deleted_user_id: int
 
 
+class ScoreCreateRequest(BaseModel):
+    """점수 저장 요청"""
+    user_id: int
+    score: int
+
+
+class ScoreResponse(BaseModel):
+    """점수 응답"""
+    message: str
+    user_id: int
+    score: int
+
+
 @app.get("/api/")
 def health_check():
     return {"status": "ok", "message": "FastAPI is running"}
@@ -267,3 +280,18 @@ def register_user(
     db.refresh(db_user)
 
     return db_user
+
+
+@app.post("/api/v1/scores", response_model=ScoreResponse)
+def create_score(score_request: ScoreCreateRequest):
+    """점수 수신 엔드포인트 (콘솔 출력만)"""
+
+    # 콘솔에 출력
+    print(f"Score received - user_id: {score_request.user_id}, score: {score_request.score}")
+
+    # 응답 반환
+    return ScoreResponse(
+        message="Score received",
+        user_id=score_request.user_id,
+        score=score_request.score
+    )
