@@ -105,9 +105,9 @@ docker run --rm -v html-data-volume:/data -v $(pwd):/backup alpine tar xzf /back
 
 ## FastAPI 구조 (./fastapi/)
 
-- **main.py**: FastAPI 애플리케이션 엔트리포인트, User CRUD 및 Login API 엔드포인트, Pydantic 스키마, Base.metadata.create_all()로 테이블 자동 생성, Data Seeding 실행
+- **main.py**: FastAPI 애플리케이션 엔트리포인트, User CRUD, Login API, Score API 엔드포인트, Pydantic 스키마, Base.metadata.create_all()로 테이블 자동 생성, Data Seeding 실행
 - **database.py**: SQLAlchemy 엔진 및 세션 설정, get_db() 의존성, wait_for_db() 재시도 로직, SessionLocal 세션 팩토리
-- **models.py**: SQLAlchemy ORM 모델 (User 테이블 정의)
+- **models.py**: SQLAlchemy ORM 모델 (User, Score 테이블 정의)
 - **auth.py**: API Key 인증 의존성 (verify_api_key 함수, APIKeyHeader 사용)
 - **seed.py**: Data Seeding 함수 (seed_admin - Admin 계정 자동 생성)
 - **schemas.py**: Pydantic 스키마 (요청/응답 검증) - 미구현 (현재 main.py에 포함)
@@ -141,6 +141,7 @@ alembic==1.13.1
 | DELETE | /api/v1/users/{user_id} | 회원 삭제 | API Key 필요 | 200, 404 |
 | POST | /api/v1/login | 로그인 (이메일/비밀번호 검증) | 불필요 | 200, 401 |
 | POST | /api/v1/register | 일반 회원가입 (role='user' 고정, DB 저장) | 불필요 | 201, 400 |
+| POST | /api/v1/scores | 점수 기록 생성 (user_id를 id로 사용) | 불필요 | 201, 500 |
 
 ### API Key 인증
 - 헤더: `X-API-Key: hexsera-secret-api-key-2026`
@@ -148,7 +149,7 @@ alembic==1.13.1
 - 잘못된 키 → 403 Forbidden
 - 구현 파일: `fastapi/auth.py` (APIKeyHeader 사용)
 - 적용 엔드포인트: POST/GET/PUT/DELETE /api/v1/users
-- 미적용 엔드포인트: POST /api/v1/login, POST /api/v1/register
+- 미적용 엔드포인트: POST /api/v1/login, POST /api/v1/register, POST /api/v1/scores
 
 ## MySQL 테이블
 
@@ -161,6 +162,20 @@ alembic==1.13.1
 | password | varchar(255) | 비밀번호 (해싱 예정) |
 | birth_date | date | 생년월일 |
 | role | varchar(20) | 역할 (user, admin 등, 기본값: user) |
+
+### scores 테이블
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| id | int (PRIMARY KEY) | 점수 기록 고유 번호 (user_id 값 사용, INDEX) |
+| user_id | int | 사용자 ID (INDEX) |
+| score | int | 획득 점수 (INDEX) |
+| created_at | datetime | 기록 생성 시각 (DEFAULT: CURRENT_TIMESTAMP, INDEX) |
+
+**특징**:
+- user_id를 id(PRIMARY KEY)로 사용하여 한 사용자당 하나의 점수만 저장
+- User 테이블과 독립적 (외래키 없음, 비회원도 점수 저장 가능)
+- 동일 user_id로 재저장 시 PRIMARY KEY 충돌 (IntegrityError)
+- func.now()로 DB 서버 시간 자동 기록
 
 ### alembic_version 테이블
 Alembic이 자동으로 생성하는 마이그레이션 버전 관리 테이블
@@ -435,6 +450,97 @@ def update_user(
 - 부분 수정 지원 (UserUpdateRequest의 Optional 필드)
 - 회원가입 성공 시 201 Created 반환
 - 로그인 실패 시 401 Unauthorized 반환
+
+### FastAPI Score API
+
+**Pydantic 스키마** (main.py에 정의):
+```python
+from datetime import datetime
+from models import Score
+
+class ScoreCreateRequest(BaseModel):
+    """점수 기록 생성 요청"""
+    user_id: int
+    score: int
+
+class ScoreResponse(BaseModel):
+    """점수 기록 응답"""
+    id: int
+    user_id: int
+    score: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ScoreListResponse(BaseModel):
+    """점수 기록 목록 응답"""
+    scores: List[ScoreResponse]
+    total: int
+```
+
+**주요 엔드포인트 구현**:
+
+1. **점수 기록 생성** (POST /api/v1/scores):
+```python
+@app.post("/api/v1/scores", response_model=ScoreResponse, status_code=201)
+def create_score(score_data: ScoreCreateRequest, db: Session = Depends(get_db)):
+    """점수 기록 생성 (user_id를 id로 사용)"""
+    # user_id를 id로 설정하여 점수 기록 생성
+    db_score = Score(
+        id=score_data.user_id,
+        user_id=score_data.user_id,
+        score=score_data.score
+    )
+    db.add(db_score)
+    db.commit()
+    db.refresh(db_score)
+    return db_score
+```
+
+**API 사용 예시**:
+```bash
+# 점수 기록 생성
+curl -X POST "http://localhost:8000/api/v1/scores" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": 1, "score": 15000}'
+
+# 응답 (201 Created)
+{
+  "id": 1,
+  "user_id": 1,
+  "score": 15000,
+  "created_at": "2026-01-26T09:37:01"
+}
+```
+
+**특징**:
+- user_id를 Score.id(PRIMARY KEY)로 명시적 설정
+- 한 사용자당 하나의 점수만 저장 가능 (PRIMARY KEY 제약)
+- 동일 user_id로 재저장 시 IntegrityError (Duplicate entry for key 'scores.PRIMARY')
+- User 테이블과 독립적 (외래키 없음, 비회원도 점수 저장 가능)
+- func.now()로 DB 서버 시간 자동 기록
+- 인증 불필요 (게임 플레이 중 원활한 저장)
+- 201 Created 상태 코드 반환
+
+**데이터베이스 구조**:
+```sql
+CREATE TABLE scores (
+  id INT PRIMARY KEY,                    -- user_id 값이 여기에 저장됨
+  user_id INT NOT NULL,                  -- 동일한 값 저장
+  score INT NOT NULL,                    -- 획득 점수
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 기록 시각
+  INDEX ix_scores_id (id),
+  INDEX ix_scores_user_id (user_id),
+  INDEX ix_scores_score (score),
+  INDEX ix_scores_created_at (created_at)
+);
+```
+
+**설계 결정**:
+- **최고 점수 갱신 구조**: user_id를 id로 사용하여 한 사용자당 하나의 점수만 유지
+- **확장 가능성**: UPDATE 쿼리로 최고 점수 갱신 기능 추가 가능
+- **인덱스 최적화**: user_id, score, created_at 모두 인덱스 설정 (조회 성능 향상)
 
 ### React 회원가입 (Register.jsx)
 - 3단계 폼: 이메일/닉네임 → 비밀번호 → 생년월일
@@ -878,6 +984,10 @@ docker exec mysql-server mysql -u hexsera -phexpoint hexdb -e "SELECT id, email,
 - ✅ .env 파일에 Admin 계정 정보 환경변수 추가
 - ✅ seed.py 파일 생성 및 seed_admin 함수 구현
 - ✅ 중복 생성 방지 로직 구현
+- ✅ Score 모델 구현 (models.py에 Score 클래스 추가)
+- ✅ Score API 구현 (POST /api/v1/scores)
+- ✅ user_id를 PRIMARY KEY(id)로 사용하여 한 사용자당 하나의 점수만 저장
+- ✅ scores 테이블 생성 (id, user_id, score, created_at)
 
 ### React / Dashboard
 - ✅ Dashboard 내 Pinball 게임 통합 (URL 변경 없이 메인 영역에 표시)
@@ -905,12 +1015,18 @@ docker exec mysql-server mysql -u hexsera -phexpoint hexdb -e "SELECT id, email,
 ## 다음 작업 (예정)
 
 ### FastAPI
+- 점수 조회 API 구현 (GET /api/v1/scores/user/{user_id})
+- 랭킹 조회 API 구현 (GET /api/v1/scores/ranking)
+- 점수 갱신 기능 구현 (기존 점수보다 높을 때만 UPDATE)
 - fastapi 실행시 로그 미출력 문제 해결
 - schemas.py 생성: Pydantic 스키마 분리 (main.py에서 이동) - 선택 사항
 - 비밀번호 해싱 구현 (passlib[bcrypt])
 - API Key 환경변수화 (.env)
 
 ### React
+- Pinball.jsx: Score API 연동 (게임 종료 시 점수 저장)
+- 점수 조회 화면 구현 (사용자별 점수 확인)
+- 랭킹 화면 구현 (전체 랭킹 Top 10)
 - UserInfo.jsx: 회원 정보 수정 기능 구현 (PUT /api/v1/users/{user_id})
 - UserInfo.jsx: 회원 탈퇴 기능 구현 (DELETE /api/v1/users/{user_id})
 - API Key를 프론트엔드에서 제거하고 백엔드 전용 API로 변경
