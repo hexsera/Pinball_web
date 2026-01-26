@@ -29,6 +29,9 @@ print("Data seeding completed")
 
 app = FastAPI(title="Hexsera API", version="1.0.0")
 
+# 친구 요청 메모리 저장소 (임시)
+friend_requests: List[dict] = []
+
 
 # Pydantic 스키마
 class UserCreateRequest(BaseModel):
@@ -113,6 +116,32 @@ class FriendRequestResponse(BaseModel):
     message: str
     id: int
     requester_id: int
+
+
+class FriendRequestData(BaseModel):
+    """친구 요청 데이터 (조회용)"""
+    id: int
+    requester_id: int
+    status: str
+
+
+class FriendRequestListResponse(BaseModel):
+    """친구 요청 목록 응답"""
+    requests: List[FriendRequestData]
+
+
+class FriendRequestActionRequest(BaseModel):
+    """친구 요청 승인/거절 요청"""
+    id: int
+    requester_id: int
+
+
+class FriendRequestActionResponse(BaseModel):
+    """친구 요청 승인/거절 응답"""
+    message: str
+    id: int
+    requester_id: int
+    status: str
 
 
 @app.get("/api/")
@@ -312,14 +341,80 @@ def create_score(score_request: ScoreCreateRequest):
 
 @app.post("/api/friend-requests", response_model=FriendRequestResponse)
 def create_friend_request(request: FriendRequestRequest):
-    """친구 추가 요청을 받는 엔드포인트 (콘솔 출력만)"""
+    """친구 추가 요청을 받는 엔드포인트 (메모리에 저장)"""
+
+    # 친구 요청 데이터 생성
+    friend_request_data = {
+        "id": request.id,
+        "requester_id": request.requester_id,
+        "status": "pending"
+    }
+
+    # 메모리에 저장
+    friend_requests.append(friend_request_data)
 
     # 콘솔에 출력
-    print(f"요청 받음, {request.id} -> {request.requester_id}")
+    print(f"친구 요청 저장됨: {request.id} -> {request.requester_id}")
 
     # 응답 반환
     return FriendRequestResponse(
         message="Friend request received",
         id=request.id,
         requester_id=request.requester_id
+    )
+
+
+@app.get("/api/friend-requests", response_model=FriendRequestListResponse)
+def get_friend_requests(user_id: int):
+    """특정 사용자가 받은 친구 요청 조회"""
+    # requester_id가 user_id와 일치하는 요청 필터링
+    user_requests = [
+        req for req in friend_requests
+        if req["requester_id"] == user_id
+    ]
+
+    return FriendRequestListResponse(requests=user_requests)
+
+
+@app.post("/api/friend-requests/accept", response_model=FriendRequestActionResponse)
+def accept_friend_request(action: FriendRequestActionRequest):
+    """친구 요청 승인"""
+    # 해당 요청 찾기
+    for req in friend_requests:
+        if req["id"] == action.id and req["requester_id"] == action.requester_id:
+            req["status"] = "accepted"
+            print(f"친구 요청 승인됨: {action.id} -> {action.requester_id}")
+            return FriendRequestActionResponse(
+                message="Friend request accepted",
+                id=req["id"],
+                requester_id=req["requester_id"],
+                status=req["status"]
+            )
+
+    # 요청을 찾지 못한 경우
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Friend request not found"
+    )
+
+
+@app.post("/api/friend-requests/reject", response_model=FriendRequestActionResponse)
+def reject_friend_request(action: FriendRequestActionRequest):
+    """친구 요청 거절"""
+    # 해당 요청 찾기
+    for req in friend_requests:
+        if req["id"] == action.id and req["requester_id"] == action.requester_id:
+            req["status"] = "rejected"
+            print(f"친구 요청 거절됨: {action.id} -> {action.requester_id}")
+            return FriendRequestActionResponse(
+                message="Friend request rejected",
+                id=req["id"],
+                requester_id=req["requester_id"],
+                status=req["status"]
+            )
+
+    # 요청을 찾지 못한 경우
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Friend request not found"
     )
