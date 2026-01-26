@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from database import wait_for_db, engine, Base, get_db, SessionLocal
-from models import User
+from models import User, Score
 from auth import verify_api_key
 from seed import seed_admin
 
@@ -93,16 +93,26 @@ class DeleteResponse(BaseModel):
 
 
 class ScoreCreateRequest(BaseModel):
-    """점수 저장 요청"""
+    """점수 기록 생성 요청"""
     user_id: int
     score: int
 
 
 class ScoreResponse(BaseModel):
-    """점수 응답"""
-    message: str
+    """점수 기록 응답"""
+    id: int
     user_id: int
     score: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ScoreListResponse(BaseModel):
+    """점수 기록 목록 응답"""
+    scores: List[ScoreResponse]
+    total: int
 
 
 class FriendRequestRequest(BaseModel):
@@ -324,21 +334,6 @@ def register_user(
     return db_user
 
 
-@app.post("/api/v1/scores", response_model=ScoreResponse)
-def create_score(score_request: ScoreCreateRequest):
-    """점수 수신 엔드포인트 (콘솔 출력만)"""
-
-    # 콘솔에 출력
-    print(f"Score received - user_id: {score_request.user_id}, score: {score_request.score}")
-
-    # 응답 반환
-    return ScoreResponse(
-        message="Score received",
-        user_id=score_request.user_id,
-        score=score_request.score
-    )
-
-
 @app.post("/api/friend-requests", response_model=FriendRequestResponse)
 def create_friend_request(request: FriendRequestRequest):
     """친구 추가 요청을 받는 엔드포인트 (메모리에 저장)"""
@@ -418,3 +413,20 @@ def reject_friend_request(action: FriendRequestActionRequest):
         status_code=status.HTTP_404_NOT_FOUND,
         detail="Friend request not found"
     )
+
+
+# ==================== Score API ====================
+
+@app.post("/api/v1/scores", response_model=ScoreResponse, status_code=201)
+def create_score(score_data: ScoreCreateRequest, db: Session = Depends(get_db)):
+    """점수 기록 생성 (user_id를 id로 사용)"""
+    # user_id를 id로 설정하여 점수 기록 생성
+    db_score = Score(
+        
+        user_id=score_data.user_id,
+        score=score_data.score
+    )
+    db.add(db_score)
+    db.commit()
+    db.refresh(db_score)
+    return db_score
