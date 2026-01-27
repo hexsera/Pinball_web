@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Matter from 'matter-js';
-import { Button, Box } from '@mui/material';
+import { Button, Box, Typography } from '@mui/material';
 
 function Pinball() {
   const sceneRef = useRef(null);
   const bgmRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [score, setScore] = useState(30);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -341,6 +342,7 @@ display: 'flex',
           </Button>
         )}
         <Box sx={{
+          position: 'relative',
           width: '700px',
           height: '1200px',
           backgroundImage: 'url(/images/pinball_back.png)',
@@ -350,6 +352,26 @@ display: 'flex',
           transform: { xs: 'scale(0.5)', sm: 'scale(0.5)', md: 'scale(0.8)' },
           transformOrigin: 'top center'
         }}>
+          {/* 점수 표시 UI */}
+          <Box sx={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            padding: '10px 20px',
+            borderRadius: '8px',
+            border: '2px solid #ffffff'
+          }}>
+            <Typography sx={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#ffffff',
+              
+            }}>
+              SCORE: {score}
+            </Typography>
+          </Box>
+
           <div ref={sceneRef} />
         </Box>
       </Box>
