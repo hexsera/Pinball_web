@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from database import wait_for_db, engine, Base, get_db, SessionLocal
-from models import User, Score
+from models import User, Score, Friendship
 from auth import verify_api_key
 from seed import seed_admin
 
@@ -117,14 +117,14 @@ class ScoreListResponse(BaseModel):
 
 class FriendRequestRequest(BaseModel):
     """친구 추가 요청 스키마"""
-    id: int
-    requester_id: int
+    addressee_id: int    # 친구 요청을 받는 사람
+    requester_id: int    # 친구 요청을 보내는 사람
 
 
 class FriendRequestResponse(BaseModel):
     """친구 추가 응답 스키마"""
     message: str
-    id: int
+    addressee_id: int
     requester_id: int
 
 
@@ -335,27 +335,33 @@ def register_user(
 
 
 @app.post("/api/friend-requests", response_model=FriendRequestResponse)
-def create_friend_request(request: FriendRequestRequest):
-    """친구 추가 요청을 받는 엔드포인트 (메모리에 저장)"""
+def create_friend_request(request: FriendRequestRequest, db: Session = Depends(get_db)):
+    """친구 추가 요청을 받는 엔드포인트 (DB와 메모리에 저장)"""
 
-    # 친구 요청 데이터 생성
+    # 1. DB에 Friendship 레코드 생성
+    db_friendship = Friendship(
+        requester_id=request.requester_id,
+        addressee_id=request.addressee_id,
+        status="pending"
+    )
+    db.add(db_friendship)
+    db.commit()
+    db.refresh(db_friendship)
+
+    # 2. 메모리에도 저장 (다른 엔드포인트 호환성 유지)
     friend_request_data = {
-        "id": request.id,
+        "id": request.addressee_id,
         "requester_id": request.requester_id,
         "status": "pending"
     }
-
-    # 메모리에 저장
     friend_requests.append(friend_request_data)
 
-    # 콘솔에 출력
-    print(f"친구 요청 저장됨: {request.id} -> {request.requester_id}")
+    print(f"친구 요청 저장됨 (DB+메모리): {request.requester_id} -> {request.addressee_id}")
 
-    # 응답 반환
     return FriendRequestResponse(
         message="Friend request received",
-        id=request.id,
-        requester_id=request.requester_id
+        addressee_id=db_friendship.addressee_id,
+        requester_id=db_friendship.requester_id
     )
 
 
