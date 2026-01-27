@@ -117,15 +117,16 @@ class ScoreListResponse(BaseModel):
 
 class FriendRequestRequest(BaseModel):
     """친구 추가 요청 스키마"""
-    addressee_id: int    # 친구 요청을 받는 사람
     requester_id: int    # 친구 요청을 보내는 사람
-
+    receiver_id: int    # 친구 요청을 받는 사람
+    
 
 class FriendRequestResponse(BaseModel):
     """친구 추가 응답 스키마"""
     message: str
-    addressee_id: int
     requester_id: int
+    receiver_id: int
+    
 
 
 class FriendRequestData(BaseModel):
@@ -142,15 +143,16 @@ class FriendRequestListResponse(BaseModel):
 
 class FriendRequestActionRequest(BaseModel):
     """친구 요청 승인/거절 요청"""
-    id: int
     requester_id: int
+    receiver_id: int
+    
 
 
 class FriendRequestActionResponse(BaseModel):
     """친구 요청 승인/거절 응답"""
     message: str
-    id: int
     requester_id: int
+    receiver_id: int
     status: str
 
 
@@ -341,26 +343,20 @@ def create_friend_request(request: FriendRequestRequest, db: Session = Depends(g
     # 1. DB에 Friendship 레코드 생성
     db_friendship = Friendship(
         requester_id=request.requester_id,
-        addressee_id=request.addressee_id,
+        receiver_id=request.receiver_id,
         status="pending"
     )
     db.add(db_friendship)
     db.commit()
     db.refresh(db_friendship)
 
-    # 2. 메모리에도 저장 (다른 엔드포인트 호환성 유지)
-    friend_request_data = {
-        "id": request.addressee_id,
-        "requester_id": request.requester_id,
-        "status": "pending"
-    }
-    friend_requests.append(friend_request_data)
 
-    print(f"친구 요청 저장됨 (DB+메모리): {request.requester_id} -> {request.addressee_id}")
+
+    print(f"친구 요청 저장됨 (DB+메모리): {request.requester_id} -> {request.receiver_id}")
 
     return FriendRequestResponse(
         message="Friend request received",
-        addressee_id=db_friendship.addressee_id,
+        receiver_id=db_friendship.receiver_id,
         requester_id=db_friendship.requester_id
     )
 
@@ -378,46 +374,66 @@ def get_friend_requests(user_id: int):
 
 
 @app.post("/api/friend-requests/accept", response_model=FriendRequestActionResponse)
-def accept_friend_request(action: FriendRequestActionRequest):
-    """친구 요청 승인"""
-    # 해당 요청 찾기
-    for req in friend_requests:
-        if req["id"] == action.id and req["requester_id"] == action.requester_id:
-            req["status"] = "accepted"
-            print(f"친구 요청 승인됨: {action.id} -> {action.requester_id}")
-            return FriendRequestActionResponse(
-                message="Friend request accepted",
-                id=req["id"],
-                requester_id=req["requester_id"],
-                status=req["status"]
-            )
+def accept_friend_request(action: FriendRequestActionRequest, db: Session = Depends(get_db)):
+    """친구 요청 승인 (DB 연동)"""
+    # DB에서 Friendship 레코드 조회
+    friendship = db.query(Friendship).filter(
+        Friendship.receiver_id == action.receiver_id,
+        Friendship.requester_id == action.requester_id
+    ).first()
 
-    # 요청을 찾지 못한 경우
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Friend request not found"
+    if not friendship:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Friend request not found"
+        )
+
+    # status 업데이트
+    friendship.status = "accepted"
+    db.commit()
+    db.refresh(friendship)
+
+    # 메모리 배열도 업데이트 (하위 호환성)
+
+
+    print(f"친구 요청 승인됨 (DB): {action.receiver_id} -> {action.requester_id}")
+    return FriendRequestActionResponse(
+        message="Friend request accepted",
+        receiver_id=friendship.receiver_id,
+        requester_id=friendship.requester_id,
+        status=friendship.status
     )
 
 
 @app.post("/api/friend-requests/reject", response_model=FriendRequestActionResponse)
-def reject_friend_request(action: FriendRequestActionRequest):
-    """친구 요청 거절"""
-    # 해당 요청 찾기
-    for req in friend_requests:
-        if req["id"] == action.id and req["requester_id"] == action.requester_id:
-            req["status"] = "rejected"
-            print(f"친구 요청 거절됨: {action.id} -> {action.requester_id}")
-            return FriendRequestActionResponse(
-                message="Friend request rejected",
-                id=req["id"],
-                requester_id=req["requester_id"],
-                status=req["status"]
-            )
+def reject_friend_request(action: FriendRequestActionRequest, db: Session = Depends(get_db)):
+    """친구 요청 거절 (DB 연동)"""
+    # DB에서 Friendship 레코드 조회
+    friendship = db.query(Friendship).filter(
+        Friendship.receiver_id == action.receiver_id,
+        Friendship.requester_id == action.requester_id
+    ).first()
 
-    # 요청을 찾지 못한 경우
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Friend request not found"
+    if not friendship:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Friend request not found"
+        )
+
+    # status 업데이트
+    friendship.status = "rejected"
+    db.commit()
+    db.refresh(friendship)
+
+    # 메모리 배열도 업데이트 (하위 호환성)
+
+
+    print(f"친구 요청 거절됨 (DB): {action.receiver_id} -> {action.requester_id}")
+    return FriendRequestActionResponse(
+        message="Friend request rejected",
+        receiver_id=friendship.receiver_id,
+        requester_id=friendship.requester_id,
+        status=friendship.status
     )
 
 
