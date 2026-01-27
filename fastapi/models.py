@@ -31,3 +31,11 @@ class Friendship(Base):
     addressee_id = Column(Integer, nullable=False, index=True)
     status = Column(String(20), nullable=False, default='pending')
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+
+
+class Visit(Base):
+    __tablename__ = "visits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=True, index=True)
+    visited_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
