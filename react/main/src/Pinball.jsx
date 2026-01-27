@@ -83,6 +83,17 @@ function Pinball() {
       render: { fillStyle: '#16213e' }
     });
 
+    // 죽음구역 만들기 (바닥 아래, 센서 역할)
+    const deathZone = Bodies.rectangle(350, 1200, 700, 40, {
+      isStatic: true,
+      isSensor: true,
+      label: 'deathZone',
+      render: {
+        fillStyle: '#8b0000',
+        opacity: 0.3
+      }
+    });
+
     // 핀볼 공 만들기
     const ball = Bodies.circle(250, 400, 15, {
       restitution: 0.8,
@@ -163,6 +174,7 @@ function Pinball() {
     leftWall,
     rightWall,
     upWall,
+    deathZone,
     ball,
     obstacle1,
     obstacle2,
@@ -183,6 +195,7 @@ function Pinball() {
 
       pairs.forEach((pair) => {
         const { bodyA, bodyB } = pair;
+        //console.log(bodyA);
 
         // 공과 범퍼가 충돌했는지 확인
         if ((bodyA.label === 'bumper' && bodyB === ball) ||
@@ -200,6 +213,13 @@ function Pinball() {
           const newVelocity = Vector.add(currentVelocity, bumperForce);
 
           Body.setVelocity(ball, newVelocity);
+        }
+
+        // 죽음구역 충돌 감지
+        if ((bodyA.label === 'deathZone' && bodyB === ball) ||
+            (bodyB.label === 'deathZone' && bodyA === ball)) {
+          console.log('Ball entered death zone!');
+          World.remove(engine.world, ball);
         }
       });
     });
