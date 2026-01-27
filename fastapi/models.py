@@ -21,3 +21,13 @@ class Score(Base):
     user_id = Column(Integer, nullable=False, index=True)
     score = Column(Integer, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+
+
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    requester_id = Column(Integer, nullable=False, index=True)
+    addressee_id = Column(Integer, nullable=False, index=True)
+    status = Column(String(20), nullable=False, default='pending')
+    created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
