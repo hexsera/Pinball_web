@@ -127,6 +127,14 @@ function Pinball() {
       render: { fillStyle: '#e74c3c' }
     });
 
+    // 목표 오브젝트 만들기 (충돌 시 강하게 튕겨냄)
+    const target = Bodies.circle(500, 500, 40, {
+      isStatic: true,
+      restitution: 1.5,
+      label: 'target',
+      render: { fillStyle: '#87CEEB' }
+    });
+
     const leftFlipper = Bodies.rectangle(200, 1150, 100, 20, {
     chamfer: { radius: 10 },
     render: { fillStyle: '#f39c12' },
@@ -184,6 +192,7 @@ function Pinball() {
     obstacle1,
     obstacle2,
     bumper,
+    target,
     leftFlipper,
     rightFlipper,
     leftFlipperConstraint,
@@ -218,6 +227,12 @@ function Pinball() {
           const newVelocity = Vector.add(currentVelocity, bumperForce);
 
           Body.setVelocity(ball, newVelocity);
+        }
+
+        // 공과 목표 오브젝트가 충돌했는지 확인
+        if ((bodyA.label === 'target' && bodyB === ball) ||
+            (bodyB.label === 'target' && bodyA === ball)) {
+          console.log('target 충돌했음');
         }
 
         // 죽음구역 충돌 감지
