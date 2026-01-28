@@ -10,6 +10,11 @@ function Pinball() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(30);
   const [lives, setLives] = useState(3);
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+  const [gameScale, setGameScale] = useState(1);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -21,6 +26,22 @@ function Pinball() {
       setIsPlaying(true);
     }
   };
+
+  // 최적 스케일 계산 함수
+  const calculateScale = useCallback(() => {
+    const canvasWidth = 700;
+    const canvasHeight = 1200;
+    const padding = 120; // 여백
+
+    // 화면 너비/높이 기준으로 각각 계산
+    const scaleByWidth = (windowSize.width - padding) / canvasWidth;
+    const scaleByHeight = (windowSize.height - padding) / canvasHeight;
+
+    // 둘 중 작은 값을 선택하여 화면에 꽉 차지 않도록
+    const optimalScale = Math.min(scaleByWidth, scaleByHeight, 1);
+
+    setGameScale(optimalScale);
+  }, [windowSize]);
 
 
 
@@ -385,6 +406,27 @@ if (sceneRef.current) {
 };
   }, []);
 
+  // 창 크기 변경 이벤트 리스너
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // windowSize 변경 시 스케일 재계산
+  useEffect(() => {
+    calculateScale();
+  }, [windowSize, calculateScale]);
+
   /*
 display: 'flex',
         flexDirection: 'column',
@@ -411,7 +453,7 @@ display: 'flex',
           backgroundSize: '100% 100%',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          transform: { xs: 'scale(0.5)', sm: 'scale(0.5)', md: 'scale(0.8)' },
+          transform: `scale(${gameScale})`,
           transformOrigin: 'top center'
         }}>
           {/* 점수 표시 UI */}
