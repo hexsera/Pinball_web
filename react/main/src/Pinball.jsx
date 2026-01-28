@@ -5,6 +5,7 @@ import { Button, Box, Typography } from '@mui/material';
 function Pinball() {
   const sceneRef = useRef(null);
   const bgmRef = useRef(null);
+  const hitSoundRef = useRef(null);
   const ballRef = useRef(null);
   const livesRef = useRef(3);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -52,6 +53,11 @@ function Pinball() {
     bgm.loop = true;
     bgm.volume = 0.05;
     bgmRef.current = bgm;
+
+    // 충돌 사운드 설정
+    const hitSound = new Audio('/audio/ball_hit.wav');
+    hitSound.volume = 0.5;
+    hitSoundRef.current = hitSound;
 
     // Matter.js 모듈 가져오기
     const Engine = Matter.Engine;
@@ -232,6 +238,16 @@ function Pinball() {
         const { bodyA, bodyB } = pair;
         //console.log(bodyA);
 
+        // 공이 포함된 충돌인지 확인하여 소리 재생
+        if (bodyA === ball || bodyB === ball) {
+          if (hitSoundRef.current) {
+            hitSoundRef.current.currentTime = 0; // 재생 위치 초기화
+            hitSoundRef.current.play().catch(err => {
+              console.log('Sound play failed:', err);
+            });
+          }
+        }
+
         // 공과 범퍼가 충돌했는지 확인
         if ((bodyA.label === 'bumper' && bodyB === ball) ||
             (bodyB.label === 'bumper' && bodyA === ball)) {
@@ -391,6 +407,10 @@ if (sceneRef.current) {
   if (bgmRef.current) {
     bgmRef.current.pause();
     bgmRef.current.currentTime = 0;
+  }
+  if (hitSoundRef.current) {
+    hitSoundRef.current.pause();
+    hitSoundRef.current.currentTime = 0;
   }
   Events.off(engine, 'beforeUpdate');
   Events.off(engine, 'collisionStart');
