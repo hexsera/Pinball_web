@@ -84,7 +84,7 @@ function Pinball() {
       engine: engine,
       options: {
         width: 700,
-        height: 1200,
+        height: 1100,
         wireframes: false,
         background: 'transparent'
       }
@@ -469,34 +469,47 @@ display: 'flex',
           position: 'relative',
           width: '700px',
           height: '1200px',
-          backgroundImage: 'url(/images/pinball_back.png)',
-          backgroundSize: '100% 100%',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
           transform: `scale(${gameScale})`,
           transformOrigin: 'top center'
         }}>
-          {/* 점수 표시 UI */}
+          {/* UI 영역 (상단 300px) */}
           <Box sx={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            padding: '10px 20px',
-            borderRadius: '8px',
-            border: '2px solid #ffffff'
+            width: '700px',
+            height: '100px',
+            backgroundColor: '#000000',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center'
           }}>
             <Typography sx={{
-              fontSize: '24px',
+              fontSize: '48px',
               fontWeight: 'bold',
-              color: '#ffffff',
-              
+              color: '#ffffff'
             }}>
               SCORE: {score}
             </Typography>
+            <Typography sx={{
+              fontSize: '32px',
+              fontWeight: 'bold',
+              color: '#ffffff',
+              marginTop: '20px'
+            }}>
+              LIVES: {lives}
+            </Typography>
           </Box>
 
-          <div ref={sceneRef} />
+          {/* 게임 영역 (하단 900px) */}
+          <Box sx={{
+            width: '700px',
+            height: '1100px',
+            backgroundImage: 'url(/images/pinball_back.png)',
+            backgroundSize: '100% 100%',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}>
+            <div ref={sceneRef} />
+          </Box>
         </Box>
       </Box>
   )
