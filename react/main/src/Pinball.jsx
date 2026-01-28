@@ -5,8 +5,11 @@ import { Button, Box, Typography } from '@mui/material';
 function Pinball() {
   const sceneRef = useRef(null);
   const bgmRef = useRef(null);
+  const ballRef = useRef(null);
+  const livesRef = useRef(3);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(30);
+  const [lives, setLives] = useState(3);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -102,6 +105,8 @@ function Pinball() {
       render: { fillStyle: '#e94560' }
 
     });
+
+    ballRef.current = ball;
 
     // 장애물 만들기
     const obstacle1 = Bodies.circle(300, 300, 30, {
@@ -219,7 +224,29 @@ function Pinball() {
         if ((bodyA.label === 'deathZone' && bodyB === ball) ||
             (bodyB.label === 'deathZone' && bodyA === ball)) {
           console.log('Ball entered death zone!');
-          World.remove(engine.world, ball);
+
+          // livesRef로 최신 lives 값 확인
+          if (livesRef.current > 0) {
+            // 공을 초기 위치로 이동
+            Body.setPosition(ball, { x: 250, y: 400 });
+
+            // 속도 초기화
+            Body.setVelocity(ball, { x: 0, y: 0 });
+
+            // 각속도 초기화 (회전 방지)
+            Body.setAngularVelocity(ball, 0);
+
+            // lives 감소 (상태와 ref 모두 업데이트)
+            const newLives = livesRef.current - 1;
+            livesRef.current = newLives;
+            setLives(newLives);
+
+            console.log(`Ball revived! Lives remaining: ${newLives}`);
+          } else {
+            // 생명이 없으면 공 제거 (게임 오버)
+            World.remove(engine.world, ball);
+            console.log('Game Over!');
+          }
         }
       });
     });
