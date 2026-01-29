@@ -7,6 +7,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Register from './Register';
 import AdminPage from './admin/AdminPage';
+import AdminUserPage from './admin/AdminUserPage';
 
 const theme = createTheme();
 
@@ -24,6 +25,7 @@ function App() {
             <Route path="/Register" element={<Register/>} />
             <Route path="/Pinball_test" element={<Pinball/>} />
             <Route path="/admin" element={<AdminPage/>} />
+            <Route path="/admin/users" element={<AdminUserPage/>} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
