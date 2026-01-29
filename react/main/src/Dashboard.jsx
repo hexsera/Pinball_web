@@ -22,7 +22,13 @@ import {
   CardMedia,
   Button,
   Menu,
-  MenuItem
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -223,7 +229,25 @@ function Maindashboard() {
       </List>
     </Box>
   );
-  
+
+  // 한달 랭킹 임시 데이터
+  const monthlyRankingData = [
+    { rank: 1, nickname: '핀볼마스터', score: 152000 },
+    { rank: 2, nickname: '게임왕', score: 148500 },
+    { rank: 3, nickname: '플리퍼킹', score: 145200 },
+    { rank: 4, nickname: '점수사냥꾼', score: 138900 },
+    { rank: 5, nickname: '핀볼러버', score: 135600 },
+    { rank: 6, nickname: '고수', score: 128300 },
+    { rank: 7, nickname: '챔피언', score: 125000 },
+    { rank: 8, nickname: '도전자', score: 118700 },
+    { rank: 9, nickname: '핀볼신', score: 112400 },
+    { rank: 10, nickname: '초보탈출', score: 108100 },
+    { rank: 11, nickname: '초보탈출', score: 108100 },
+    { rank: 12, nickname: '초보탈출', score: 108100 },
+    { rank: 13, nickname: '초보탈출', score: 108100 }
+
+  ];
+
   const mainele = (
     <Grid container spacing={3} sx={{ mb: 3 }}>
         <Paper
@@ -266,6 +290,37 @@ function Maindashboard() {
         <Paper
             sx={{
                 p: 3,
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+                border: '1px solid #e5e7eb',
+            }}
+            >
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+                한달 랭킹 TOP 10
+            </Typography>
+            <TableContainer>
+                <Table size="small">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell sx={{ fontWeight: 600 }}>순위</TableCell>
+                            <TableCell sx={{ fontWeight: 600 }}>닉네임</TableCell>
+                            <TableCell sx={{ fontWeight: 600 }} align="right">점수</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {monthlyRankingData.map((row) => (
+                            <TableRow key={row.rank}>
+                                <TableCell>{row.rank}</TableCell>
+                                <TableCell>{row.nickname}</TableCell>
+                                <TableCell align="right">{row.score.toLocaleString()}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Paper>
+        <Paper
+            sx={{
+                p: 3,
 
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
                 border: '1px solid #e5e7eb',
@@ -276,12 +331,12 @@ function Maindashboard() {
             </Typography>
             <CardMedia
                 component="img"
-                
+
                 image="/images/graph.png"
                 alt="로고"
                 sx={{ marginBottom: 2, objectFit: 'contain' }}
             />
-            
+
         </Paper>
         <Paper
             sx={{
