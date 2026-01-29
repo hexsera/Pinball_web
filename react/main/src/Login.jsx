@@ -25,9 +25,15 @@ function Login() {
       // 로그인 성공
       if (response.status === 200) {
         console.log('로그인 성공:', response.data);
-        login({ id: response.data.user_id, name: response.data.nickname });
+        login({ id: response.data.user_id, name: response.data.nickname, role: response.data.role });
         setLoginError(false);
-        navigate('/');
+
+        // role 기반 페이지 이동
+        if (response.data.role === 'admin') {
+          navigate('/admin');  // 관리자는 관리자 페이지로
+        } else {
+          navigate('/');  // 일반 사용자는 대시보드로
+        }
       }
     } catch (error) {
       // 로그인 실패

@@ -84,6 +84,7 @@ class LoginResponse(BaseModel):
     user_id: int
     email: str
     nickname: str
+    role: str
 
 
 class DeleteResponse(BaseModel):
@@ -303,7 +304,8 @@ def login(
         message="Login successful",
         user_id=user.id,
         email=user.email,
-        nickname=user.nickname
+        nickname=user.nickname,
+        role=user.role
     )
 
 
