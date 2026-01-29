@@ -29,6 +29,9 @@ function UserInfo() {
   // 회원 정보 수정 상태
   const [editNickname, setEditNickname] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editBirthYear, setEditBirthYear] = useState('');
+  const [editBirthMonth, setEditBirthMonth] = useState('');
+  const [editBirthDay, setEditBirthDay] = useState('');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [updateError, setUpdateError] = useState(null);
 
@@ -49,6 +52,15 @@ function UserInfo() {
           nickname: response.data.nickname,
           birth_date: response.data.birth_date
         });
+
+        // 수정 필드에 기본값 설정
+        setEditNickname(response.data.nickname);
+
+        // 생년월일 분리 (YYYY-MM-DD → 연도, 월, 일)
+        const birthDateParts = response.data.birth_date.split('-');
+        setEditBirthYear(birthDateParts[0]);
+        setEditBirthMonth(birthDateParts[1]);
+        setEditBirthDay(birthDateParts[2]);
       } catch (err) {
         console.error('회원 정보 API 호출 실패:', err);
       }
@@ -60,20 +72,67 @@ function UserInfo() {
   }, [user]);
 
   // 회원 정보 수정
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     setUpdateError(null);
     setUpdateSuccess(false);
 
-    if (!editNickname && !editPassword) {
+    // 수정할 필드가 하나도 없는지 검증
+    if (!editNickname && !editPassword && !editBirthYear && !editBirthMonth && !editBirthDay) {
       setUpdateError('수정할 정보를 입력해주세요.');
       return;
     }
 
-    // TODO: 백엔드 API 연동
-    console.log('수정 요청:', { editNickname, editPassword });
-    setUpdateSuccess(true);
-    setEditNickname('');
-    setEditPassword('');
+    try {
+      // 입력된 필드만 포함하는 객체 생성
+      const updateData = {};
+      if (editNickname) updateData.nickname = editNickname;
+      if (editPassword) updateData.password = editPassword;
+
+      // 생년월일이 입력된 경우 YYYY-MM-DD 형식으로 변환
+      if (editBirthYear || editBirthMonth || editBirthDay) {
+        const formattedMonth = editBirthMonth.padStart(2, '0');
+        const formattedDay = editBirthDay.padStart(2, '0');
+        updateData.birth_date = `${editBirthYear}-${formattedMonth}-${formattedDay}`;
+      }
+
+      console.log('회원 정보 수정 API 호출 시작:', updateData);
+
+      const response = await axios.put(
+        `/api/v1/users/${user.id}`,
+        updateData,
+        {
+          headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
+        }
+      );
+
+      console.log('회원 정보 수정 API 호출 성공:', response.data);
+
+      // 성공 시 상태 초기화 및 회원 정보 다시 조회
+      setUpdateSuccess(true);
+      /* setEditNickname('');
+      setEditPassword('');
+      setEditBirthYear('');
+      setEditBirthMonth('');
+      setEditBirthDay(''); */
+
+      // 회원 정보 갱신 (nickname이 변경된 경우 화면에 반영)
+      setUserInfo({
+        email: response.data.email,
+        nickname: response.data.nickname,
+        birth_date: response.data.birth_date
+      });
+
+    } catch (err) {
+      console.error('회원 정보 수정 API 호출 실패:', err);
+
+      if (err.response?.status === 400) {
+        setUpdateError('이메일이 이미 사용 중입니다.');
+      } else if (err.response?.status === 404) {
+        setUpdateError('사용자를 찾을 수 없습니다.');
+      } else {
+        setUpdateError('회원 정보 수정에 실패했습니다.');
+      }
+    }
   };
 
   // 회원 탈퇴
@@ -153,6 +212,29 @@ function UserInfo() {
             value={editPassword}
             onChange={(e) => setEditPassword(e.target.value)}
           />
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
+            <TextField
+              label="연도"
+              placeholder="2000"
+              value={editBirthYear}
+              onChange={(e) => setEditBirthYear(e.target.value)}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="월"
+              placeholder="01"
+              value={editBirthMonth}
+              onChange={(e) => setEditBirthMonth(e.target.value)}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="일"
+              placeholder="01"
+              value={editBirthDay}
+              onChange={(e) => setEditBirthDay(e.target.value)}
+              sx={{ flex: 1 }}
+            />
+          </Box>
           {updateSuccess && (
             <Alert severity="success">회원 정보가 성공적으로 수정되었습니다.</Alert>
           )}
