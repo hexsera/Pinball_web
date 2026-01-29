@@ -61,6 +61,11 @@ function Maindashboard() {
 
   const [showPinball, setShowPinball] = useState(false);
   const [showUserInfo, setShowUserInfo] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   // 기기 유형 감지
   useEffect(() => {
@@ -242,9 +247,6 @@ function Maindashboard() {
     { rank: 8, nickname: '도전자', score: 118700 },
     { rank: 9, nickname: '핀볼신', score: 112400 },
     { rank: 10, nickname: '초보탈출', score: 108100 },
-    { rank: 11, nickname: '초보탈출', score: 108100 },
-    { rank: 12, nickname: '초보탈출', score: 108100 },
-    { rank: 13, nickname: '초보탈출', score: 108100 }
 
   ];
 
@@ -376,7 +378,15 @@ function Maindashboard() {
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+
             <TextField
               placeholder="Type to search..."
               size="small"
@@ -453,15 +463,34 @@ function Maindashboard() {
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
       >
-
+        {/* 모바일 Drawer */}
         <Drawer
-          variant="permanent"
-
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // 모바일 성능 향상
+          }}
           sx={{
-            display: { xs: 'block', sm: 'block' },
+            display: { xs: 'block', sm: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
-              width: drawerWidth+10, 
+              width: drawerWidth,
+              backgroundColor: '#ffffffff',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+
+        {/* 데스크탑 Drawer */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
               backgroundColor: '#ffffffff',
             },
           }}
