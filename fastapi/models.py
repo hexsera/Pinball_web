@@ -39,3 +39,12 @@ class Visit(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=True, index=True)
     visited_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+
+
+class MonthlyScore(Base):
+    __tablename__ = "monthly_scores"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    score = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
