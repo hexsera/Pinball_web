@@ -34,7 +34,6 @@ friend_requests: List[dict] = []
 
 # 월간 점수 메모리 저장소 (임시)
 monthly_scores: List[dict] = []
-monthly_score_id_counter: int = 0
 
 
 # Pydantic 스키마
@@ -133,7 +132,6 @@ class MonthlyScoreUpdateRequest(BaseModel):
 
 class MonthlyScoreResponse(BaseModel):
     """월간 점수 응답"""
-    id: int
     user_id: int
     score: int
     created_at: datetime
@@ -498,9 +496,7 @@ def create_score(score_data: ScoreCreateRequest, db: Session = Depends(get_db)):
 
 @app.post("/api/v1/monthly-scores", response_model=MonthlyScoreResponse)
 def create_or_update_monthly_score(score_data: MonthlyScoreCreateRequest):
-    """월간 점수 생성 또는 수정 (Upsert)"""
-    global monthly_score_id_counter
-
+    """월간 점수 생성 또는 수정 (최고 점수만 저장)"""
     # 기존 레코드 검색
     existing_score = next(
         (s for s in monthly_scores if s["user_id"] == score_data.user_id),
@@ -508,14 +504,14 @@ def create_or_update_monthly_score(score_data: MonthlyScoreCreateRequest):
     )
 
     if existing_score:
-        # 업데이트: score만 수정, created_at 유지
-        existing_score["score"] = score_data.score
+        # 새 점수가 기존 점수보다 큰 경우에만 업데이트
+        if score_data.score > existing_score["score"]:
+            existing_score["score"] = score_data.score
+        # 새 점수가 작거나 같으면 기존 점수 유지
         return existing_score
     else:
-        # 생성: 새 레코드 추가
-        monthly_score_id_counter += 1
+        # 생성: 새 레코드 추가 (id 필드 없음)
         new_score = {
-            "id": monthly_score_id_counter,
             "user_id": score_data.user_id,
             "score": score_data.score,
             "created_at": datetime.now()
