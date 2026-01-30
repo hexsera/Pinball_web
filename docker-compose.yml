@@ -38,12 +38,12 @@ services:
 
 
   fastapi:
-      build: ./fastapi
+      build: ./backend
       container_name: fastapi-server
       restart: always
       working_dir: /code
       volumes:
-        - ./fastapi:/code
+        - ./backend:/code
       ports:
         - "8000:8000"
       depends_on:
