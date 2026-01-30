@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime
+from sqlalchemy import Column, Integer, String, Date, DateTime, UniqueConstraint, CheckConstraint
 from sqlalchemy.sql import func
 from database import Base
 
@@ -31,6 +31,11 @@ class Friendship(Base):
     receiver_id = Column(Integer, nullable=False, index=True)
     status = Column(String(20), nullable=False, default='pending')
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+
+    __table_args__ = (
+        UniqueConstraint('requester_id', 'receiver_id', name='uq_friendship_pair'),
+        CheckConstraint('requester_id != receiver_id', name='ck_no_self_friend'),
+    )
 
 
 class Visit(Base):
