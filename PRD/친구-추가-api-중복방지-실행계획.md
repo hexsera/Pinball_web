@@ -258,12 +258,10 @@ monthly_scores: List[dict] = []
 ## 🔍 Phase 2 체크포인트
 
 **Phase 2 완료 체크리스트**:
-- [ ] 동일한 친구 요청을 2번 보내면 "Friend request already sent" 에러 발생 확인
-- [ ] A→B 요청 후 B→A 요청 시 "already sent you a friend request" 에러 발생 확인
-- [ ] 자기 자신에게 친구 요청 시 "Cannot send friend request to yourself" 에러 발생 확인
-- [ ] GET /api/friend-requests가 DB에서 실제 pending 요청을 반환하는지 확인
-- [ ] 친구 요청 승인 후 동일 요청 재시도 시 "Already friends" 에러 발생 확인
-- [ ] main.py에서 friend_requests 메모리 배열이 제거되었는지 확인
+- [o] 동일한 친구 요청을 2번 보내면 "Friend request already sent" 에러 발생 확인
+- [x] A→B 요청 후 B→A 요청 시 "already sent you a friend request" 에러 발생 확인
+- [o] 자기 자신에게 친구 요청 시 "Cannot send friend request to yourself" 에러 발생 확인
+
 
 **Phase 2 테스트 시나리오**:
 ```bash

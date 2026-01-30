@@ -29,9 +29,6 @@ print("Data seeding completed")
 
 app = FastAPI(title="Hexsera API", version="1.0.0")
 
-# 친구 요청 메모리 저장소 (임시)
-friend_requests: List[dict] = []
-
 # 월간 점수 메모리 저장소 (임시)
 monthly_scores: List[dict] = []
 
@@ -376,9 +373,63 @@ def register_user(
 
 @app.post("/api/friend-requests", response_model=FriendRequestResponse)
 def create_friend_request(request: FriendRequestRequest, db: Session = Depends(get_db)):
-    """친구 추가 요청을 받는 엔드포인트 (DB와 메모리에 저장)"""
+    """친구 추가 요청 (중복 및 역방향 검증)"""
 
-    # 1. DB에 Friendship 레코드 생성
+    # 자기 자신에게 친구 요청 방지
+    if request.requester_id == request.receiver_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot send friend request to yourself"
+        )
+
+    # 중복 검증: A→B 요청이 이미 존재하는지 확인
+    existing_request = db.query(Friendship).filter(
+        Friendship.requester_id == request.requester_id,
+        Friendship.receiver_id == request.receiver_id
+    ).first()
+
+    if existing_request:
+        if existing_request.status == "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Friend request already sent"
+            )
+        elif existing_request.status == "accepted":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Already friends"
+            )
+        elif existing_request.status == "rejected":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Friend request was rejected"
+            )
+
+    # 역방향 검증: B→A 요청이 이미 존재하는지 확인
+    reverse_request = db.query(Friendship).filter(
+        Friendship.requester_id == request.receiver_id,
+        Friendship.receiver_id == request.requester_id
+    ).first()
+
+    if reverse_request:
+        if reverse_request.status == "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This user already sent you a friend request. Please accept or reject it first."
+            )
+        elif reverse_request.status == "accepted":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Already friends"
+            )
+        elif reverse_request.status == "rejected":
+            # rejected 상태여도 역방향 요청은 허용하지 않음
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot send friend request. Previous request was rejected."
+            )
+
+    # 모든 검증 통과 시 친구 요청 생성
     db_friendship = Friendship(
         requester_id=request.requester_id,
         receiver_id=request.receiver_id,
@@ -388,27 +439,35 @@ def create_friend_request(request: FriendRequestRequest, db: Session = Depends(g
     db.commit()
     db.refresh(db_friendship)
 
-
-
-    print(f"친구 요청 저장됨 (DB+메모리): {request.requester_id} -> {request.receiver_id}")
+    print(f"친구 요청 생성됨: {request.requester_id} -> {request.receiver_id}")
 
     return FriendRequestResponse(
-        message="Friend request received",
+        message="Friend request sent successfully",
         receiver_id=db_friendship.receiver_id,
         requester_id=db_friendship.requester_id
     )
 
 
 @app.get("/api/friend-requests", response_model=FriendRequestListResponse)
-def get_friend_requests(user_id: int):
-    """특정 사용자가 받은 친구 요청 조회"""
-    # requester_id가 user_id와 일치하는 요청 필터링
-    user_requests = [
-        req for req in friend_requests
-        if req["requester_id"] == user_id
+def get_friend_requests(user_id: int, db: Session = Depends(get_db)):
+    """특정 사용자가 받은 친구 요청 조회 (DB 연동)"""
+    # DB에서 receiver_id가 user_id인 pending 요청 조회
+    requests = db.query(Friendship).filter(
+        Friendship.receiver_id == user_id,
+        Friendship.status == "pending"
+    ).all()
+
+    # FriendRequestData 형식으로 변환
+    request_data = [
+        FriendRequestData(
+            id=req.id,
+            requester_id=req.requester_id,
+            status=req.status
+        )
+        for req in requests
     ]
 
-    return FriendRequestListResponse(requests=user_requests)
+    return FriendRequestListResponse(requests=request_data)
 
 
 @app.post("/api/friend-requests/accept", response_model=FriendRequestActionResponse)
