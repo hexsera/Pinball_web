@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from database import wait_for_db, engine, Base, get_db, SessionLocal
-from models import User, Score, Friendship
+from models import User, Score, Friendship, MonthlyScore
 from auth import verify_api_key
 from seed import seed_admin
 
@@ -28,9 +28,6 @@ finally:
 print("Data seeding completed")
 
 app = FastAPI(title="Hexsera API", version="1.0.0")
-
-# 월간 점수 메모리 저장소 (임시)
-monthly_scores: List[dict] = []
 
 
 # Pydantic 스키마
@@ -554,61 +551,56 @@ def create_score(score_data: ScoreCreateRequest, db: Session = Depends(get_db)):
 # ==================== Monthly Score API ====================
 
 @app.post("/api/v1/monthly-scores", response_model=MonthlyScoreResponse)
-def create_or_update_monthly_score(score_data: MonthlyScoreCreateRequest):
+def create_or_update_monthly_score(
+    score_data: MonthlyScoreCreateRequest,
+    db: Session = Depends(get_db)
+):
     """월간 점수 생성 또는 수정 (최고 점수만 저장)"""
-    # 기존 레코드 검색
-    existing_score = next(
-        (s for s in monthly_scores if s["user_id"] == score_data.user_id),
-        None
-    )
+    existing_score = db.query(MonthlyScore).filter(
+        MonthlyScore.user_id == score_data.user_id
+    ).first()
 
     if existing_score:
-        # 새 점수가 기존 점수보다 큰 경우에만 업데이트
-        if score_data.score > existing_score["score"]:
-            existing_score["score"] = score_data.score
-        # 새 점수가 작거나 같으면 기존 점수 유지
+        if score_data.score > existing_score.score:
+            existing_score.score = score_data.score
+            db.commit()
+            db.refresh(existing_score)
         return existing_score
     else:
-        # 생성: 새 레코드 추가 (id 필드 없음)
-        new_score = {
-            "user_id": score_data.user_id,
-            "score": score_data.score,
-            "created_at": datetime.now()
-        }
-        monthly_scores.append(new_score)
+        new_score = MonthlyScore(
+            user_id=score_data.user_id,
+            score=score_data.score
+        )
+        db.add(new_score)
+        db.commit()
+        db.refresh(new_score)
         return new_score
 
 
 @app.get("/api/v1/monthly-scores", response_model=MonthlyScoreListResponse)
 def get_monthly_scores(
-    order_by: str = "score",
-    order: str = "desc"
+    db: Session = Depends(get_db)
 ):
-    """전체 월간 점수 조회 (정렬)"""
-    sorted_scores = monthly_scores.copy()
-
-    # 정렬
-    reverse = (order == "desc")
-    if order_by == "score":
-        sorted_scores.sort(key=lambda x: x["score"], reverse=reverse)
-    elif order_by == "created_at":
-        sorted_scores.sort(key=lambda x: x["created_at"], reverse=reverse)
-    elif order_by == "user_id":
-        sorted_scores.sort(key=lambda x: x["user_id"], reverse=reverse)
+    """전체 월간 점수 조회 (score 내림차순)"""
+    scores = db.query(MonthlyScore).order_by(
+        MonthlyScore.score.desc()
+    ).all()
 
     return MonthlyScoreListResponse(
-        scores=sorted_scores,
-        total=len(sorted_scores)
+        scores=scores,
+        total=len(scores)
     )
 
 
 @app.get("/api/v1/monthly-scores/{user_id}", response_model=MonthlyScoreResponse)
-def get_monthly_score(user_id: int):
+def get_monthly_score(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
     """특정 사용자 월간 점수 조회"""
-    score = next(
-        (s for s in monthly_scores if s["user_id"] == user_id),
-        None
-    )
+    score = db.query(MonthlyScore).filter(
+        MonthlyScore.user_id == user_id
+    ).first()
 
     if score is None:
         raise HTTPException(
@@ -620,12 +612,15 @@ def get_monthly_score(user_id: int):
 
 
 @app.put("/api/v1/monthly-scores/{user_id}", response_model=MonthlyScoreResponse)
-def update_monthly_score(user_id: int, score_data: MonthlyScoreUpdateRequest):
+def update_monthly_score(
+    user_id: int,
+    score_data: MonthlyScoreUpdateRequest,
+    db: Session = Depends(get_db)
+):
     """특정 사용자 월간 점수 수정"""
-    score = next(
-        (s for s in monthly_scores if s["user_id"] == user_id),
-        None
-    )
+    score = db.query(MonthlyScore).filter(
+        MonthlyScore.user_id == user_id
+    ).first()
 
     if score is None:
         raise HTTPException(
@@ -633,19 +628,21 @@ def update_monthly_score(user_id: int, score_data: MonthlyScoreUpdateRequest):
             detail=f"Monthly score for user {user_id} not found"
         )
 
-    score["score"] = score_data.score
+    score.score = score_data.score
+    db.commit()
+    db.refresh(score)
     return score
 
 
 @app.delete("/api/v1/monthly-scores/{user_id}", response_model=MonthlyScoreDeleteResponse)
-def delete_monthly_score(user_id: int):
+def delete_monthly_score(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
     """특정 사용자 월간 점수 삭제"""
-    global monthly_scores
-
-    score = next(
-        (s for s in monthly_scores if s["user_id"] == user_id),
-        None
-    )
+    score = db.query(MonthlyScore).filter(
+        MonthlyScore.user_id == user_id
+    ).first()
 
     if score is None:
         raise HTTPException(
@@ -653,7 +650,8 @@ def delete_monthly_score(user_id: int):
             detail=f"Monthly score for user {user_id} not found"
         )
 
-    monthly_scores = [s for s in monthly_scores if s["user_id"] != user_id]
+    db.delete(score)
+    db.commit()
 
     return MonthlyScoreDeleteResponse(
         message="Monthly score deleted successfully",
