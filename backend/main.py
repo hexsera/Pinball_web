@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from database import wait_for_db, engine, Base, get_db, SessionLocal
 from models import User, Score, Friendship, MonthlyScore
 from auth import verify_api_key
@@ -164,6 +165,7 @@ class FriendRequestData(BaseModel):
     """친구 요청 데이터 (조회용)"""
     id: int
     requester_id: int
+    receiver_id: int
     status: str
 
 
@@ -445,20 +447,41 @@ def create_friend_request(request: FriendRequestRequest, db: Session = Depends(g
     )
 
 
+VALID_FRIEND_STATUSES = {"pending", "accepted", "rejected", "all"}
+
 @app.get("/api/friend-requests", response_model=FriendRequestListResponse)
-def get_friend_requests(user_id: int, db: Session = Depends(get_db)):
-    """특정 사용자가 받은 친구 요청 조회 (DB 연동)"""
-    # DB에서 receiver_id가 user_id인 pending 요청 조회
-    requests = db.query(Friendship).filter(
-        Friendship.receiver_id == user_id,
-        Friendship.status == "pending"
-    ).all()
+def get_friend_requests(user_id: int, friend_status: str = "pending", db: Session = Depends(get_db)):
+    """특정 사용자의 친구 요청 조회 (양방향, status 필터)"""
+    # status 유효성 검증
+    if friend_status not in VALID_FRIEND_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Allowed values: {sorted(VALID_FRIEND_STATUSES)}"
+        )
+
+    # 양방향 조건: user_id가 requester_id 또는 receiver_id인 경우
+    direction_filter = or_(
+        Friendship.requester_id == user_id,
+        Friendship.receiver_id == user_id
+    )
+
+    # status 필터 구성: "all"이면 status 필터 미적용
+    if friend_status == "all":
+        query = db.query(Friendship).filter(direction_filter)
+    else:
+        query = db.query(Friendship).filter(
+            direction_filter,
+            Friendship.status == friend_status
+        )
+
+    requests = query.all()
 
     # FriendRequestData 형식으로 변환
     request_data = [
         FriendRequestData(
             id=req.id,
             requester_id=req.requester_id,
+            receiver_id=req.receiver_id,
             status=req.status
         )
         for req in requests
