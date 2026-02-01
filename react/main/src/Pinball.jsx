@@ -11,6 +11,7 @@ function Pinball() {
   const hitSoundRef = useRef(null);
   const ballRef = useRef(null);
   const livesRef = useRef(2);
+  const scoreRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -43,9 +44,9 @@ function Pinball() {
     try {
       const response = await axios.post('/api/v1/monthly-scores', {
         user_id: user.id,
-        score: score
+        score: scoreRef.current
       });
-      console.log("sendsocre", score);
+      console.log("sendsocre", scoreRef.current);
       console.log('Score submitted successfully:', response.data);
       setBestScore(response.data.score);
     } catch (error) {
@@ -493,6 +494,11 @@ if (sceneRef.current) {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  // score 상태가 변경될 때마다 scoreRef에 동기화
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
 
   // windowSize 변경 시 스케일 재계산
   useEffect(() => {
