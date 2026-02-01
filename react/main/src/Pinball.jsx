@@ -10,9 +10,9 @@ function Pinball() {
   const bgmRef = useRef(null);
   const hitSoundRef = useRef(null);
   const ballRef = useRef(null);
-  const livesRef = useRef(3);
+  const livesRef = useRef(2);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [score, setScore] = useState(3000);
+  const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [overlayState, setOverlayState] = useState(null);
   const [bestScore, setBestScore] = useState(null);
@@ -45,6 +45,7 @@ function Pinball() {
         user_id: user.id,
         score: score
       });
+      console.log("sendsocre", score);
       console.log('Score submitted successfully:', response.data);
       setBestScore(response.data.score);
     } catch (error) {
@@ -318,6 +319,7 @@ function Pinball() {
         if ((bodyA.label === 'target' && bodyB === ball) ||
             (bodyB.label === 'target' && bodyA === ball)) {
           console.log('target 충돌했음');
+          setScore(prev => prev + 300);
         }
 
         // 죽음구역 충돌 감지
@@ -533,17 +535,9 @@ display: 'flex',
             alignItems: 'center'
           }}>
             <Typography sx={{
-              fontSize: '48px',
-              fontWeight: 'bold',
-              color: '#ffffff'
-            }}>
-              SCORE: {score}
-            </Typography>
-            <Typography sx={{
               fontSize: '32px',
               fontWeight: 'bold',
-              color: '#ffffff',
-              marginTop: '20px'
+              color: '#ffffff'
             }}>
               LIVES: {lives}
             </Typography>
@@ -559,6 +553,26 @@ display: 'flex',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
           }}>
+            {/* 점수 컴포넌트 (게임 영역 내부, 반투명 흰색) */}
+            <Box sx={{
+              position: 'absolute',
+              top: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              borderRadius: '8px',
+              padding: '6px 20px',
+              zIndex: 5
+            }}>
+              <Typography sx={{
+                fontSize: '28px',
+                fontWeight: 'bold',
+                color: '#000000'
+              }}>
+                SCORE: {score}
+              </Typography>
+            </Box>
+
             <div ref={sceneRef} />
 
             {/* 인게임 오버레이 (게임 캔버스 영역 위) */}
