@@ -114,31 +114,52 @@ function Pinball() {
       }
     });
 
-    // 바닥 만들기
-    const ground = Bodies.rectangle(350, 1200, 700, 20, {
+    // 왼쪽 벽 (두께 40px, 내면 x=40)
+    const leftWall = Bodies.rectangle(20, 550, 40, 1100, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
 
-    // 왼쪽 벽
-    const leftWall = Bodies.rectangle(0, 600, 20, 1200, {
+    // 오른쪽 벽 (두께 40px, 내면 x=660)
+    const rightWall = Bodies.rectangle(700, 550, 40, 1100, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
 
-    // 오른쪽 벽
-    const rightWall = Bodies.rectangle(700, 600, 20, 1200, {
+    const rightWall2 = Bodies.rectangle(630, 550, 30, 1100, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
 
-    const upWall = Bodies.rectangle(350, 0, 700, 20, {
+    // 천장 (두께 40px)
+    const upWall = Bodies.rectangle(350, 20, 700, 40, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
 
-    // 죽음구역 만들기 (바닥 아래, 센서 역할)
-    const deathZone = Bodies.rectangle(350, 1200, 700, 40, {
+    // 깔대기 경사면 설정값
+    // 왼쪽: (40, 950) → (270, 1080), 오른쪽: (660, 950) → (430, 1080)
+    // 수평 230px, 수직 130px → 길이 ≈ 264.2px, 각도 ≈ 29.5°
+    //const FUNNEL_LENGTH = Math.sqrt(230 * 230 + 130 * 130); // ≈ 264.2
+    const FUNNEL_ANGLE = 35 * Math.PI / 180;         // ≈ 0.515 rad (29.5°)
+    const FUNNEL_THICKNESS = 20;
+
+    // 깔대기 왼쪽 경사면 (중심: x=155, y=1015)
+    const leftFunnelWall = Bodies.rectangle(105, 915, 260, FUNNEL_THICKNESS, {
+      isStatic: true,
+      render: { fillStyle: '#16213e' }
+    });
+    Body.setAngle(leftFunnelWall, FUNNEL_ANGLE);
+
+    // 깔대기 오른쪽 경사면 (중심: x=545, y=1015)
+    const rightFunnelWall = Bodies.rectangle(540, 925, 220, FUNNEL_THICKNESS, {
+      isStatic: true,
+      render: { fillStyle: '#16213e' }
+    });
+    Body.setAngle(rightFunnelWall, -FUNNEL_ANGLE);
+
+    // 죽음구역 만들기 (깔대기 구멍 아래, 센서 역할)
+    const deathZone = Bodies.rectangle(350, 1195, 700, 30, {
       isStatic: true,
       isSensor: true,
       label: 'deathZone',
@@ -186,45 +207,46 @@ function Pinball() {
       render: { fillStyle: '#87CEEB' }
     });
 
-    const leftFlipper = Bodies.rectangle(200, 1150, 100, 20, {
-    chamfer: { radius: 10 },
-    render: { fillStyle: '#f39c12' },
-    density: 0.001,
-    isSleeping: false,
-    sleepThreshold: Infinity
+    // 왼쪽 플리퍼 (회전축 x=270, 중심 = 회전축 + 길이절반50 = x=320)
+    const leftFlipper = Bodies.rectangle(320, 1090, 100, 20, {
+      chamfer: { radius: 10 },
+      render: { fillStyle: '#f39c12' },
+      density: 0.001,
+      isSleeping: false,
+      sleepThreshold: Infinity
     });
 
-// 오른쪽 플리퍼 만들기
-    const rightFlipper = Bodies.rectangle(550, 1150, 100, 20, {
-    chamfer: { radius: 10 },
-    render: { fillStyle: '#f39c12' },
-    density: 0.001,
-    isSleeping: false,
-    sleepThreshold: Infinity
+    // 오른쪽 플리퍼 (회전축 x=430, 중심 = 회전축 - 길이절반50 = x=380)
+    const rightFlipper = Bodies.rectangle(380, 1090, 100, 20, {
+      chamfer: { radius: 10 },
+      render: { fillStyle: '#f39c12' },
+      density: 0.001,
+      isSleeping: false,
+      sleepThreshold: Infinity
     });
 
     const leftFlipperConstraint = Constraint.create({
-  bodyA: leftFlipper,
-  pointA: { x: -40, y: 0 }, // 플리퍼 왼쪽 끝
-  pointB: { x: 210, y: 1150 }, // 고정 위치
-  stiffness: 1,
-  damping: 0,
-  length: 0
-});
+      bodyA: leftFlipper,
+      pointA: { x: -40, y: 0 },
+      pointB: { x: 225, y: 995 }, // 경사면 끝점 왼쪽
+      stiffness: 1,
+      damping: 0,
+      length: 0
+    });
 
     const rightFlipperConstraint = Constraint.create({
-  bodyA: rightFlipper,
-  pointA: { x: 40, y: 0 }, // 플리퍼 오른쪽 끝
-  pointB: { x: 540, y: 1150 }, // 고정 위치
-  stiffness: 1,
-  damping: 0,
-  length: 0
-});
+      bodyA: rightFlipper,
+      pointA: { x: 40, y: 0 },
+      pointB: { x: 440, y: 995 }, // 경사면 끝점 오른쪽
+      stiffness: 1,
+      damping: 0,
+      length: 0
+    });
 //(-Math.PI / 6;
     // 플리퍼 각도 제한 상수
     const LEFT_FLIPPER_MIN_ANGLE = -35 * Math.PI / 180  // -30도 (라디안)
-    const LEFT_FLIPPER_MAX_ANGLE = -15 * Math.PI / 180;              // 0도
-    const RIGHT_FLIPPER_MIN_ANGLE = 15 * Math.PI / 180;             // 0도
+    const LEFT_FLIPPER_MAX_ANGLE = 15 * Math.PI / 180;              // 0도
+    const RIGHT_FLIPPER_MIN_ANGLE = -15 * Math.PI / 180;             // 0도
     const RIGHT_FLIPPER_MAX_ANGLE = 35 * Math.PI / 180;   // 30도 (라디안)
     const FLIPPER_SPEED = 0.3;
 
@@ -234,20 +256,22 @@ function Pinball() {
 
     // 세계에 모든 물체 추가
     World.add(engine.world, [
-    ground,
-    leftWall,
-    rightWall,
-    upWall,
-    deathZone,
-    ball,
-    obstacle1,
-    obstacle2,
-    bumper,
-    target,
-    leftFlipper,
-    rightFlipper,
-    leftFlipperConstraint,
-    rightFlipperConstraint
+      leftWall,
+      rightWall,
+      rightWall2,
+      upWall,
+      leftFunnelWall,
+      rightFunnelWall,
+      deathZone,
+      ball,
+      obstacle1,
+      obstacle2,
+      bumper,
+      target,
+      leftFlipper,
+      rightFlipper,
+      leftFlipperConstraint,
+      rightFlipperConstraint
     ]);
 
     //
