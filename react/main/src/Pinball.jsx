@@ -11,6 +11,7 @@ function Pinball() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(30);
   const [lives, setLives] = useState(3);
+  const [overlayState, setOverlayState] = useState(null);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -298,6 +299,7 @@ function Pinball() {
             // 생명이 없으면 공 제거 (게임 오버)
             World.remove(engine.world, ball);
             console.log('Game Over!');
+            setOverlayState('gameOver');
           }
         }
       });
@@ -499,8 +501,9 @@ display: 'flex',
             </Typography>
           </Box>
 
-          {/* 게임 영역 (하단 900px) */}
+          {/* 게임 영역 (하단 1100px) */}
           <Box sx={{
+            position: 'relative',
             width: '700px',
             height: '1100px',
             backgroundImage: 'url(/images/pinball_back.png)',
@@ -509,6 +512,46 @@ display: 'flex',
             backgroundRepeat: 'no-repeat'
           }}>
             <div ref={sceneRef} />
+
+            {/* 인게임 오버레이 (게임 캔버스 영역 위) */}
+            {overlayState && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 10,
+                }}
+              >
+                {overlayState === 'gameOver' && (
+                  <>
+                    <Typography variant="h2" sx={{ color: '#ff0000', fontWeight: 'bold', mb: 4 }}>
+                      GAME OVER
+                    </Typography>
+                    <Typography variant="h4" sx={{ color: '#ffffff', mb: 2 }}>
+                      획득 점수: {score}
+                    </Typography>
+                    <Typography variant="h5" sx={{ color: '#ffff00', mb: 4 }}>
+                      최고 점수: ---
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      
+                      sx={{ fontSize: '1.2rem', padding: '10px 30px' }}
+                    >
+                      다시 시작
+                    </Button>
+                  </>
+                )}
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>
