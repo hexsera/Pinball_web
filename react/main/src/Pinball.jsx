@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Matter from 'matter-js';
+import axios from 'axios';
 import { Button, Box, Typography } from '@mui/material';
+import { useAuth } from './AuthContext';
 
 function Pinball() {
+  const { user } = useAuth();
   const sceneRef = useRef(null);
   const bgmRef = useRef(null);
   const hitSoundRef = useRef(null);
   const ballRef = useRef(null);
   const livesRef = useRef(3);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [score, setScore] = useState(30);
+  const [score, setScore] = useState(3000);
   const [lives, setLives] = useState(3);
   const [overlayState, setOverlayState] = useState(null);
+  const [bestScore, setBestScore] = useState(null);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -26,6 +30,25 @@ function Pinball() {
     if (bgmRef.current) {
       bgmRef.current.play();
       setIsPlaying(true);
+    }
+  };
+
+  // 점수 전송 및 최고점수 갱신 함수
+  const submitScore = async () => {
+    if (!user || !user.id) {
+      console.log('User not logged in, score not submitted');
+      return;
+    }
+
+    try {
+      const response = await axios.post('/api/v1/monthly-scores', {
+        user_id: user.id,
+        score: score
+      });
+      console.log('Score submitted successfully:', response.data);
+      setBestScore(response.data.score);
+    } catch (error) {
+      console.error('Failed to submit score:', error);
     }
   };
 
@@ -300,6 +323,7 @@ function Pinball() {
             World.remove(engine.world, ball);
             console.log('Game Over!');
             setOverlayState('gameOver');
+            submitScore();
           }
         }
       });
@@ -539,7 +563,7 @@ display: 'flex',
                       획득 점수: {score}
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#ffff00', mb: 4 }}>
-                      최고 점수: ---
+                      최고 점수: {bestScore !== null ? bestScore : '---'}
                     </Typography>
                     <Button
                       variant="contained"
