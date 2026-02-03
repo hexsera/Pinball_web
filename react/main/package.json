@@ -15,6 +15,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
+    "@mui/x-charts": "^8.27.0",
     "@mui/x-data-grid": "^8.26.0",
     "axios": "^1.13.2",
     "matter-js": "^0.20.0",
