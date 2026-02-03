@@ -8,31 +8,8 @@ function AdminStatisticsMain() {
   const drawerWidth = 260;
 
   // 상태 변수
-  const [weeklyData, setWeeklyData] = useState([]);
+  const [dailyData, setDailyData] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // 일주일 단위 집계 함수
-  const aggregateByWeek = (dailyData, startDate) => {
-    // dailyData: [{ date: "2026-01-20", play_count: 150 }, ...]
-    const weekMap = {};
-
-    dailyData.forEach(item => {
-      const date = dayjs(item.date);
-      // 해당 날짜가 시작일로부터 몇 번째 주인지 계산
-      const weekNumber = Math.floor(date.diff(startDate, 'day') / 7) + 1;
-
-      if (!weekMap[weekNumber]) {
-        weekMap[weekNumber] = 0;
-      }
-      weekMap[weekNumber] += item.play_count;
-    });
-
-    // { 1: 500, 2: 450, ... } → [{ week: 1, play_count: 500 }, ...]
-    return Object.keys(weekMap).map(week => ({
-      week: parseInt(week),
-      play_count: weekMap[week]
-    })).sort((a, b) => a.week - b.week);
-  };
 
   // 임시 일별 데이터 생성 함수 (3개월 분량)
   const generateMockDailyData = (startDate, endDate) => {
@@ -59,9 +36,9 @@ function AdminStatisticsMain() {
   const fetchStatistics = async () => {
     setLoading(true);
 
-    // 오늘부터 8주 전 날짜 계산
+    // 오늘부터 2주 전 날짜 계산
     const endDate = dayjs();
-    const startDate = dayjs().subtract(8, 'week');
+    const startDate = dayjs().subtract(2, 'week');
 
     try {
       console.log('통계 데이터 로딩 시작:', {
@@ -79,26 +56,28 @@ function AdminStatisticsMain() {
 
       console.log('API 응답:', response.data);
 
-      // 예상 응답 구조: [{ date: "2026-01-20", play_count: 150 }, ...]
-      const dailyData = response.data;
-      const aggregated = aggregateByWeek(dailyData, startDate);
-      setWeeklyData(aggregated);
+      // 일별 데이터를 그대로 사용 (집계 없이)
+      const dailyDataFromAPI = response.data;
+
+      // 날짜 오름차순 정렬 (2주 전 → 오늘)
+      const sortedData = dailyDataFromAPI.sort((a, b) =>
+        dayjs(a.date).isAfter(dayjs(b.date)) ? 1 : -1
+      );
+
+      setDailyData(sortedData);
     } catch (error) {
       console.error('통계 데이터 로딩 실패:', error);
 
-      // API 미구현 시 임시 일별 데이터 생성 (3개월 분량)
-      const mockStartDate = dayjs().subtract(12, 'week'); // 3개월 (약 12주)
+      // API 미구현 시 임시 일별 데이터 생성 (2주 분량)
+      const mockStartDate = dayjs().subtract(2, 'week');
       const mockEndDate = dayjs();
       const mockDailyData = generateMockDailyData(mockStartDate, mockEndDate);
 
       console.log('임시 일별 데이터 생성:', mockDailyData.length + '일 분량');
       console.log('첫 5개 데이터:', mockDailyData.slice(0, 5));
 
-      // 일주일 단위 집계 함수 테스트
-      const aggregated = aggregateByWeek(mockDailyData, mockStartDate);
-      console.log('집계된 주차별 데이터:', aggregated);
-
-      setWeeklyData(aggregated);
+      // 집계 없이 바로 사용
+      setDailyData(mockDailyData);
     } finally {
       setLoading(false);
     }
@@ -133,21 +112,21 @@ function AdminStatisticsMain() {
         border: '1px solid #e5e7eb'
       }}>
         <Typography variant="h6" sx={{ mb: 2, color: '#1f2937' }}>
-          게임 플레이 통계 (최근 8주)
+          게임 플레이 통계 (최근 2주)
         </Typography>
         <LineChart
           xAxis={[{
-            data: weeklyData.map(item => item.week),
+            data: dailyData.map(item => dayjs(item.date).format('MM-DD')),
             scaleType: 'point',
-            label: '주차'
+            label: '날짜'
           }]}
           series={[{
-            data: weeklyData.map(item => item.play_count),
+            data: dailyData.map(item => item.play_count),
             label: '게임 플레이 횟수',
             color: '#465FFF',
             showMark: true,
           }]}
-          width={800}
+          
           height={400}
           loading={loading}
         />
