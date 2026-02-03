@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Register from './Register';
 import AdminPage from './admin/AdminPage';
 import AdminUserPage from './admin/AdminUserPage';
+import AdminStatisticsPage from './admin/AdminStatisticsPage';
 
 const theme = createTheme();
 
@@ -26,6 +27,7 @@ function App() {
             <Route path="/Pinball_test" element={<Pinball/>} />
             <Route path="/admin" element={<AdminPage/>} />
             <Route path="/admin/users" element={<AdminUserPage/>} />
+            <Route path="/admin/statistics" element={<AdminStatisticsPage/>} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
