@@ -17,9 +17,9 @@ docker compose down
 docker compose logs -f [service_name]
 ```
 
-### React 개발 (./react/main/)
+### React 개발 (./frontend/)
 ```bash
-cd react/main
+cd frontend
 npm install
 npm run start    # 개발 서버 (Vite)
 npm run build    # 프로덕션 빌드 → dist/
@@ -52,7 +52,7 @@ docker run --rm -v html-data-volume:/data -v $(pwd):/backup alpine tar xzf /back
                            → MySQL(:3306)
 ```
 
-## React 구조 (./react/main/src/)
+## React 구조 (./frontend/src/)
 
 - **App.jsx**: 라우팅 설정 및 AuthProvider 래핑
 - **AuthContext.jsx**: 전역 인증 상태 (login, logout, isLoggedIn)
@@ -101,7 +101,7 @@ docker run --rm -v html-data-volume:/data -v $(pwd):/backup alpine tar xzf /back
 - `traefik.yml`: Traefik 설정 (SSL, 라우팅)
 - `nginx.conf`: Nginx 서버 설정
 - `fastapi/Dockerfile`: FastAPI 컨테이너 빌드
-- `react/main/vite.config.js`: Vite 빌드 설정
+- `frontend/vite.config.js`: Vite 빌드 설정
 
 ## FastAPI 구조 (./fastapi/)
 
