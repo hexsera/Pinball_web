@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Box,
   Drawer,
@@ -63,6 +64,10 @@ function Maindashboard() {
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [monthlyRankingData, setMonthlyRankingData] = useState([]);
+  const [isLoadingRanking, setIsLoadingRanking] = useState(true);
+  const [rankingError, setRankingError] = useState(null);
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -80,6 +85,36 @@ function Maindashboard() {
       console.log('데스크탑 환경');
 
     }
+  }, []);
+
+  // 월간 랭킹 데이터 조회
+  useEffect(() => {
+    const fetchMonthlyRanking = async () => {
+      try {
+        setIsLoadingRanking(true);
+
+        // 월간 점수 목록 조회
+        const response = await axios.get('/api/v1/monthly-scores');
+        const scores = response.data.scores;
+
+        // 응답 데이터를 rank와 임시 nickname 추가하여 변환
+        const rankingData = scores.slice(0, 10).map((score, index) => ({
+          rank: index + 1,
+          nickname: 'testnickname',  // 임시 닉네임 (추후 API에서 제공 예정)
+          score: score.score
+        }));
+
+        setMonthlyRankingData(rankingData);
+        setRankingError(null);
+      } catch (error) {
+        console.error('월간 랭킹 조회 실패:', error);
+        setRankingError('랭킹 데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoadingRanking(false);
+      }
+    };
+
+    fetchMonthlyRanking();
   }, []);
 
   // 메뉴 항목 데이터
@@ -235,21 +270,6 @@ function Maindashboard() {
     </Box>
   );
 
-  // 한달 랭킹 임시 데이터
-  const monthlyRankingData = [
-    { rank: 1, nickname: '핀볼마스터', score: 152000 },
-    { rank: 2, nickname: '게임왕', score: 148500 },
-    { rank: 3, nickname: '플리퍼킹', score: 145200 },
-    { rank: 4, nickname: '점수사냥꾼', score: 138900 },
-    { rank: 5, nickname: '핀볼러버', score: 135600 },
-    { rank: 6, nickname: '고수', score: 128300 },
-    { rank: 7, nickname: '챔피언', score: 125000 },
-    { rank: 8, nickname: '도전자', score: 118700 },
-    { rank: 9, nickname: '핀볼신', score: 112400 },
-    { rank: 10, nickname: '초보탈출', score: 108100 },
-
-  ];
-
   const mainele = (
     <Grid container spacing={3} sx={{ mb: 3 }}>
         <Paper
@@ -294,31 +314,55 @@ function Maindashboard() {
                 p: 3,
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
                 border: '1px solid #e5e7eb',
+                maxHeight: 500,
             }}
             >
             <Typography variant="h6" fontWeight={600} gutterBottom>
                 한달 랭킹 TOP 10
             </Typography>
-            <TableContainer>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 600 }}>순위</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>닉네임</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }} align="right">점수</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {monthlyRankingData.map((row) => (
-                            <TableRow key={row.rank}>
-                                <TableCell>{row.rank}</TableCell>
-                                <TableCell>{row.nickname}</TableCell>
-                                <TableCell align="right">{row.score.toLocaleString()}</TableCell>
+            {isLoadingRanking ? (
+                <Typography sx={{ py: 3, textAlign: 'center' }}>
+                    로딩 중...
+                </Typography>
+            ) : rankingError ? (
+                <Typography sx={{ py: 3, textAlign: 'center', color: 'error.main' }}>
+                    {rankingError}
+                </Typography>
+            ) : (
+                <TableContainer sx={{
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    '&::-webkit-scrollbar': {
+                        width: '8px',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: '#e5e7eb',
+                        borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        backgroundColor: '#d1d5db',
+                    },
+                }}>
+                    <Table size="small" stickyHeader>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }}>순위</TableCell>
+                                <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }}>닉네임</TableCell>
+                                <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }} align="right">점수</TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                            {monthlyRankingData.map((row) => (
+                                <TableRow key={row.rank}>
+                                    <TableCell>{row.rank}</TableCell>
+                                    <TableCell>{row.nickname}</TableCell>
+                                    <TableCell align="right">{row.score.toLocaleString()}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
         </Paper>
         <Paper
             sx={{
