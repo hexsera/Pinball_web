@@ -11,12 +11,10 @@ import {
   DialogActions,
   Alert
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import axios from 'axios';
 
 function UserInfo() {
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   // 회원 정보 상태
@@ -37,6 +35,8 @@ function UserInfo() {
 
   // 회원 탈퇴 상태
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteError, setDeleteError] = useState(null);
 
   // 회원 정보 조회
   useEffect(() => {
@@ -136,12 +136,40 @@ function UserInfo() {
   };
 
   // 회원 탈퇴
-  const handleDelete = () => {
-    // TODO: 백엔드 API 연동
-    console.log('탈퇴 요청');
-    setDeleteDialogOpen(false);
-    logout();
-    navigate('/');
+  const handleDelete = async () => {
+    setDeleteError(null);
+
+    // "회원 탈퇴" 텍스트 일치 검증
+    if (deleteConfirmText !== '회원 탈퇴') {
+      setDeleteError('"회원 탈퇴"를 정확히 입력해주세요.');
+      return;
+    }
+
+    try {
+      // 회원 삭제 (DELETE /api/v1/users/{user_id})
+      console.log('회원 삭제 API 호출 시작');
+      await axios.delete(`/api/v1/users/${user.id}`, {
+        headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
+      });
+      console.log('회원 삭제 API 호출 성공');
+
+      // 로그아웃 및 메인 페이지 이동
+      setDeleteDialogOpen(false);
+      logout();
+      // 페이지 전체 새로고침으로 메인 페이지로 이동
+      window.location.href = '/';
+    } catch (err) {
+      console.error('회원 탈퇴 실패:', err);
+
+      // 사용자를 찾을 수 없음 (404)
+      if (err.response?.status === 404) {
+        setDeleteError('사용자를 찾을 수 없습니다.');
+      }
+      // 기타 에러
+      else {
+        setDeleteError('회원 탈퇴에 실패했습니다.');
+      }
+    }
   };
 
   return (
@@ -277,18 +305,44 @@ function UserInfo() {
       {/* 탈퇴 확인 Dialog */}
       <Dialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setDeleteConfirmText('');
+          setDeleteError(null);
+        }}
       >
         <DialogTitle>회원 탈퇴</DialogTitle>
         <DialogContent>
-          <Typography>
-            정말 탈퇴하시겠습니까? 모든 데이터가 삭제되며 복구할 수 없습니다.
+          <Typography gutterBottom>
+            정말 탈퇴하시겠습니까? 삭제된 정보는 되돌릴 수 없습니다.
           </Typography>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+            진행하려면 아래 입력란에 <strong>"회원 탈퇴"</strong>를 정확히 입력해 주세요.
+          </Typography>
+          <TextField
+            fullWidth
+            label="회원 탈퇴 확인"
+            placeholder="회원 탈퇴"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            sx={{ mt: 2 }}
+          />
+          {deleteError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>취소</Button>
+          <Button onClick={() => {
+            setDeleteDialogOpen(false);
+            setDeleteConfirmText('');
+            setDeleteError(null);
+          }}>
+            취소
+          </Button>
           <Button onClick={handleDelete} color="error" variant="contained">
-            탈퇴
+            확인
           </Button>
         </DialogActions>
       </Dialog>
