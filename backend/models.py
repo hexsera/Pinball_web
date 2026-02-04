@@ -38,12 +38,6 @@ class Friendship(Base):
     )
 
 
-class Visit(Base):
-    __tablename__ = "visits"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=True, index=True)
-    visited_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
 
 
 class MonthlyScore(Base):
