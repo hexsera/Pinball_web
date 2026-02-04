@@ -236,6 +236,20 @@ class GameVisitCreateResponse(BaseModel):
     is_new_record: bool
 
 
+class DailyVisitStats(BaseModel):
+    """일별 접속자 수 통계"""
+    date: str  # YYYY-MM-DD 형식
+    user_count: int
+
+
+class DailyVisitStatsResponse(BaseModel):
+    """일별 접속자 수 통계 응답"""
+    stats: List[DailyVisitStats]
+    total_days: int
+    start_date: str
+    end_date: str
+
+
 @app.get("/api/")
 def health_check():
     return {"status": "ok", "message": "FastAPI is running"}
@@ -816,4 +830,55 @@ def update_game_visit(
         ip_address=game_visit.ip_address,
         is_visits=game_visit.is_visits,
         updated_at=game_visit.updated_at
+    )
+
+
+@app.get("/api/v1/game_visits/", response_model=DailyVisitStatsResponse)
+def get_daily_visit_stats(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """게임 일일 접속자 수 조회 (날짜 범위 필터)"""
+    from datetime import timedelta
+    from sqlalchemy import func
+
+    # 기본값 설정: 최근 7일
+    if not end_date:
+        end_date_obj = date.today()
+    else:
+        end_date_obj = date.fromisoformat(end_date)
+
+    if not start_date:
+        start_date_obj = end_date_obj - timedelta(days=6)
+    else:
+        start_date_obj = date.fromisoformat(start_date)
+
+    # 날짜별 접속자 수 집계 (POST에서 이미 일별 IP 중복 방지)
+    stats = db.query(
+        func.date(GameVisit.created_at).label('visit_date'),
+        func.count(GameVisit.id).label('user_count')
+    ).filter(
+        func.date(GameVisit.created_at) >= start_date_obj,
+        func.date(GameVisit.created_at) <= end_date_obj
+    ).group_by(
+        func.date(GameVisit.created_at)
+    ).order_by(
+        func.date(GameVisit.created_at)
+    ).all()
+
+    # 응답 형식으로 변환
+    result = [
+        DailyVisitStats(
+            date=str(stat.visit_date),
+            user_count=stat.user_count
+        )
+        for stat in stats
+    ]
+
+    return DailyVisitStatsResponse(
+        stats=result,
+        total_days=len(result),
+        start_date=str(start_date_obj),
+        end_date=str(end_date_obj)
     )

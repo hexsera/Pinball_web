@@ -47,7 +47,7 @@ function AdminStatisticsMain() {
       });
 
       // API가 구현되면 실제 엔드포인트로 변경
-      const response = await axios.get('/api/v1/game-plays', {
+      const response = await axios.get('/api/v1/game_visits/', {
         params: {
           start_date: startDate.format('YYYY-MM-DD'),
           end_date: endDate.format('YYYY-MM-DD')
@@ -60,11 +60,11 @@ function AdminStatisticsMain() {
       const dailyDataFromAPI = response.data;
 
       // 날짜 오름차순 정렬 (2주 전 → 오늘)
-      const sortedData = dailyDataFromAPI.sort((a, b) =>
+      /* const sortedData = dailyDataFromAPI.sort((a, b) =>
         dayjs(a.date).isAfter(dayjs(b.date)) ? 1 : -1
-      );
+      ); */
 
-      setDailyData(sortedData);
+      setDailyData(dailyDataFromAPI.stats);
     } catch (error) {
       console.error('통계 데이터 로딩 실패:', error);
 
@@ -121,7 +121,7 @@ function AdminStatisticsMain() {
             label: '날짜'
           }]}
           series={[{
-            data: dailyData.map(item => item.play_count),
+            data: dailyData.map(item => item.user_count),
             label: '게임 플레이 횟수',
             color: '#465FFF',
             showMark: true,
