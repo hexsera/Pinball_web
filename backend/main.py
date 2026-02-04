@@ -250,6 +250,19 @@ class DailyVisitStatsResponse(BaseModel):
     end_date: str
 
 
+class GameVisitDeleteRequest(BaseModel):
+    """게임 접속 기록 삭제 요청 (날짜 범위)"""
+    start_date: date
+    end_date: date
+
+
+class GameVisitDeleteResponse(BaseModel):
+    """게임 접속 기록 삭제 응답"""
+    message: str
+    start_date: str
+    end_date: str
+
+
 @app.get("/api/")
 def health_check():
     return {"status": "ok", "message": "FastAPI is running"}
@@ -881,4 +894,34 @@ def get_daily_visit_stats(
         total_days=len(result),
         start_date=str(start_date_obj),
         end_date=str(end_date_obj)
+    )
+
+
+@app.delete("/api/v1/game_visits/", response_model=GameVisitDeleteResponse)
+def delete_game_visits(
+    delete_data: GameVisitDeleteRequest,
+    db: Session = Depends(get_db)
+):
+    """게임 접속 기록 삭제 (날짜 범위 기반)"""
+    from sqlalchemy import func
+
+    # 날짜 유효성 검증
+    if delete_data.start_date > delete_data.end_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="start_date must be less than or equal to end_date"
+        )
+
+    # 날짜 범위에 해당하는 레코드 삭제
+    db.query(GameVisit).filter(
+        func.date(GameVisit.created_at) >= delete_data.start_date,
+        func.date(GameVisit.created_at) <= delete_data.end_date
+    ).delete(synchronize_session=False)
+
+    db.commit()
+
+    return GameVisitDeleteResponse(
+        message="Game visit records deleted successfully",
+        start_date=str(delete_data.start_date),
+        end_date=str(delete_data.end_date)
     )
