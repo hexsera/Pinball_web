@@ -5,7 +5,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from database import wait_for_db, engine, Base, get_db, SessionLocal
-from models import User, Score, Friendship, MonthlyScore
+from models import User, Score, Friendship, MonthlyScore, GameVisit
 from auth import verify_api_key
 from seed import seed_admin
 
@@ -187,6 +187,21 @@ class FriendRequestActionResponse(BaseModel):
     requester_id: int
     receiver_id: int
     status: str
+
+
+class GameVisitUpdateRequest(BaseModel):
+    """게임 접속 기록 수정 요청"""
+    user_id: Optional[int] = None
+    ip_address: str
+
+
+class GameVisitUpdateResponse(BaseModel):
+    """게임 접속 기록 수정 응답"""
+    message: str
+    user_id: Optional[int]
+    ip_address: str
+    is_visits: bool
+    updated_at: datetime
 
 
 @app.get("/api/")
@@ -679,4 +694,39 @@ def delete_monthly_score(
     return MonthlyScoreDeleteResponse(
         message="Monthly score deleted successfully",
         deleted_user_id=user_id
+    )
+
+
+# ==================== Game Visit API ====================
+
+@app.put("/api/v1/game_visits", response_model=GameVisitUpdateResponse)
+def update_game_visit(
+    visit_data: GameVisitUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """IP 주소 기반 게임 접속 기록 업데이트 (is_visits = True)"""
+    # IP 주소로 레코드 조회
+    game_visit = db.query(GameVisit).filter(
+        GameVisit.ip_address == visit_data.ip_address
+    ).first()
+
+    if game_visit is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Game visit record for IP {visit_data.ip_address} not found"
+        )
+
+    # user_id와 is_visits 필드 업데이트
+    if visit_data.user_id is not None:
+        game_visit.user_id = visit_data.user_id
+    game_visit.is_visits = True
+    db.commit()
+    db.refresh(game_visit)
+
+    return GameVisitUpdateResponse(
+        message="Game visit updated successfully",
+        user_id=game_visit.user_id,
+        ip_address=game_visit.ip_address,
+        is_visits=game_visit.is_visits,
+        updated_at=game_visit.updated_at
     )

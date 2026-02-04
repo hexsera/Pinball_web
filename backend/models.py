@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, UniqueConstraint, CheckConstraint
 from sqlalchemy.sql import func
 from database import Base
 
@@ -53,3 +53,14 @@ class MonthlyScore(Base):
     user_id = Column(Integer, nullable=False, index=True)
     score = Column(Integer, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+
+
+class GameVisit(Base):
+    __tablename__ = "game_visits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=True, index=True)
+    ip_address = Column(String(45), nullable=False, index=True)
+    is_visits = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
