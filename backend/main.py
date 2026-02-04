@@ -145,7 +145,7 @@ class MonthlyScoreUpdateRequest(BaseModel):
 
 class MonthlyScoreResponse(BaseModel):
     """월간 점수 응답"""
-    user_id: int
+    nickname: str
     score: int
     created_at: datetime
 
@@ -653,6 +653,14 @@ def create_or_update_monthly_score(
     db: Session = Depends(get_db)
 ):
     """월간 점수 생성 또는 수정 (최고 점수만 저장)"""
+    # User 테이블에서 nickname 조회
+    user = db.query(User).filter(User.id == score_data.user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"User with id {score_data.user_id} not found"
+        )
+
     existing_score = db.query(MonthlyScore).filter(
         MonthlyScore.user_id == score_data.user_id
     ).first()
@@ -660,12 +668,14 @@ def create_or_update_monthly_score(
     if existing_score:
         if score_data.score > existing_score.score:
             existing_score.score = score_data.score
+            existing_score.nickname = user.nickname  # nickname 갱신
             db.commit()
             db.refresh(existing_score)
         return existing_score
     else:
         new_score = MonthlyScore(
             user_id=score_data.user_id,
+            nickname=user.nickname,  # nickname 저장
             score=score_data.score
         )
         db.add(new_score)

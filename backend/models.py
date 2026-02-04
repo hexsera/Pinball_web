@@ -51,6 +51,7 @@ class MonthlyScore(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, index=True)
+    nickname = Column(String(100), nullable=False)
     score = Column(Integer, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
 

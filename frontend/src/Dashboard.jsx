@@ -100,7 +100,7 @@ function Maindashboard() {
         // 응답 데이터를 rank와 임시 nickname 추가하여 변환
         const rankingData = scores.slice(0, 10).map((score, index) => ({
           rank: index + 1,
-          nickname: 'testnickname',  // 임시 닉네임 (추후 API에서 제공 예정)
+          nickname: score.nickname,  // 임시 닉네임 (추후 API에서 제공 예정)
           score: score.score
         }));
 
