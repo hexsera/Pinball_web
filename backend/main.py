@@ -276,10 +276,9 @@ def api_test():
 @app.post("/api/v1/users", response_model=UserResponse)
 def create_user(
     user: UserCreateRequest,
-    db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    db: Session = Depends(get_db)
 ):
-    """범용 사용자 생성 엔드포인트 (role 지정 가능, API Key 필요)"""
+    """범용 사용자 생성 엔드포인트 (role 지정 가능)"""
     # 이메일 중복 검증
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -305,10 +304,9 @@ def create_user(
 
 @app.get("/api/v1/users", response_model=List[UserResponse])
 def get_all_users(
-    db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    db: Session = Depends(get_db)
 ):
-    """전체 사용자 조회 (API Key 필요)"""
+    """전체 사용자 조회"""
     users = db.query(User).all()
     return users
 
@@ -316,10 +314,9 @@ def get_all_users(
 @app.get("/api/v1/users/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
-    db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    db: Session = Depends(get_db)
 ):
-    """특정 사용자 조회 (API Key 필요)"""
+    """특정 사용자 조회"""
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(
@@ -333,10 +330,9 @@ def get_user(
 def update_user(
     user_id: int,
     user_update: UserUpdateRequest,
-    db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    db: Session = Depends(get_db)
 ):
-    """사용자 정보 수정 (API Key 필요)"""
+    """사용자 정보 수정"""
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(
@@ -367,10 +363,9 @@ def update_user(
 @app.delete("/api/v1/users/{user_id}", response_model=DeleteResponse)
 def delete_user(
     user_id: int,
-    db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    db: Session = Depends(get_db)
 ):
-    """사용자 삭제 (API Key 필요)"""
+    """사용자 삭제"""
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(
