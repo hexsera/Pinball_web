@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from database import wait_for_db, engine, Base, get_db, SessionLocal
 from models import User, Score, Friendship, MonthlyScore, GameVisit
 from auth import verify_api_key
@@ -29,6 +29,24 @@ finally:
 print("Data seeding completed")
 
 app = FastAPI(title="Hexsera API", version="1.0.0")
+
+
+# Helper Functions
+def get_client_ip(request: Request) -> str:
+    """클라이언트 IP 주소 추출 (프록시 고려)"""
+    # X-Forwarded-For 헤더 확인 (프록시/로드밸런서 뒤에 있는 경우)
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        # 첫 번째 IP가 실제 클라이언트 IP
+        return forwarded_for.split(",")[0].strip()
+
+    # X-Real-IP 헤더 확인 (Nginx 등에서 사용)
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip
+
+    # 직접 연결된 클라이언트 IP
+    return request.client.host
 
 
 # Pydantic 스키마
@@ -202,6 +220,20 @@ class GameVisitUpdateResponse(BaseModel):
     ip_address: str
     is_visits: bool
     updated_at: datetime
+
+
+class GameVisitCreateRequest(BaseModel):
+    """게임 접속 기록 생성 요청"""
+    user_id: Optional[int] = None
+
+
+class GameVisitCreateResponse(BaseModel):
+    """게임 접속 기록 생성 응답"""
+    message: str
+    user_id: Optional[int]
+    ip_address: str
+    created_at: datetime
+    is_new_record: bool
 
 
 @app.get("/api/")
@@ -698,6 +730,61 @@ def delete_monthly_score(
 
 
 # ==================== Game Visit API ====================
+
+@app.post("/api/v1/game_visits", response_model=GameVisitCreateResponse, status_code=201)
+def create_game_visit(
+    visit_data: GameVisitCreateRequest,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """게임 접속 기록 생성 (오늘 날짜 + IP 기준 중복 방지)"""
+    from sqlalchemy import func
+
+    # 클라이언트 IP 추출
+    client_ip = get_client_ip(request)
+
+    # 오늘 날짜와 IP로 레코드 조회
+    today = func.date(func.now())
+    existing_visit = db.query(GameVisit).filter(
+        and_(
+            func.date(GameVisit.created_at) == today,
+            GameVisit.ip_address == client_ip
+        )
+    ).first()
+
+    if existing_visit:
+        # 레코드가 존재하면 user_id가 null인 경우에만 업데이트
+        if existing_visit.user_id is None and visit_data.user_id is not None:
+            existing_visit.user_id = visit_data.user_id
+            db.commit()
+            db.refresh(existing_visit)
+
+        return GameVisitCreateResponse(
+            message="Game visit record updated",
+            user_id=existing_visit.user_id,
+            ip_address=existing_visit.ip_address,
+            created_at=existing_visit.created_at,
+            is_new_record=False
+        )
+    else:
+        # 레코드가 없으면 새로 생성
+        new_visit = GameVisit(
+            user_id=visit_data.user_id,
+            ip_address=client_ip,
+            is_visits=True
+        )
+        db.add(new_visit)
+        db.commit()
+        db.refresh(new_visit)
+
+        return GameVisitCreateResponse(
+            message="Game visit record created",
+            user_id=new_visit.user_id,
+            ip_address=new_visit.ip_address,
+            created_at=new_visit.created_at,
+            is_new_record=True
+        )
+
 
 @app.put("/api/v1/game_visits", response_model=GameVisitUpdateResponse)
 def update_game_visit(

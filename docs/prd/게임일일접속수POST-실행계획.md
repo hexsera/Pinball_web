@@ -165,11 +165,11 @@ from sqlalchemy import or_, and_
 
 ## 완료 체크리스트
 
-- [ ] backend/main.py에 Request와 and_ import가 추가되었는지 확인
-- [ ] get_client_ip 함수가 정의되었는지 확인
-- [ ] POST /api/v1/game_visits 엔드포인트가 생성되었는지 확인
-- [ ] Swagger UI (http://localhost:8000/docs)에서 POST /api/v1/game_visits 엔드포인트가 표시되는지 확인
-- [ ] 동일 IP로 오늘 첫 요청 시 새 레코드가 생성되는지 확인 (is_new_record=true)
-- [ ] 동일 IP로 오늘 두 번째 요청 시 기존 레코드가 반환되는지 확인 (is_new_record=false)
-- [ ] 비회원(user_id=null) 접속 후 회원 로그인 시 user_id가 업데이트되는지 확인
-- [ ] 이미 user_id가 있는 레코드는 업데이트되지 않는지 확인
+- [o] backend/main.py에 Request와 and_ import가 추가되었는지 확인
+- [o] get_client_ip 함수가 정의되었는지 확인
+- [o] POST /api/v1/game_visits 엔드포인트가 생성되었는지 확인
+- [o] Swagger UI (http://localhost:8000/docs)에서 POST /api/v1/game_visits 엔드포인트가 표시되는지 확인
+- [o] 동일 IP로 오늘 첫 요청 시 새 레코드가 생성되는지 확인 (is_new_record=true)
+- [o] 동일 IP로 오늘 두 번째 요청 시 기존 레코드가 반환되는지 확인 (is_new_record=false)
+- [o] 비회원(user_id=null) 접속 후 회원 로그인 시 user_id가 업데이트되는지 확인
+- [o] 이미 user_id가 있는 레코드는 업데이트되지 않는지 확인
