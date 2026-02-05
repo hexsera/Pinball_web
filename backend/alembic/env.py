@@ -15,7 +15,7 @@ load_dotenv()
 config = context.config
 
 # 환경변수에서 DATABASE_URL 설정
-DATABASE_URL = f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DATABASE')}"
+DATABASE_URL = os.getenv("DATABASE_URL")
 config.set_main_option('sqlalchemy.url', DATABASE_URL)
 
 # Interpret the config file for Python logging.
