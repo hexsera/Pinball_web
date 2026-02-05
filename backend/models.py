@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, UniqueConstraint, CheckConstraint, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
@@ -31,8 +31,8 @@ class Friendship(Base):
     __tablename__ = "friendships"
 
     id = Column(Integer, primary_key=True, index=True)
-    requester_id = Column(Integer, nullable=False, index=True)
-    receiver_id = Column(Integer, nullable=False, index=True)
+    requester_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    receiver_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     status = Column(String(20), nullable=False, default='pending')
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
 

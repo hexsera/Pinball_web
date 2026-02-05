@@ -641,6 +641,7 @@ def create_score(score_data: ScoreCreateRequest, db: Session = Depends(get_db)):
     return db_score
 
 
+
 # ==================== Monthly Score API ====================
 
 @app.post("/api/v1/monthly-scores", response_model=MonthlyScoreResponse)
@@ -872,6 +873,7 @@ def get_daily_visit_stats(
         start_date_obj = end_date_obj - timedelta(days=6)
     else:
         start_date_obj = date.fromisoformat(start_date)
+
 
     # 날짜별 접속자 수 집계 (POST에서 이미 일별 IP 중복 방지)
     stats = db.query(
