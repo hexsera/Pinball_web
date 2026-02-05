@@ -142,17 +142,6 @@ config.set_main_option('sqlalchemy.url', DATABASE_URL)
 - f-string 조합 제거하고 환경변수 직접 참조
 - .env 파일만 수정하면 모든 파일에 자동 반영됨
 
-### Phase 2 완료 체크리스트
-
-- [x] `.env` 파일에 DATABASE_URL이 `postgresql+psycopg2://` 형식으로 설정됨
-- [x] `backend/database.py`가 `os.getenv("DATABASE_URL")`을 사용함
-- [x] `backend/app/core/config.py`의 Settings 클래스가 DATABASE_URL 환경변수를 사용함
-- [x] `backend/alembic/env.py`가 `os.getenv("DATABASE_URL")`을 사용함
-- [x] 모든 파일에서 DATABASE_URL f-string 조합 코드가 제거됨
-- [x] Python 문법 오류가 없음 (import 문, 환경변수 참조 등)
-
-## Phase 3: 배포 및 마이그레이션
-
 ### 오류 해결: ModuleNotFoundError: No module named 'psycopg2'
 
 **원인**:
@@ -178,6 +167,17 @@ docker compose up -d --build fastapi
 - requirements.txt 변경만으로는 자동으로 재설치되지 않음
 - `--build` 또는 `build --no-cache`로 강제 재빌드 필요
 - 재빌드 시 `RUN pip install -r requirements.txt` 단계에서 psycopg2-binary 설치됨
+
+### Phase 2 완료 체크리스트
+
+- [o] `.env` 파일에 DATABASE_URL이 `postgresql+psycopg2://` 형식으로 설정됨
+- [o] `backend/database.py`가 `os.getenv("DATABASE_URL")`을 사용함
+- [o] `backend/app/core/config.py`의 Settings 클래스가 DATABASE_URL 환경변수를 사용함
+- [o] `backend/alembic/env.py`가 `os.getenv("DATABASE_URL")`을 사용함
+- [o] 모든 파일에서 DATABASE_URL f-string 조합 코드가 제거됨
+- [o] Python 문법 오류가 없음 (import 문, 환경변수 참조 등)
+
+## Phase 3: 배포 및 마이그레이션
 
 ### 7. docker-compose.yml의 fastapi depends_on 수정
 ```yaml
@@ -245,9 +245,9 @@ docker exec fastapi-server alembic upgrade head
 
 ## 완료 체크리스트
 
-- [ ] `docker compose up -d postgres` 실행 시 PostgreSQL 컨테이너 정상 시작
-- [ ] `docker exec postgres-server psql -U hexsera -d hexdb -c "\dt"` 실행 시 테이블 목록 출력
-- [ ] `docker compose up -d fastapi` 실행 시 FastAPI 정상 시작 (로그에 "Database connected successfully" 출력)
-- [ ] `curl http://localhost:8000/api/` 실행 시 헬스 체크 응답 수신
-- [ ] `curl -X POST http://localhost:8000/api/v1/register -H "Content-Type: application/json" -d '{"email":"test@test.com","nickname":"test","password":"test123","birth_date":"2000-01-01"}'` 실행 시 201 응답
-- [ ] MySQL 컨테이너(`mysql-server`)가 여전히 존재하고 데이터 보존됨
+- [o] `docker compose up -d postgres` 실행 시 PostgreSQL 컨테이너 정상 시작
+- [o] `docker exec postgres-server psql -U hexsera -d hexdb -c "\dt"` 실행 시 테이블 목록 출력
+- [o] `docker compose up -d fastapi` 실행 시 FastAPI 정상 시작 (로그에 "Database connected successfully" 출력)
+- [o] `curl http://localhost:8000/api/` 실행 시 헬스 체크 응답 수신
+- [o] `curl -X POST http://localhost:8000/api/v1/register -H "Content-Type: application/json" -d '{"email":"test@test.com","nickname":"test","password":"test123","birth_date":"2000-01-01"}'` 실행 시 201 응답
+- [o] MySQL 컨테이너(`mysql-server`)가 여전히 존재하고 데이터 보존됨

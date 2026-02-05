@@ -19,6 +19,7 @@ Base.metadata.create_all(bind=engine)
 print("Database tables created successfully")
 
 
+
 # Data Seeding
 print("Starting data seeding...")
 db = SessionLocal()
