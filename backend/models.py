@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, UniqueConstraint, CheckConstraint
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+import uuid
 from database import Base
 
 
@@ -7,6 +9,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(UUID(as_uuid=True), unique=True, nullable=True,
+                    default=uuid.uuid4, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     nickname = Column(String(100), nullable=False)
     password = Column(String(255), nullable=False)
