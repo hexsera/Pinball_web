@@ -132,7 +132,8 @@ function Pinball() {
       render: { fillStyle: '#16213e' }
     });
 
-    const rightWall2 = Bodies.rectangle(630, 550, 30, 1100, {
+    // rightWall2: y=200~1100 구간만 벽 유지 (상단 160px 개방하여 Plunger lane 출구 생성)
+    const rightWall2 = Bodies.rectangle(630, 650, 30, 900, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
@@ -175,8 +176,29 @@ function Pinball() {
       }
     });
 
-    // 핀볼 공 만들기
-    const ball = Bodies.circle(250, 400, 15, {
+    // Plunger lane 상단 가이드 벽 (공이 왼쪽 게임 필드로 나가도록 유도)
+    const plungerLaneGuide = Bodies.rectangle(660, 150, 60, 10, {
+      isStatic: true,
+      angle: 40 * Math.PI/180,
+      render: { fillStyle: '#16213e' }
+    });
+
+    // Plunger 상수
+    const PLUNGER_X = 662;
+    const PLUNGER_REST_Y = 1050;
+    const PLUNGER_PULL_SPEED = 0.8;
+    const PLUNGER_MAX_PULL_Y = 1080;
+    const PLUNGER_MAX_LAUNCH_SPEED = 35;
+
+    // Plunger Body (시각적 표현, isStatic)
+    const plunger = Bodies.rectangle(PLUNGER_X, PLUNGER_REST_Y, 30, 15, {
+      isStatic: true,
+      label: 'plunger',
+      render: { fillStyle: '#c0c0c0' }
+    });
+
+    // 핀볼 공 만들기 (Plunger lane에서 시작)
+    const ball = Bodies.circle(662, 1020, 15, {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
@@ -232,6 +254,8 @@ function Pinball() {
     // 키 누름 상태 변수
     let isLeftKeyPressed = false;
     let isRightKeyPressed = false;
+    let isSpacePressed = false;
+    let spaceHoldStartTime = 0;
 
     // 맵 로딩 함수
     const loadStageMap = (stageNumber) => {
@@ -280,7 +304,9 @@ function Pinball() {
       leftFlipper,
       rightFlipper,
       leftFlipperConstraint,
-      rightFlipperConstraint
+      rightFlipperConstraint,
+      plunger,              // Phase 1에서 추가
+      plungerLaneGuide      // Phase 1에서 추가
     ]);
 
     // 스테이지 1 맵 로딩
@@ -340,8 +366,8 @@ function Pinball() {
 
           // livesRef로 최신 lives 값 확인
           if (livesRef.current > 0) {
-            // 공을 초기 위치로 이동
-            Body.setPosition(ball, { x: 250, y: 400 });
+            // 공을 Plunger lane으로 이동
+            Body.setPosition(ball, { x: 662, y: 1020 });
 
             // 속도 초기화
             Body.setVelocity(ball, { x: 0, y: 0 });
@@ -410,6 +436,17 @@ function Pinball() {
       if (rightFlipper.angle < RIGHT_FLIPPER_MIN_ANGLE) {
         Body.setAngle(rightFlipper, RIGHT_FLIPPER_MIN_ANGLE);
       }
+
+      // Plunger 시각적 당기기 (스페이스바 누르고 있을 때)
+      if (isSpacePressed) {
+        const currentY = plunger.position.y;
+        if (currentY < PLUNGER_MAX_PULL_Y) {
+          Body.setPosition(plunger, {
+            x: PLUNGER_X,
+            y: Math.min(currentY + PLUNGER_PULL_SPEED, PLUNGER_MAX_PULL_Y)
+          });
+        }
+      }
     });
 
     // 엔진과 렌더러 시작
@@ -426,6 +463,15 @@ function Pinball() {
     console.log('오른쪽 방향키 눌림');
     isRightKeyPressed = true;
   }
+  // 스페이스바로 Plunger 충전
+  if (event.key === ' ' || event.code === 'Space') {
+    event.preventDefault();
+    if (!isSpacePressed) {
+      isSpacePressed = true;
+      spaceHoldStartTime = Date.now();
+      console.log('스페이스바 눌림 - Plunger 충전 시작');
+    }
+  }
   // 'n' 키로 스테이지 전환 (테스트용)
   if (event.key === 'n' || event.key === 'N') {
     const currentStage = stageRef.current;
@@ -441,8 +487,8 @@ function Pinball() {
       livesRef.current = 2;  // lives 상태는 +1이므로 ref는 2
       setLives(3);
 
-      // 공 초기 위치로 이동
-      Body.setPosition(ball, { x: 250, y: 400 });
+      // 공을 Plunger lane으로 이동
+      Body.setPosition(ball, { x: 662, y: 1020 });
       Body.setVelocity(ball, { x: 0, y: 0 });
       Body.setAngularVelocity(ball, 0);
 
@@ -475,6 +521,28 @@ const handleKeyUp = (event) => {
   }
   if (event.key === 'ArrowRight') {
     isRightKeyPressed = false;
+  }
+  // 스페이스바 발사
+  if (event.key === ' ' || event.code === 'Space') {
+    if (isSpacePressed) {
+      isSpacePressed = false;
+
+      const holdDuration = Math.min(Date.now() - spaceHoldStartTime, 1500);
+      const chargeRatio = Math.max(holdDuration / 1500, 0.1);
+      const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
+
+      // 공이 plunger lane 안에 있을 때만 발사
+      const ballInLane = ball.position.x > 640 && ball.position.x < 685 &&
+                         ball.position.y > 900 && ball.position.y < 1080;
+
+      if (ballInLane) {
+        Body.setVelocity(ball, { x: 0, y: -launchSpeed });
+        console.log(`Plunger 발사! 충전: ${(chargeRatio * 100).toFixed(0)}%`);
+      }
+
+      // Plunger 원래 위치로 복귀
+      Body.setPosition(plunger, { x: PLUNGER_X, y: PLUNGER_REST_Y });
+    }
   }
 };
 
