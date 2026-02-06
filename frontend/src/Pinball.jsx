@@ -82,8 +82,20 @@ function Pinball() {
     setGameScale(optimalScale);
   }, [windowSize]);
 
+  // 게임 방문 기록 API 호출
+  useEffect(() => {
+    const recordGameVisit = async () => {
+      try {
+        await axios.post('/api/v1/game_visits', {
+          user_id: user?.id || null
+        });
+      } catch (error) {
+        console.error('Game visit recording failed:', error);
+      }
+    };
 
-
+    recordGameVisit();
+  }, []);
 
   useEffect(() => {
     // 배경음악 설정
