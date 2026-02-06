@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Button, Box, Typography, IconButton } from '@mui/material';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from './AuthContext';
 import { STAGE_CONFIGS } from './stageConfigs';
 
@@ -13,7 +14,7 @@ function Pinball() {
   const bgmRef = useRef(null);
   const hitSoundRef = useRef(null);
   const ballRef = useRef(null);
-  const livesRef = useRef(2);
+  const livesRef = useRef(3);
   const scoreRef = useRef(0);
   const stageRef = useRef(1);
   const stageBodiesRef = useRef([]);
@@ -370,6 +371,9 @@ function Pinball() {
         if ((bodyA.label === 'deathZone' && bodyB === ball) ||
             (bodyB.label === 'deathZone' && bodyA === ball)) {
           console.log('Ball entered death zone!');
+          const newLives = livesRef.current - 1;
+          livesRef.current = newLives;
+          setLives(newLives);
 
           // livesRef로 최신 lives 값 확인
           if (livesRef.current > 0) {
@@ -383,9 +387,7 @@ function Pinball() {
             Body.setAngularVelocity(ball, 0);
 
             // lives 감소 (상태와 ref 모두 업데이트)
-            const newLives = livesRef.current - 1;
-            livesRef.current = newLives;
-            setLives(newLives);
+            
 
             console.log(`Ball revived! Lives remaining: ${newLives}`);
           } else {
@@ -491,7 +493,7 @@ function Pinball() {
       setStage(nextStage);
 
       // 생명 초기화
-      livesRef.current = 2;  // lives 상태는 +1이므로 ref는 2
+      livesRef.current = 3;  // lives 상태는 +1이므로 ref는 2
       setLives(3);
 
       // 공을 Plunger lane으로 이동
@@ -647,13 +649,22 @@ display: 'flex',
             alignItems: 'center',
             padding: '0 20px'
           }}>
-            <Typography sx={{
-              fontSize: '32px',
-              fontWeight: 'bold',
-              color: '#ffffff'
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: '6px'
             }}>
-              LIVES: {lives}
-            </Typography>
+              {Array.from({ length: lives }).map((_, index) => (
+                <FavoriteIcon
+                  key={index}
+                  sx={{
+                    fontSize: '36px',
+                    color: '#ff1744'
+                  }}
+                />
+              ))}
+            </Box>
 
             <IconButton
               onClick={handleToggleMusic}
