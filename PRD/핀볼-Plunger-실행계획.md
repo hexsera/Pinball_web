@@ -207,58 +207,37 @@ Body.setPosition(ball, { x: 662, y: 1020 });
 
 ---
 
-### Phase 3: 모바일 터치 대응
+### Phase 3: Plunger 발사력 강화
 
-#### 3-1. handleTouchStart 수정
-
-```javascript
-const handleTouchStart = (event) => {
-  const touch = event.touches[0];
-  const rect = sceneRef.current.getBoundingClientRect();
-  const touchX = touch.clientX - rect.left;
-  const centerX = rect.width / 2;
-  const plungerZone = rect.width * 0.9;
-
-  if (touchX > plungerZone) {
-    isSpacePressed = true;
-    spaceHoldStartTime = Date.now();
-    console.log('Plunger 터치 시작');
-  } else if (touchX < centerX) {
-    isLeftKeyPressed = true;
-  } else {
-    isRightKeyPressed = true;
-  }
-};
-```
-- 화면 오른쪽 끝 10% 영역을 터치하면 Plunger 충전이 시작된다
-
-#### 3-2. handleTouchEnd에 Plunger 발사 로직 추가
+#### 3-1. PLUNGER_MAX_LAUNCH_SPEED 상수 값 증가
 
 ```javascript
-const handleTouchEnd = () => {
-  if (isSpacePressed) {
-    isSpacePressed = false;
-    const holdDuration = Math.min(Date.now() - spaceHoldStartTime, 1500);
-    const chargeRatio = Math.max(holdDuration / 1500, 0.1);
-    const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
+// 변경 전
+const PLUNGER_MAX_LAUNCH_SPEED = 35;
 
-    const ballInLane = ball.position.x > 640 && ball.position.x < 685 &&
-                       ball.position.y > 900 && ball.position.y < 1080;
-    if (ballInLane) {
-      Body.setVelocity(ball, { x: 0, y: -launchSpeed });
-    }
-    Body.setPosition(plunger, { x: PLUNGER_X, y: PLUNGER_REST_Y });
-  }
-  isLeftKeyPressed = false;
-  isRightKeyPressed = false;
-};
+// 변경 후 (50으로 증가)
+const PLUNGER_MAX_LAUNCH_SPEED = 50;
 ```
-- 터치를 떼면 충전 시간에 비례하여 발사한다
+- 최대 발사 속도를 35에서 50으로 증가시킨다 (약 43% 증가)
+- 충전 시스템은 그대로 유지 (최소 0.1배 ~ 최대 1.0배)
+- 최소 발사력: 5.0 (50 × 0.1), 최대 발사력: 50 (50 × 1.0)
+
+**또는 더 강하게 (60으로 증가):**
+```javascript
+const PLUNGER_MAX_LAUNCH_SPEED = 60;
+```
+- 최소 발사력: 6.0, 최대 발사력: 60 (약 71% 증가)
+
+**테스트 권장값:**
+- 약한 발사: 40~45 (공이 lane 상단 출구까지만 도달)
+- 보통 발사: 50~55 (공이 게임 필드 중간까지 도달)
+- 강한 발사: 60~70 (공이 게임 필드 상단까지 도달)
 
 **Phase 3 완료 체크리스트**:
-- [ ] 모바일에서 오른쪽 끝을 터치하면 Plunger가 충전되는가
-- [ ] 터치를 떼면 공이 발사되는가
-- [ ] 기존 플리퍼 터치(좌/우)가 정상 작동하는가
+- [ ] 스페이스바 짧게 누르면 공이 lane을 빠져나가는가
+- [ ] 스페이스바 길게 누르면 공이 게임 필드 중간~상단까지 도달하는가
+- [ ] 발사력이 너무 약하거나 강하지 않은가 (적절한 밸런스)
+- [ ] 공이 천장에 과도하게 튕기지 않는가
 
 ## 수정/생성할 파일 목록
 
@@ -274,6 +253,6 @@ const handleTouchEnd = () => {
 - [ ] 공이 lane 상단 출구를 통해 게임 필드로 진입하는가
 - [ ] 공이 죽었을 때 Plunger lane으로 리셋되는가
 - [ ] 공이 게임 필드에 있을 때 스페이스바를 눌러도 아무 일도 일어나지 않는가
-- [ ] 모바일에서 오른쪽 끝 터치로 Plunger가 작동하는가
+- [ ] Plunger 발사력이 적절한가 (공이 게임 필드로 진입 가능)
 - [ ] 기존 플리퍼(좌/우 방향키)가 정상 작동하는가
 - [ ] 에러 없이 게임이 실행되는가

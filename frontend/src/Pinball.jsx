@@ -188,7 +188,7 @@ function Pinball() {
     const PLUNGER_REST_Y = 1050;
     const PLUNGER_PULL_SPEED = 0.8;
     const PLUNGER_MAX_PULL_Y = 1080;
-    const PLUNGER_MAX_LAUNCH_SPEED = 35;
+    const PLUNGER_MAX_LAUNCH_SPEED = 55;
 
     // Plunger Body (시각적 표현, isStatic)
     const plunger = Bodies.rectangle(PLUNGER_X, PLUNGER_REST_Y, 30, 15, {
