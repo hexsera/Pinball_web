@@ -3,6 +3,7 @@ import Matter from 'matter-js';
 import axios from 'axios';
 import { Button, Box, Typography } from '@mui/material';
 import { useAuth } from './AuthContext';
+import { STAGE_CONFIGS } from './stageConfigs';
 
 function Pinball() {
   const { user } = useAuth();
@@ -12,9 +13,12 @@ function Pinball() {
   const ballRef = useRef(null);
   const livesRef = useRef(2);
   const scoreRef = useRef(0);
+  const stageRef = useRef(1);
+  const stageBodiesRef = useRef([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const [stage, setStage] = useState(1);
   const [overlayState, setOverlayState] = useState(null);
   const [bestScore, setBestScore] = useState(null);
   const [windowSize, setWindowSize] = useState({
@@ -182,33 +186,6 @@ function Pinball() {
 
     ballRef.current = ball;
 
-    // 장애물 만들기
-    const obstacle1 = Bodies.circle(300, 300, 30, {
-      isStatic: true,
-      render: { fillStyle: '#0f3460' }
-    });
-
-    const obstacle2 = Bodies.circle(500, 300, 30, {
-      isStatic: true,
-      render: { fillStyle: '#0f3460' }
-    });
-
-    // 범퍼 만들기 (충돌 시 강하게 튕겨냄)
-    const bumper = Bodies.circle(400, 600, 40, {
-      isStatic: true,
-      restitution: 1.5,
-      label: 'bumper',
-      render: { fillStyle: '#e74c3c' }
-    });
-
-    // 목표 오브젝트 만들기 (충돌 시 강하게 튕겨냄)
-    const target = Bodies.circle(500, 500, 40, {
-      isStatic: true,
-      restitution: 1.5,
-      label: 'target',
-      render: { fillStyle: '#87CEEB' }
-    });
-
     // 왼쪽 플리퍼 (회전축 x=270, 중심 = 회전축 + 길이절반50 = x=320)
     const leftFlipper = Bodies.rectangle(320, 1090, 100, 20, {
       chamfer: { radius: 10 },
@@ -256,6 +233,40 @@ function Pinball() {
     let isLeftKeyPressed = false;
     let isRightKeyPressed = false;
 
+    // 맵 로딩 함수
+    const loadStageMap = (stageNumber) => {
+      // 기존 스테이지 Bodies 제거
+      if (stageBodiesRef.current.length > 0) {
+        World.remove(engine.world, stageBodiesRef.current);
+        stageBodiesRef.current = [];
+      }
+
+      const config = STAGE_CONFIGS[stageNumber];
+      const newBodies = [];
+
+      // 장애물 생성
+      config.obstacles.forEach((obs) => {
+        const body = Bodies.circle(obs.x, obs.y, obs.radius, obs.options);
+        newBodies.push(body);
+      });
+
+      // 범퍼 생성
+      config.bumpers.forEach((b) => {
+        const body = Bodies.circle(b.x, b.y, b.radius, b.options);
+        newBodies.push(body);
+      });
+
+      // 목표물 생성
+      config.targets.forEach((t) => {
+        const body = Bodies.circle(t.x, t.y, t.radius, t.options);
+        newBodies.push(body);
+      });
+
+      // World에 추가
+      World.add(engine.world, newBodies);
+      stageBodiesRef.current = newBodies;
+    };
+
     // 세계에 모든 물체 추가
     World.add(engine.world, [
       leftWall,
@@ -266,15 +277,14 @@ function Pinball() {
       rightFunnelWall,
       deathZone,
       ball,
-      obstacle1,
-      obstacle2,
-      bumper,
-      target,
       leftFlipper,
       rightFlipper,
       leftFlipperConstraint,
       rightFlipperConstraint
     ]);
+
+    // 스테이지 1 맵 로딩
+    loadStageMap(1);
 
     //
 

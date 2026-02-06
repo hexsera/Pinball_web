@@ -9,6 +9,7 @@ from models import User, Score, Friendship, MonthlyScore, GameVisit
 from auth import verify_api_key
 from seed import seed_admin
 
+
 # 애플리케이션 시작 시 DB 연결 확인
 if not wait_for_db():
     raise Exception("Database connection failed after retries")
