@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Matter from 'matter-js';
 import axios from 'axios';
-import { Button, Box, Typography } from '@mui/material';
+import { Button, Box, Typography, IconButton } from '@mui/material';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useAuth } from './AuthContext';
 import { STAGE_CONFIGS } from './stageConfigs';
 
@@ -30,11 +32,16 @@ function Pinball() {
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
 
-  // 음악 재생 버튼 클릭 핸들러
-  const handlePlayMusic = () => {
+  // 음악 재생/정지 토글 핸들러
+  const handleToggleMusic = () => {
     if (bgmRef.current) {
-      bgmRef.current.play();
-      setIsPlaying(true);
+      if (isPlaying) {
+        bgmRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        bgmRef.current.play();
+        setIsPlaying(true);
+      }
     }
   };
 
@@ -622,11 +629,6 @@ display: 'flex',
         flexDirection: 'column',
         alignItems: 'center'
       }}>
-        {!isPlaying && (
-          <Button variant="contained" onClick={handlePlayMusic}>
-            음악 시작
-          </Button>
-        )}
         <Box sx={{
           position: 'relative',
           width: '700px',
@@ -640,9 +642,10 @@ display: 'flex',
             height: '100px',
             backgroundColor: '#000000',
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center'
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '0 20px'
           }}>
             <Typography sx={{
               fontSize: '32px',
@@ -651,6 +654,20 @@ display: 'flex',
             }}>
               LIVES: {lives}
             </Typography>
+
+            <IconButton
+              onClick={handleToggleMusic}
+              sx={{
+                color: '#ffffff7a',
+                '&:hover': { color: '#ffffffb7' },
+              }}
+            >
+              {isPlaying ? (
+                <VolumeUpIcon sx={{ fontSize: '36px' }} />
+              ) : (
+                <VolumeOffIcon sx={{ fontSize: '36px' }} />
+              )}
+            </IconButton>
           </Box>
 
           {/* 게임 영역 (하단 1100px) */}
