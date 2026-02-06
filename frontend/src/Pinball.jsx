@@ -426,6 +426,32 @@ function Pinball() {
     console.log('오른쪽 방향키 눌림');
     isRightKeyPressed = true;
   }
+  // 'n' 키로 스테이지 전환 (테스트용)
+  if (event.key === 'n' || event.key === 'N') {
+    const currentStage = stageRef.current;
+    const nextStage = currentStage + 1;
+    if (STAGE_CONFIGS[nextStage]) {
+      console.log(`Stage ${currentStage} → Stage ${nextStage} (테스트)`);
+
+      // 스테이지 전환
+      stageRef.current = nextStage;
+      setStage(nextStage);
+
+      // 생명 초기화
+      livesRef.current = 2;  // lives 상태는 +1이므로 ref는 2
+      setLives(3);
+
+      // 공 초기 위치로 이동
+      Body.setPosition(ball, { x: 250, y: 400 });
+      Body.setVelocity(ball, { x: 0, y: 0 });
+      Body.setAngularVelocity(ball, 0);
+
+      // 맵 전환
+      loadStageMap(nextStage);
+    } else {
+      console.log('마지막 스테이지입니다');
+    }
+  }
 };
 
 const handleTouchStart = (event) => {
