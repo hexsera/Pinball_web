@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, IconButton, Badge, Avatar, Typography,
   Button, Menu, MenuItem
@@ -9,6 +9,7 @@ import { useAuth } from '../AuthContext';
 
 function HeaderUserInfo() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoggedIn, user, logout } = useAuth();
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -26,6 +27,15 @@ function HeaderUserInfo() {
 
   function AvatarLogoutButton() {
     logout();
+  }
+
+  function handlePageNavigation() {
+    if (location.pathname.startsWith('/admin')) {
+      navigate('/');
+    } else {
+      navigate('/admin');
+    }
+    handleAvatarMenuClose();
   }
 
   return (
@@ -53,7 +63,7 @@ function HeaderUserInfo() {
             open={avatarMenu}
           >
             <MenuItem>프로필</MenuItem>
-            <MenuItem>페이지 이동</MenuItem>
+            <MenuItem onClick={handlePageNavigation}>페이지 이동</MenuItem>
             <MenuItem onClick={() => AvatarLogoutButton()}>로그아웃</MenuItem>
           </Menu>
         </>
