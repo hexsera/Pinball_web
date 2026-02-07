@@ -69,3 +69,22 @@ describe('Dashboard 친구 페이지 통합', () => {
     expect(friendPage).toBeInTheDocument();
   });
 });
+
+describe('FriendPage 레이아웃 통합', () => {
+  beforeEach(() => {
+    localStorage.setItem('user', JSON.stringify({ id: 1, name: '테스트유저' }));
+  });
+
+  it('왼쪽 영역(검색)과 오른쪽 영역(요청+목록)이 분리되어 렌더링된다', () => {
+    render(<FriendPage />);
+
+    const leftArea = screen.getByTestId('friend-left-area');
+    const rightArea = screen.getByTestId('friend-right-area');
+
+    // 왼쪽 영역에 검색 관련 요소 존재
+    expect(leftArea.querySelector('input[placeholder="닉네임을 입력하세요"]')).toBeInTheDocument();
+
+    // 오른쪽 영역에 Paper 존재
+    expect(rightArea.querySelector('.MuiPaper-root')).toBeInTheDocument();
+  });
+});
