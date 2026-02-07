@@ -8,7 +8,6 @@ import {
   ListItem,
   ListItemText,
   Typography,
-  CircularProgress,
   Alert,
   Divider
 } from '@mui/material';
@@ -230,13 +229,6 @@ function FriendPage() {
               친구 요청
             </Typography>
 
-            {pendingLoading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                <CircularProgress size={24} />
-                <Typography sx={{ ml: 2 }}>로딩 중...</Typography>
-              </Box>
-            )}
-
             {pendingError && (
               <Alert severity="error">{pendingError}</Alert>
             )}
@@ -258,8 +250,7 @@ function FriendPage() {
                     }}
                   >
                     <ListItemText
-                      primary={`사용자 ID: ${request.requester_id}`}
-                      secondary={`요청 ID: ${request.id}`}
+                      primary={`요청 ID: ${request.id}`}
                     />
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button
@@ -293,13 +284,6 @@ function FriendPage() {
               현재 친구
             </Typography>
 
-            {friendLoading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                <CircularProgress size={24} />
-                <Typography sx={{ ml: 2 }}>로딩 중...</Typography>
-              </Box>
-            )}
-
             {friendError && (
               <Alert severity="error">{friendError}</Alert>
             )}
@@ -324,7 +308,6 @@ function FriendPage() {
                     >
                       <ListItemText
                         primary={`친구 ID: ${friendId}`}
-                        secondary={`관계 ID: ${friendship.id}`}
                       />
                     </ListItem>
                   );

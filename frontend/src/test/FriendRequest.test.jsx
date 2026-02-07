@@ -89,9 +89,9 @@ describe('친구 요청 API 호출', () => {
     render(<FriendPage />);
 
     await waitFor(() => {
-      // requester_id 3, 5가 표시되는지 확인 (닉네임 또는 ID)
+      // 요청 ID 1, 2가 표시되는지 확인
       const rightArea = screen.getByTestId('friend-right-area');
-      expect(rightArea.textContent).toMatch(/3|5|홍길동|박영희/);
+      expect(rightArea.textContent).toMatch(/요청 ID: 1|요청 ID: 2/);
     });
   });
 
