@@ -1,4 +1,5 @@
 import { AppBar, Toolbar, Box } from '@mui/material';
+import HeaderUserInfo from '../components/HeaderUserInfo';
 
 const drawerWidth = 260;
 
@@ -15,8 +16,8 @@ function AdminHeader() {
         borderBottom: '1px solid #e5e7eb',
       }}
     >
-      <Toolbar>
-        
+      <Toolbar sx={{ justifyContent: 'flex-end' }}>
+        <HeaderUserInfo />
       </Toolbar>
     </AppBar>
   );

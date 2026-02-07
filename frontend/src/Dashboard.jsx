@@ -48,6 +48,7 @@ import { useAuth } from './AuthContext';
 import Pinball from './Pinball';
 import UserInfo from './UserInfo';
 import FriendPage from './FriendPage';
+import HeaderUserInfo from './components/HeaderUserInfo';
 
 const drawerWidth = 260;
 
@@ -58,8 +59,6 @@ function Maindashboard() {
 
   const [openMenus, setOpenMenus] = useState({});
   const [menuIndex, setMenuIndex] = useState(0);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [avatarMenu, setAvatarMenu] = useState(false);
 
   const [showPinball, setShowPinball] = useState(false);
   const [showUserInfo, setShowUserInfo] = useState(false);
@@ -198,22 +197,6 @@ function Maindashboard() {
     }
   }
 
-  function AvatarButtonClick (event)
-  {
-    setAnchorEl(event.currentTarget);
-    setAvatarMenu(!avatarMenu);
-  }
-
-  function handleAvatarMenuClose ()
-  {
-    setAnchorEl(null);
-    setAvatarMenu(false);
-  }
-
-  function AvatarLogoutButton()
-  {
-    logout();
-  }
 
   // 통계 카드 데이터
   
@@ -455,60 +438,7 @@ function Maindashboard() {
               }}
             />
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {isLoggedIn ? (
-                <>
-                <IconButton onClick={() => navigate('/admin')}>
-              <Badge >
-                <Notifications />
-              </Badge>
-            </IconButton>
-            <IconButton>
-              <Badge >
-                <Mail />
-              </Badge>
-            </IconButton>
-            <Button
-              id="basic-button"
-              onClick={AvatarButtonClick}
-              >
-              <Avatar sx={{ width: 40, height: 40, ml: 1 }}>U</Avatar>
-              <Typography>
-                {user.name}
-              </Typography>
-            </Button>
-            <Menu
-            anchorEl={anchorEl}
-            onClose={handleAvatarMenuClose}
-            id="user-menu"
-            open={avatarMenu}
-            >
-              <MenuItem>
-              프로필
-              </MenuItem>
-              <MenuItem
-              onClick={()=>AvatarLogoutButton()}>
-              로그아웃
-              </MenuItem>
-            </Menu>
-                </>
-                
-            ) : (
-                <>
-                <Button
-                 variant="contained"
-                 onClick={()=>navigate('/login')}>
-                    로그인
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={()=>navigate('/Register')}>
-                    회원가입
-                </Button>
-                </>
-            )}
-            
-          </Box>
+          <HeaderUserInfo />
         </Toolbar>
 
       </AppBar>
