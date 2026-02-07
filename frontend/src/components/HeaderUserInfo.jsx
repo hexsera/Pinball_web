@@ -53,6 +53,7 @@ function HeaderUserInfo() {
             open={avatarMenu}
           >
             <MenuItem>프로필</MenuItem>
+            <MenuItem>페이지 이동</MenuItem>
             <MenuItem onClick={() => AvatarLogoutButton()}>로그아웃</MenuItem>
           </Menu>
         </>
