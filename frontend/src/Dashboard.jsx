@@ -47,6 +47,7 @@ import { useAuth } from './AuthContext';
 
 import Pinball from './Pinball';
 import UserInfo from './UserInfo';
+import FriendPage from './FriendPage';
 
 const drawerWidth = 260;
 
@@ -62,6 +63,7 @@ function Maindashboard() {
 
   const [showPinball, setShowPinball] = useState(false);
   const [showUserInfo, setShowUserInfo] = useState(false);
+  const [showFriend, setShowFriend] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [monthlyRankingData, setMonthlyRankingData] = useState([]);
@@ -147,12 +149,14 @@ function Maindashboard() {
     {
         setShowPinball(false);
         setShowUserInfo(false);
+        setShowFriend(false);
     }
 
     if (itemtext == '게임하기')
     {
       setShowPinball(true);
       setShowUserInfo(false);
+      setShowFriend(false);
     }
 
     if (itemtext == '친구')
@@ -160,6 +164,12 @@ function Maindashboard() {
       if (isLoggedIn == false)
       {
         navigate('/login')
+      }
+      else
+      {
+        setShowPinball(false);
+        setShowUserInfo(false);
+        setShowFriend(true);
       }
     }
     if (itemtext == '소식')
@@ -183,6 +193,7 @@ function Maindashboard() {
       {
         setShowPinball(false);
         setShowUserInfo(true);
+        setShowFriend(false);
       }
     }
   }
@@ -557,7 +568,7 @@ function Maindashboard() {
       >
       <Toolbar />
       <Container maxWidth="xl">
-        {showPinball ? <Pinball /> : showUserInfo ? <UserInfo /> : mainele}
+        {showPinball ? <Pinball /> : showUserInfo ? <UserInfo /> : showFriend ? <FriendPage /> : mainele}
       </Container>
       </Box>
     </Box>
