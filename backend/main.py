@@ -10,25 +10,30 @@ from auth import verify_api_key
 from seed import seed_admin
 
 
-# 애플리케이션 시작 시 DB 연결 확인
-if not wait_for_db():
-    raise Exception("Database connection failed after retries")
+def startup():
+    """애플리케이션 시작 시 DB 초기화 및 시딩"""
+    # 애플리케이션 시작 시 DB 연결 확인
+    if not wait_for_db():
+        raise Exception("Database connection failed after retries")
 
-# 모든 테이블 생성 (존재하지 않는 경우에만)
-print("Creating database tables...")
-Base.metadata.create_all(bind=engine)
-print("Database tables created successfully")
+    # 모든 테이블 생성 (존재하지 않는 경우에만)
+    print("Creating database tables...")
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully")
+
+    # Data Seeding
+    print("Starting data seeding...")
+    db = SessionLocal()
+    try:
+        seed_admin(db)
+    finally:
+        db.close()
+    print("Data seeding completed")
 
 
-
-# Data Seeding
-print("Starting data seeding...")
-db = SessionLocal()
-try:
-    seed_admin(db)
-finally:
-    db.close()
-print("Data seeding completed")
+import os
+if os.getenv("TESTING") != "1":
+    startup()
 
 app = FastAPI(title="Hexsera API", version="1.0.0")
 
