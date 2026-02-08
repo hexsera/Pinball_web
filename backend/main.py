@@ -5,7 +5,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from database import wait_for_db, engine, Base, get_db, SessionLocal
-from models import User, Score, Friendship, MonthlyScore, GameVisit
+from models import User, Score, Friendship, MonthlyScore, GameVisit, HighScore
 from auth import verify_api_key
 from seed import seed_admin
 
@@ -275,9 +275,11 @@ class HighScoreCreate(BaseModel):
     score: int
 
 class HighScoreResponse(BaseModel):
+    id: int
     user_id: int
     score: int
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
@@ -782,7 +784,7 @@ def delete_monthly_score(
 
 # ==================== High Score API ====================
 
-""" @app.post("/api/v1/high-scores", response_model=HighScoreResponse, status_code=status.HTTP_201_CREATED)
+@app.post("/api/v1/high-scores", response_model=HighScoreResponse, status_code=status.HTTP_201_CREATED)
 def create_or_update_high_score(payload: HighScoreCreate, db: Session = Depends(get_db)):
     # 1. 기존 기록이 있는지 확인
     existing_score = db.query(HighScore).filter(HighScore.user_id == payload.user_id).first()
@@ -801,34 +803,25 @@ def create_or_update_high_score(payload: HighScoreCreate, db: Session = Depends(
         existing_score.score = payload.score
         db.commit()
         db.refresh(existing_score)
-    
+
     # 4. 새 점수가 낮더라도 201 상태코드와 함께 기존(혹은 업데이트된) 데이터를 반환
-    return existing_score """
-    
-from typing import Dict
-fake_db: Dict[int, dict] = {}
+    return existing_score
 
-@app.post("/api/v1/high-scores", status_code=201)
-def create_or_update_high_score(data: HighScoreCreate):
-    user_id = data.user_id
-    new_score = data.score
 
-    # 1. 기존 기록이 있는지 확인
-    if user_id in fake_db:
-        # 2. 더 높은 점수일 때만 업데이트 (UPDATE)
-        if new_score > fake_db[user_id]["score"]:
-            fake_db[user_id]["score"] = new_score
-            # created_at은 원래 생성 시점 유지 혹은 갱신 (테스트 요구사항에 맞춰)
-    else:
-        # 3. 최초 기록 생성 (INSERT)
-        fake_db[user_id] = {
-            "user_id": user_id,
-            "score": new_score,
-            "created_at": datetime.utcnow().isoformat()
-        }
+@app.get("/api/v1/high-scores", response_model=HighScoreResponse)
+def get_high_score(user_id: int, db: Session = Depends(get_db)):
+    """사용자의 개인 최고 기록 조회"""
+    # user_id 음수 검증
+    if user_id < 0:
+        raise HTTPException(status_code=422, detail="user_id must be positive")
 
-    return fake_db[user_id]
+    # DB에서 조회
+    high_score = db.query(HighScore).filter(HighScore.user_id == user_id).first()
 
+    if not high_score:
+        raise HTTPException(status_code=404, detail="High score not found")
+
+    return high_score
 
 
 # ==================== Game Visit API ====================

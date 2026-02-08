@@ -68,3 +68,156 @@ def test_create_high_score_without_user_id(client, db_session):
     )
 
     assert response.status_code == 422
+
+
+# ===== GET API 테스트 (개인 최고기록 조회) =====
+
+def test_get_high_score_returns_200_for_existing_user(client, db_session):
+    """존재하는 사용자의 최고 기록 조회 시 200 상태 코드 반환"""
+    # Given: user_id=1인 점수 기록이 DB에 존재
+    client.post("/api/v1/high-scores", json={"user_id": 1, "score": 15000})
+
+    # When: GET /api/v1/high-scores?user_id=1 요청
+    response = client.get("/api/v1/high-scores?user_id=1")
+
+    # Then: 200 OK 응답
+    assert response.status_code == 200
+
+
+def test_get_high_score_returns_score_data(client, db_session):
+    """응답 본문에 점수 데이터 포함"""
+    # Given: user_id=1, score=15000 기록이 DB에 존재
+    client.post("/api/v1/high-scores", json={"user_id": 1, "score": 15000})
+
+    # When: GET /api/v1/high-scores?user_id=1 요청
+    response = client.get("/api/v1/high-scores?user_id=1")
+
+    # Then: response.json()에 score 필드가 15000
+    data = response.json()
+    assert data["score"] == 15000
+
+
+def test_get_high_score_returns_user_id(client, db_session):
+    """응답 본문에 user_id 포함"""
+    # Given: user_id=1 기록이 DB에 존재
+    client.post("/api/v1/high-scores", json={"user_id": 1, "score": 15000})
+
+    # When: GET /api/v1/high-scores?user_id=1 요청
+    response = client.get("/api/v1/high-scores?user_id=1")
+
+    # Then: response.json()에 user_id 필드가 1
+    data = response.json()
+    assert data["user_id"] == 1
+
+
+def test_get_high_score_returns_created_at(client, db_session):
+    """응답 본문에 기록 생성 시각 포함"""
+    # Given: user_id=1 기록이 DB에 존재
+    client.post("/api/v1/high-scores", json={"user_id": 1, "score": 15000})
+
+    # When: GET /api/v1/high-scores?user_id=1 요청
+    response = client.get("/api/v1/high-scores?user_id=1")
+
+    # Then: response.json()에 created_at 필드가 존재하고 datetime 형식
+    data = response.json()
+    assert "created_at" in data
+    assert isinstance(data["created_at"], str)  # ISO 8601 문자열
+
+
+def test_get_high_score_returns_updated_at(client, db_session):
+    """응답 본문에 기록 갱신 시각 포함"""
+    # Given: user_id=1 기록이 DB에 존재
+    client.post("/api/v1/high-scores", json={"user_id": 1, "score": 15000})
+
+    # When: GET /api/v1/high-scores?user_id=1 요청
+    response = client.get("/api/v1/high-scores?user_id=1")
+
+    # Then: response.json()에 updated_at 필드가 존재하고 datetime 형식
+    data = response.json()
+    assert "updated_at" in data
+    assert isinstance(data["updated_at"], str)  # ISO 8601 문자열
+
+
+def test_get_high_score_returns_id(client, db_session):
+    """응답 본문에 고유 ID 포함"""
+    # Given: user_id=1 기록이 DB에 존재
+    client.post("/api/v1/high-scores", json={"user_id": 1, "score": 15000})
+
+    # When: GET /api/v1/high-scores?user_id=1 요청
+    response = client.get("/api/v1/high-scores?user_id=1")
+
+    # Then: response.json()에 id 필드가 존재하고 양의 정수
+    data = response.json()
+    assert "id" in data
+    assert isinstance(data["id"], int)
+    assert data["id"] > 0
+
+
+def test_get_high_score_returns_404_for_nonexistent_user(client, db_session):
+    """존재하지 않는 사용자 조회 시 404 반환"""
+    # Given: user_id=9999 기록이 DB에 없음
+
+    # When: GET /api/v1/high-scores?user_id=9999 요청
+    response = client.get("/api/v1/high-scores?user_id=9999")
+
+    # Then: 404 Not Found 응답
+    assert response.status_code == 404
+
+
+def test_get_high_score_returns_error_message_for_nonexistent_user(client, db_session):
+    """404 응답에 명확한 에러 메시지 포함"""
+    # Given: user_id=9999 기록이 DB에 없음
+
+    # When: GET /api/v1/high-scores?user_id=9999 요청
+    response = client.get("/api/v1/high-scores?user_id=9999")
+
+    # Then: response.json()['detail']에 "High score not found" 메시지
+    data = response.json()
+    assert "detail" in data
+    assert "not found" in data["detail"].lower()
+
+
+def test_get_high_score_returns_422_for_missing_user_id(client, db_session):
+    """user_id 파라미터 누락 시 422 반환"""
+    # Given: 파라미터 없음
+
+    # When: GET /api/v1/high-scores 요청 (쿼리 파라미터 없음)
+    response = client.get("/api/v1/high-scores")
+
+    # Then: 422 Unprocessable Entity 응답
+    assert response.status_code == 422
+
+
+def test_get_high_score_returns_422_for_invalid_user_id_type(client, db_session):
+    """user_id가 정수가 아닐 때 422 반환"""
+    # Given: user_id="abc" (문자열)
+
+    # When: GET /api/v1/high-scores?user_id=abc 요청
+    response = client.get("/api/v1/high-scores?user_id=abc")
+
+    # Then: 422 Unprocessable Entity 응답
+    assert response.status_code == 422
+
+
+def test_get_high_score_returns_zero_score(client, db_session):
+    """점수가 0인 경우도 정상 반환"""
+    # Given: user_id=2, score=0 기록이 DB에 존재
+    client.post("/api/v1/high-scores", json={"user_id": 2, "score": 0})
+
+    # When: GET /api/v1/high-scores?user_id=2 요청
+    response = client.get("/api/v1/high-scores?user_id=2")
+
+    # Then: response.json()['score']가 0
+    data = response.json()
+    assert data["score"] == 0
+
+
+def test_get_high_score_returns_negative_user_id_422(client, db_session):
+    """음수 user_id는 422 반환"""
+    # Given: user_id=-1
+
+    # When: GET /api/v1/high-scores?user_id=-1 요청
+    response = client.get("/api/v1/high-scores?user_id=-1")
+
+    # Then: 422 Unprocessable Entity 응답
+    assert response.status_code == 422
