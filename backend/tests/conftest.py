@@ -52,3 +52,33 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def sample_users(db_session):
+    """테스트용 사용자 2명 생성"""
+    from models import User
+    from datetime import date
+
+    user1 = User(
+        email="user1@test.com",
+        nickname="User1",
+        password="password1",
+        birth_date=date(2000, 1, 1),
+        role="user"
+    )
+    user2 = User(
+        email="user2@test.com",
+        nickname="User2",
+        password="password2",
+        birth_date=date(2000, 1, 2),
+        role="user"
+    )
+
+    db_session.add(user1)
+    db_session.add(user2)
+    db_session.commit()
+    db_session.refresh(user1)
+    db_session.refresh(user2)
+
+    return [user1, user2]

@@ -471,6 +471,21 @@ def create_friend_request(request: FriendRequestRequest, db: Session = Depends(g
             detail="Cannot send friend request to yourself"
         )
 
+    # FK 제약조건 검증: 두 사용자가 모두 존재하는지 확인 (1회 쿼리)
+    users = db.query(User).filter(User.id.in_([request.requester_id, request.receiver_id])).all()
+    user_ids = {user.id for user in users}
+
+    if request.requester_id not in user_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Requester user not found"
+        )
+    if request.receiver_id not in user_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Receiver user not found"
+        )
+
     # 중복 검증: A→B 요청이 이미 존재하는지 확인
     existing_request = db.query(Friendship).filter(
         Friendship.requester_id == request.requester_id,
