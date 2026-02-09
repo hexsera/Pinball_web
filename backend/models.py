@@ -48,7 +48,7 @@ class MonthlyScore(Base):
     __tablename__ = "monthly_scores"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     nickname = Column(String(100), nullable=False)
     score = Column(Integer, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
@@ -69,7 +69,7 @@ class HighScore(Base):
     __tablename__ = "high_scores"
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    user_id = Column(Integer, nullable=False, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True, index=True)
     score = Column(Integer, nullable=False, index=True)
     created_at = Column(DateTime, default=func.now(), nullable=False, index=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)

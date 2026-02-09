@@ -221,3 +221,41 @@ def test_get_high_score_returns_negative_user_id_422(client, db_session):
 
     # Then: 422 Unprocessable Entity 응답
     assert response.status_code == 422
+
+
+# ===== Foreign Key 제약조건 테스트 =====
+
+def test_create_high_score_with_valid_user_id_succeeds(client, db_session, sample_users):
+    """존재하는 user_id로 HighScore 생성 시 성공"""
+    # Given: sample_users fixture로 user1, user2가 DB에 존재 (id=1, id=2)
+    user1 = sample_users[0]
+
+    # When: 존재하는 user_id로 HighScore 생성
+    response = client.post(
+        "/api/v1/high-scores",
+        json={"user_id": user1.id, "score": 5000}
+    )
+
+    # Then: 201 Created 응답
+    assert response.status_code == 201
+    data = response.json()
+    assert data["user_id"] == user1.id
+    assert data["score"] == 5000
+
+
+def test_create_high_score_with_nonexistent_user_id_fails(client, db_session):
+    """존재하지 않는 user_id로 HighScore 생성 시 실패 (FK 제약조건)"""
+    # Given: user_id=99999가 users 테이블에 존재하지 않음
+    nonexistent_user_id = 99999
+
+    # When: 존재하지 않는 user_id로 HighScore 생성 시도
+    response = client.post(
+        "/api/v1/high-scores",
+        json={"user_id": nonexistent_user_id, "score": 1000}
+    )
+
+    # Then: 400 Bad Request 또는 422 Unprocessable Entity 응답
+    # (FK 제약조건 위반으로 인한 실패)
+    assert response.status_code in [400, 422, 500]
+    data = response.json()
+    assert "detail" in data

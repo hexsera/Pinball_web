@@ -4,6 +4,7 @@ from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
+from sqlalchemy.exc import IntegrityError
 from database import wait_for_db, engine, Base, get_db, SessionLocal
 from models import User, Score, Friendship, MonthlyScore, GameVisit, HighScore
 from auth import verify_api_key
@@ -801,28 +802,33 @@ def delete_monthly_score(
 
 @app.post("/api/v1/high-scores", response_model=HighScoreResponse, status_code=status.HTTP_201_CREATED)
 def create_or_update_high_score(payload: HighScoreCreate, db: Session = Depends(get_db)):
-    # 1. 기존 기록이 있는지 확인
-    existing_score = db.query(HighScore).filter(HighScore.user_id == payload.user_id).first()
+    try:
+        # 1. 기존 기록이 있는지 확인
+        existing_score = db.query(HighScore).filter(HighScore.user_id == payload.user_id).first()
 
-    if not existing_score:
-        # 2. 기록이 없으면 새로 생성 (최초 최고 기록)
-        new_high_score = HighScore(user_id=payload.user_id, score=payload.score)
-        db.add(new_high_score)
-        db.commit()
-        db.refresh(new_high_score)
-        return new_high_score
+        if not existing_score:
+            # 2. 기록이 없으면 새로 생성 (최초 최고 기록)
+            new_high_score = HighScore(user_id=payload.user_id, score=payload.score)
+            db.add(new_high_score)
+            db.commit()
+            db.refresh(new_high_score)
+            return new_high_score
 
-    # 3. 기존 기록이 있다면 점수 비교
-    if payload.score > existing_score.score:
-        # 새 점수가 더 높을 때만 업데이트
-        existing_score.score = payload.score
-        db.commit()
-        db.refresh(existing_score)
+        # 3. 기존 기록이 있다면 점수 비교
+        if payload.score > existing_score.score:
+            # 새 점수가 더 높을 때만 업데이트
+            existing_score.score = payload.score
+            db.commit()
+            db.refresh(existing_score)
 
-    # 4. 새 점수가 낮더라도 201 상태코드와 함께 기존(혹은 업데이트된) 데이터를 반환
-    return existing_score
-
-
+        # 4. 새 점수가 낮더라도 201 상태코드와 함께 기존(혹은 업데이트된) 데이터를 반환
+        return existing_score
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="존재하지 않는 사용자 ID입니다"
+        )
 @app.get("/api/v1/high-scores", response_model=HighScoreResponse)
 def get_high_score(user_id: int, db: Session = Depends(get_db)):
     """사용자의 개인 최고 기록 조회"""
