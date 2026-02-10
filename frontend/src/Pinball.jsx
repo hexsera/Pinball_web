@@ -8,6 +8,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from './AuthContext';
 import { STAGE_CONFIGS } from './stageConfigs';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from './pinballSound';
+import { getRestartState } from './pinballRestart';
 
 function Pinball() {
   const { user } = useAuth();
@@ -23,6 +24,9 @@ function Pinball() {
   const scoreRef = useRef(0);
   const stageRef = useRef(1);
   const stageBodiesRef = useRef([]);
+  const engineRef = useRef(null);
+  const loadStageMapRef = useRef(null);
+  const plungerRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -68,6 +72,45 @@ function Pinball() {
       setBestScore(response.data.score);
     } catch (error) {
       console.error('Failed to submit score:', error);
+    }
+  };
+
+  // 재시작 핸들러
+  const handleRestart = () => {
+    const { overlayState, score, lives, stage } = getRestartState();
+
+    // React 상태 초기화
+    setOverlayState(overlayState);
+    setScore(score);
+    setLives(lives);
+    setStage(stage);
+
+    // ref 초기화
+    scoreRef.current = score;
+    livesRef.current = lives;
+    stageRef.current = stage;
+
+    // Matter.js 물리 상태 초기화
+    const ball = ballRef.current;
+    const engine = engineRef.current;
+    if (ball && engine) {
+      // 공을 World에 다시 추가 (게임오버 시 제거됐으므로)
+      const World = Matter.World;
+      const Body = Matter.Body;
+      World.add(engine.world, ball);
+      Body.setPosition(ball, { x: 662, y: 1020 });
+      Body.setVelocity(ball, { x: 0, y: 0 });
+      Body.setAngularVelocity(ball, 0);
+    }
+
+    // plunger 원래 위치로 복귀
+    if (plungerRef.current && engineRef.current) {
+      Matter.Body.setPosition(plungerRef.current, { x: 662, y: 1050 });
+    }
+
+    // 스테이지 1 맵 다시 로딩
+    if (loadStageMapRef.current) {
+      loadStageMapRef.current(1);
     }
   };
 
@@ -152,6 +195,7 @@ function Pinball() {
             y: 1
         }
     });
+    engineRef.current = engine;
 
     // 화면에 보여주기 위한 렌더러 만들기
     const render = Render.create({
@@ -241,6 +285,7 @@ function Pinball() {
       label: 'plunger',
       render: { fillStyle: '#c0c0c0' }
     });
+    plungerRef.current = plunger;
 
     // 핀볼 공 만들기 (Plunger lane에서 시작)
     const ball = Bodies.circle(662, 1020, 15, {
@@ -335,6 +380,7 @@ function Pinball() {
       World.add(engine.world, newBodies);
       stageBodiesRef.current = newBodies;
     };
+    loadStageMapRef.current = loadStageMap;
 
     // 세계에 모든 물체 추가
     World.add(engine.world, [
@@ -803,7 +849,7 @@ display: 'flex',
                     </Typography>
                     <Button
                       variant="contained"
-                      
+                      onClick={handleRestart}
                       sx={{ fontSize: '1.2rem', padding: '10px 30px' }}
                     >
                       다시 시작
