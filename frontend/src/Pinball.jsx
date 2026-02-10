@@ -6,7 +6,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from './AuthContext';
-import { STAGE_CONFIGS } from './stageConfigs';
+import { STAGE_CONFIGS, BUMPER_RADIUS } from './stageConfigs';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from './pinballSound';
 import { getRestartState } from './pinballRestart';
 
@@ -376,6 +376,7 @@ function Pinball() {
         newBodies.push(body);
       });
 
+
       // World에 추가
       World.add(engine.world, newBodies);
       stageBodiesRef.current = newBodies;
@@ -544,6 +545,68 @@ function Pinball() {
       }
     });
 
+    // 범퍼 네온 글로우 커스텀 렌더링
+    Events.on(render, 'afterRender', () => {
+      const ctx = render.context;
+      const bumperBodies = stageBodiesRef.current.filter(b => b.label === 'bumper');
+
+      bumperBodies.forEach((bumper) => {
+        const { x, y } = bumper.position;
+        const r = BUMPER_RADIUS;
+
+        ctx.save();
+
+        // 외곽 글로우 레이어 1 (가장 넓게 번짐)
+        ctx.beginPath();
+        ctx.arc(x, y, r + 12, 0, Math.PI * 2);
+        ctx.shadowColor = '#ff2244';
+        ctx.shadowBlur = 30;
+        ctx.strokeStyle = 'rgba(255, 34, 68, 0.25)';
+        ctx.lineWidth = 8;
+        ctx.stroke();
+
+        // 외곽 글로우 레이어 2 (중간)
+        ctx.beginPath();
+        ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+        ctx.shadowColor = '#ff4466';
+        ctx.shadowBlur = 20;
+        ctx.strokeStyle = 'rgba(255, 80, 100, 0.6)';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // 범퍼 몸체 (방사형 그라디언트)
+        const bodyGrad = ctx.createRadialGradient(x, y - r * 0.3, r * 0.05, x, y, r);
+        bodyGrad.addColorStop(0, '#ff6688');   // 중앙 밝은 핑크
+        bodyGrad.addColorStop(0.5, '#cc1133'); // 중간 빨강
+        bodyGrad.addColorStop(1, '#660011');   // 외곽 짙은 빨강
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.shadowColor = '#ff2244';
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = bodyGrad;
+        ctx.fill();
+
+        // 내부 선명한 테두리 링
+        ctx.beginPath();
+        ctx.arc(x, y, r - 2, 0, Math.PI * 2);
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ff8899';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // 중앙 하이라이트 (상단 반사광)
+        const highlightGrad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.35, 1, x, y, r * 0.55);
+        highlightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.75)');
+        highlightGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.55, 0, Math.PI * 2);
+        ctx.fillStyle = highlightGrad;
+        ctx.fill();
+
+        ctx.restore();
+      });
+    });
+
     // 엔진과 렌더러 시작
     const runner = Runner.create();
     Runner.run(runner, engine);
@@ -686,6 +749,7 @@ if (sceneRef.current) {
   }
   Events.off(engine, 'beforeUpdate');
   Events.off(engine, 'collisionStart');
+  Events.off(render, 'afterRender');
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('keyup', handleKeyUp);
   if (sceneRef.current) {
