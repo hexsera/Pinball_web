@@ -7,7 +7,7 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from './AuthContext';
 import { STAGE_CONFIGS } from './stageConfigs';
-import { playFlipperSound, playLifeDownSound } from './pinballSound';
+import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from './pinballSound';
 
 function Pinball() {
   const { user } = useAuth();
@@ -16,6 +16,8 @@ function Pinball() {
   const hitSoundRef = useRef(null);
   const fliperSoundRef = useRef(null);
   const lifeDownSoundRef = useRef(null);
+  const gameoverSoundRef = useRef(null);
+  const bumperSoundRef = useRef(null);
   const ballRef = useRef(null);
   const livesRef = useRef(3);
   const scoreRef = useRef(0);
@@ -121,6 +123,16 @@ function Pinball() {
     const lifeDownSound = new Audio('/audio/lifedown_cut.mp3');
     lifeDownSound.volume = 0.7;
     lifeDownSoundRef.current = lifeDownSound;
+
+    // 게임오버 사운드 설정
+    const gameoverSound = new Audio('/audio/gameover.mp3');
+    gameoverSound.volume = 0.7;
+    gameoverSoundRef.current = gameoverSound;
+
+    // 범퍼 사운드 설정
+    const bumperSound = new Audio('/audio/bumper.mp3');
+    bumperSound.volume = 0.7;
+    bumperSoundRef.current = bumperSound;
 
     // Matter.js 모듈 가져오기
     const Engine = Matter.Engine;
@@ -371,6 +383,7 @@ function Pinball() {
         if ((bodyA.label === 'bumper' && bodyB === ball) ||
             (bodyB.label === 'bumper' && bodyA === ball)) {
           console.log('Bumper hit!');
+          playBumperSound(bumperSoundRef.current);
 
           // 충돌 방향 계산 (범퍼 중심 → 공 중심)
           const bumperBody = bodyA.label === 'bumper' ? bodyA : bodyB;
@@ -420,6 +433,7 @@ function Pinball() {
             // 생명이 없으면 공 제거 (게임 오버)
             World.remove(engine.world, ball);
             console.log('Game Over!');
+            playGameOverSound(gameoverSoundRef.current);
             setOverlayState('gameOver');
             submitScore();
           }
@@ -615,6 +629,14 @@ if (sceneRef.current) {
   if (lifeDownSoundRef.current) {
     lifeDownSoundRef.current.pause();
     lifeDownSoundRef.current.currentTime = 0;
+  }
+  if (gameoverSoundRef.current) {
+    gameoverSoundRef.current.pause();
+    gameoverSoundRef.current.currentTime = 0;
+  }
+  if (bumperSoundRef.current) {
+    bumperSoundRef.current.pause();
+    bumperSoundRef.current.currentTime = 0;
   }
   Events.off(engine, 'beforeUpdate');
   Events.off(engine, 'collisionStart');
