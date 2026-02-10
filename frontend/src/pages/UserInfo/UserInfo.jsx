@@ -11,7 +11,7 @@ import {
   DialogActions,
   Alert
 } from '@mui/material';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 
 function UserInfo() {

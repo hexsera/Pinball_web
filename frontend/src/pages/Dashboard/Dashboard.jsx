@@ -43,12 +43,12 @@ import {
   Notifications,
   Mail,
 } from '@mui/icons-material';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
-import Pinball from './Pinball';
-import UserInfo from './UserInfo';
-import FriendPage from './FriendPage';
-import HeaderUserInfo from './components/HeaderUserInfo';
+import Pinball from '../Pinball';
+import UserInfo from '../UserInfo';
+import FriendPage from '../FriendPage';
+import HeaderUserInfo from '../../components/HeaderUserInfo';
 
 const drawerWidth = 260;
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRestartState } from '../pinballRestart'
+import { getRestartState } from '../pages/Pinball/pinballRestart'
 
 describe('getRestartState', () => {
   it('재시작 시 overlayState가 null이 된다', () => {

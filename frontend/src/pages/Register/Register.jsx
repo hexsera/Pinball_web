@@ -65,7 +65,7 @@ function Register() {
     //
   };
 
-  
+
 
   const Register_email_and_name = (
     <>
@@ -167,7 +167,7 @@ function Register() {
         생년월일을 입력 해 주세요.
     </Typography>
 
-            
+
     <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, mt: 1 }}>
         <TextField
             label="연도"
@@ -243,7 +243,7 @@ function Register() {
             }}
           >
             {step[registerStep]}
-            
+
           </Box>
         </Paper>
       </Container>

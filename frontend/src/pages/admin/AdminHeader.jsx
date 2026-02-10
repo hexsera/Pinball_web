@@ -1,5 +1,5 @@
 import { AppBar, Toolbar, Box } from '@mui/material';
-import HeaderUserInfo from '../components/HeaderUserInfo';
+import HeaderUserInfo from '../../components/HeaderUserInfo';
 
 const drawerWidth = 260;
 

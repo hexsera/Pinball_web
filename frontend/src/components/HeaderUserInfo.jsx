@@ -5,7 +5,7 @@ import {
   Button, Menu, MenuItem
 } from '@mui/material';
 import { Notifications, Mail } from '@mui/icons-material';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 function HeaderUserInfo() {
   const navigate = useNavigate();

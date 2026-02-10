@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import FriendPage from '../FriendPage';
+import FriendPage from '../pages/FriendPage';
 import axios from 'axios';
 
 // axios mock

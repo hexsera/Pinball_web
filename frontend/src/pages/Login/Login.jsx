@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, TextField, Button, Container, Typography, Paper, Alert, CardMedia} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 
 function Login() {

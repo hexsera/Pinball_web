@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import HeaderUserInfo from '../components/HeaderUserInfo';
-import { AuthProvider } from '../AuthContext';
+import { AuthProvider } from '../contexts/AuthContext';
 
 describe('HeaderUserInfo 컴포넌트', () => {
   beforeEach(() => {

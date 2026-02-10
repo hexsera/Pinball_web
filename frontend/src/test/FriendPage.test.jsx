@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import FriendPage from '../FriendPage';
-import Maindashboard from '../Dashboard';
-import { AuthProvider } from '../AuthContext';
+import FriendPage from '../pages/FriendPage';
+import Maindashboard from '../pages/Dashboard';
+import { AuthProvider } from '../contexts/AuthContext';
 
 describe('FriendPage 컴포넌트', () => {
   it('FriendPage가 렌더링된다', () => {

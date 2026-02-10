@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from '../pinballSound'
+import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from '../pages/Pinball/pinballSound'
 
 describe('playFlipperSound', () => {
   it('플리퍼 버튼을 누르면 flipper 사운드의 play()가 호출된다', () => {

@@ -5,7 +5,7 @@ import { Button, Box, Typography, IconButton } from '@mui/material';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { STAGE_CONFIGS, BUMPER_RADIUS } from './stageConfigs';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from './pinballSound';
 import { getRestartState } from './pinballRestart';

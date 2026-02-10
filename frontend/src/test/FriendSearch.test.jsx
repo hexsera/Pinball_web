@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import FriendPage from '../FriendPage';
+import FriendPage from '../pages/FriendPage';
 
 describe('FriendPage 검색기능', () => {
   it('검색바가 존재한다', () => {

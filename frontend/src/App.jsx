@@ -1,14 +1,12 @@
-import Pinball from './Pinball';
-import Login from './Login';
-import Dashboard from './Dashboard';
+import Pinball from './pages/Pinball';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import { AuthProvider } from './contexts';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Register from './Register';
-import AdminPage from './admin/AdminPage';
-import AdminUserPage from './admin/AdminUserPage';
-import AdminStatisticsPage from './admin/AdminStatisticsPage';
+import Register from './pages/Register';
+import { AdminPage, AdminUserPage, AdminStatisticsPage } from './pages/admin';
 
 const theme = createTheme();
 
