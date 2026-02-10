@@ -1,7 +1,7 @@
 import Pinball from './Pinball';
 import Login from './Login';
 import Dashboard from './Dashboard';
-import { AuthProvider } from './AuthContext';
+import { AuthProvider } from './contexts';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
