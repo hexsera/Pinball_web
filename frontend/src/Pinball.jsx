@@ -9,6 +9,7 @@ import { useAuth } from './AuthContext';
 import { STAGE_CONFIGS, BUMPER_RADIUS } from './stageConfigs';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from './pinballSound';
 import { getRestartState } from './pinballRestart';
+import WallOverlay from './WallOverlay';
 
 function Pinball() {
   const { user } = useAuth();
@@ -856,11 +857,15 @@ display: 'flex',
             position: 'relative',
             width: '700px',
             height: '1100px',
+            overflow: 'hidden',
             backgroundImage: 'url(/images/pinball_back.png)',
             backgroundSize: '100% 100%',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
           }}>
+            {/* CSS 벽 오버레이 (Canvas 아래, z-index:1) */}
+            <WallOverlay />
+
             {/* 점수 컴포넌트 (게임 영역 내부, 반투명 흰색) */}
             <Box sx={{
               position: 'absolute',
@@ -881,7 +886,7 @@ display: 'flex',
               </Typography>
             </Box>
 
-            <div ref={sceneRef} />
+            <div ref={sceneRef} style={{ position: 'relative', zIndex: 2 }} />
 
             {/* 인게임 오버레이 (게임 캔버스 영역 위) */}
             {overlayState && (
