@@ -222,7 +222,7 @@ function Pinball() {
     });
 
     // rightWall2: y=200~1100 구간만 벽 유지 (상단 160px 개방하여 Plunger lane 출구 생성)
-    const rightWall2 = Bodies.rectangle(630, 650, 30, 900, {
+    const rightWall2 = Bodies.rectangle(630, 700, 30, 850, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
@@ -552,7 +552,7 @@ function Pinball() {
 
       bumperBodies.forEach((bumper) => {
         const { x, y } = bumper.position;
-        const r = BUMPER_RADIUS;
+        const r = bumper.circleRadius || BUMPER_RADIUS;
 
         ctx.save();
 
