@@ -7,12 +7,15 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from './AuthContext';
 import { STAGE_CONFIGS } from './stageConfigs';
+import { playFlipperSound, playLifeDownSound } from './pinballSound';
 
 function Pinball() {
   const { user } = useAuth();
   const sceneRef = useRef(null);
   const bgmRef = useRef(null);
   const hitSoundRef = useRef(null);
+  const fliperSoundRef = useRef(null);
+  const lifeDownSoundRef = useRef(null);
   const ballRef = useRef(null);
   const livesRef = useRef(3);
   const scoreRef = useRef(0);
@@ -108,6 +111,16 @@ function Pinball() {
     const hitSound = new Audio('/audio/ball_hit.wav');
     hitSound.volume = 0.5;
     hitSoundRef.current = hitSound;
+
+    // 플리퍼 사운드 설정
+    const fliperSound = new Audio('/audio/fliper.mp3');
+    fliperSound.volume = 0.5;
+    fliperSoundRef.current = fliperSound;
+
+    // 라이프다운 사운드 설정
+    const lifeDownSound = new Audio('/audio/lifedown_cut.mp3');
+    lifeDownSound.volume = 0.7;
+    lifeDownSoundRef.current = lifeDownSound;
 
     // Matter.js 모듈 가져오기
     const Engine = Matter.Engine;
@@ -386,6 +399,7 @@ function Pinball() {
           const newLives = livesRef.current - 1;
           livesRef.current = newLives;
           setLives(newLives);
+          playLifeDownSound(lifeDownSoundRef.current);
 
           // livesRef로 최신 lives 값 확인
           if (livesRef.current > 0) {
@@ -479,10 +493,12 @@ function Pinball() {
   if (event.key === 'ArrowLeft') {
     console.log('왼쪽 방향키 눌림');
     isLeftKeyPressed = true;
+    playFlipperSound(fliperSoundRef.current);
   }
   if (event.key === 'ArrowRight') {
     console.log('오른쪽 방향키 눌림');
     isRightKeyPressed = true;
+    playFlipperSound(fliperSoundRef.current);
   }
   // 스페이스바로 Plunger 충전
   if (event.key === ' ' || event.code === 'Space') {
@@ -530,9 +546,11 @@ const handleTouchStart = (event) => {
   if (touchX < centerX) {
     console.log('왼쪽 터치');
     isLeftKeyPressed = true;
+    playFlipperSound(fliperSoundRef.current);
   } else {
     console.log('오른쪽 터치');
     isRightKeyPressed = true;
+    playFlipperSound(fliperSoundRef.current);
   }
 };
 
@@ -589,6 +607,14 @@ if (sceneRef.current) {
   if (hitSoundRef.current) {
     hitSoundRef.current.pause();
     hitSoundRef.current.currentTime = 0;
+  }
+  if (fliperSoundRef.current) {
+    fliperSoundRef.current.pause();
+    fliperSoundRef.current.currentTime = 0;
+  }
+  if (lifeDownSoundRef.current) {
+    lifeDownSoundRef.current.pause();
+    lifeDownSoundRef.current.currentTime = 0;
   }
   Events.off(engine, 'beforeUpdate');
   Events.off(engine, 'collisionStart');
