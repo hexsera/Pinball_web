@@ -5,6 +5,7 @@ import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper
 } from '@mui/material';
+import Aurora from '../../components/Aurora/Aurora';
 
 const COLORS = {
   bg: '#0F172A',
@@ -27,11 +28,23 @@ function HomePage() {
   ]);
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: COLORS.bg, display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ position: 'relative', minHeight: '100vh', backgroundColor: COLORS.bg, display: 'flex', flexDirection: 'column' }}>
+      {/* Aurora 배경 */}
+      <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden'}}>
+        <Aurora
+          colorStops={['#467ee5', '#7C3AED', '#908aff']}
+          amplitude={1.2}
+          speed={1.2}
+          blend={0.35}
+        />
+      </Box>
+
+      {/* 기존 콘텐츠 */}
+      <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* 네비게이션 바 */}
       <AppBar position="static" sx={{ backgroundColor: COLORS.card, borderBottom: `1px solid ${COLORS.border}` }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" sx={{ color: COLORS.primary, fontWeight: 'bold' }}>
+          <Typography variant="h6" sx={{ color: COLORS.text, fontWeight: 'bold' }}>
             🎯 HEXSERA PINBALL
           </Typography>
           <Box>
@@ -41,7 +54,7 @@ function HomePage() {
             <Button
               onClick={() => navigate('/login')}
               variant="outlined"
-              sx={{ color: COLORS.primary, borderColor: COLORS.primary, ml: 1 }}
+              sx={{ color: COLORS.text, borderColor: COLORS.text, ml: 1 }}
             >
               로그인
             </Button>
@@ -58,7 +71,7 @@ function HomePage() {
 
       {/* Hero 섹션 */}
       <Container maxWidth="lg" sx={{ flexGrow: 1, overflow: 'hidden' }}>
-      <Grid container spacing={4} sx={{ mt: 4 }}>
+      <Grid container spacing={4} sx={{ mt: 16 }}>
         {/* 좌측: 타이틀 + CTA */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: { md: 6 } }}>
@@ -96,7 +109,7 @@ function HomePage() {
                         {row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : row.rank}
                       </TableCell>
                       <TableCell sx={{ color: COLORS.text, borderColor: COLORS.border }}>{row.nickname}</TableCell>
-                      <TableCell align="right" sx={{ color: COLORS.primary, fontWeight: 'bold', borderColor: COLORS.border }}>
+                      <TableCell align="right" sx={{ color: COLORS.text, fontWeight: 'bold', borderColor: COLORS.border }}>
                         {row.score.toLocaleString()}
                       </TableCell>
                     </TableRow>
@@ -112,6 +125,7 @@ function HomePage() {
       {/* 푸터 */}
       <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 'auto', color: COLORS.subText }}>
         <Typography variant="body2">© 2026 HEXSERA</Typography>
+      </Box>
       </Box>
     </Box>
   );
