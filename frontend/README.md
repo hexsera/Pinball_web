@@ -1,16 +1,31 @@
 # Frontend README
 
+<!--
+## README 작성 요령 (Claude를 위한 가이드)
+
+이 README는 AI가 프론트엔드를 빠르게 탐색·이해하기 위한 네비게이션 문서다.
+세부 구현은 각 파일을 직접 열어서 읽도록 유도하는 것이 목적이다.
+
+### 작성 원칙
+- 각 파일 설명은 1줄로 제한. "무엇을 하는 파일인가"만 기술
+- 구현 세부 사항(코드 스니펫, 동작 흐름, 함수 시그니처 등)은 적지 않는다
+- API 엔드포인트는 어떤 파일에서 사용하는지 식별용으로만 기재
+- 주의사항은 "이 프로젝트에서만 특이한 것"만 기재 (일반적인 라이브러리 사용법 제외)
+
+### 업데이트 시점
+업무일지를 바탕으로 README를 업데이트할 때:
+1. 신규 파일이 생겼으면 디렉토리 구조에 1줄 추가
+2. 라우팅이 변경됐으면 라우팅 테이블 수정
+3. 기존에 없던 "특이한 주의사항"이 생겼으면 주의사항에 추가
+4. 그 외 세부 변경(구현 방식, 내부 로직 등)은 README에 기록하지 않는다
+-->
+
+
 React + Vite 기반 핀볼 게임 웹 플랫폼 프론트엔드.
 
 ## 기술 스택
 
-- **React 19** (함수형 컴포넌트, Hooks)
-- **Vite** (빌드 도구, 개발 서버)
-- **Material-UI (MUI)** (UI 컴포넌트)
-- **React Router v6** (클라이언트 라우팅)
-- **Axios** (HTTP 요청)
-- **Matter.js** (핀볼 게임 물리 엔진)
-- **Vitest** (테스트)
+- React 19, Vite, Material-UI v7, React Router v6, Axios, Matter.js, ogl, Vitest
 
 ## 개발 명령어
 
@@ -21,121 +36,84 @@ npm run build   # 프로덕션 빌드 → dist/
 npm test        # Vitest 테스트 실행
 ```
 
-## 디렉토리 구조
-
-```
-src/
-├── App.jsx                    # 루트 컴포넌트. React Router 라우팅 정의, AuthProvider 래핑
-├── main.jsx                   # Vite 엔트리포인트
-│
-├── contexts/
-│   ├── AuthContext.jsx        # 전역 인증 상태 (AuthProvider, useAuth)
-│   └── index.js               # barrel export
-│
-├── components/
-│   └── HeaderUserInfo.jsx     # 헤더 우측 유저 정보 영역 (로그인/로그아웃, 알림, 아바타 메뉴)
-│
-├── pages/
-│   ├── Dashboard/
-│   │   ├── Dashboard.jsx      # 메인 대시보드 (사이드바, 헤더 포함). 내부 라우팅으로 Pinball/UserInfo/FriendPage 조건부 렌더링
-│   │   └── index.js
-│   │
-│   ├── Login/
-│   │   ├── Login.jsx          # 로그인 폼. POST /api/v1/login, AuthContext.login() 호출
-│   │   └── index.js
-│   │
-│   ├── Register/
-│   │   ├── Register.jsx       # 3단계 회원가입 폼. POST /api/v1/register
-│   │   └── index.js
-│   │
-│   ├── UserInfo/
-│   │   ├── UserInfo.jsx       # 회원 정보 조회/수정/탈퇴. GET /api/v1/users/{id}
-│   │   └── index.js
-│   │
-│   ├── FriendPage/
-│   │   ├── FriendPage.jsx     # 친구 목록/검색/요청 페이지
-│   │   └── index.js
-│   │
-│   ├── Pinball/
-│   │   ├── Pinball.jsx        # Matter.js 핀볼 게임 본체 (물리 엔진, 플리퍼, 범퍼, 점수, 스테이지)
-│   │   ├── WallOverlay.jsx    # 핀볼 벽 CSS 오버레이 (Matter.js 캔버스 위에 렌더링)
-│   │   ├── stageConfigs.js    # 스테이지별 범퍼 배치 설정, 공유 상수 (BUMPER_RADIUS, BUMPER_OPTIONS 등)
-│   │   ├── pinballSound.js    # 사운드 재생 유틸 함수 (playFlipperSound, playBumperSound 등)
-│   │   ├── pinballRestart.js  # 게임 재시작 시 초기 상태값 반환 (getRestartState)
-│   │   └── index.js
-│   │
-│   └── admin/
-│       ├── AdminPage.jsx      # Admin 전체 레이아웃 (Sidebar + Header + Main 조합)
-│       ├── AdminSidebar.jsx   # Admin 좌측 Drawer 사이드바 (260px)
-│       ├── AdminHeader.jsx    # Admin 상단 AppBar (HeaderUserInfo 포함)
-│       ├── AdminMain.jsx      # Admin 메인 콘텐츠 영역
-│       ├── AdminUserPage.jsx  # Admin 회원 관리 페이지 레이아웃
-│       ├── AdminUserMain.jsx  # Admin 회원 관리 메인 콘텐츠
-│       ├── AdminStatisticsPage.jsx  # Admin 통계 페이지 레이아웃
-│       ├── AdminStatisticsMain.jsx  # Admin 통계 메인 콘텐츠
-│       └── index.js           # barrel export (AdminPage, AdminUserPage, AdminStatisticsPage)
-│
-├── test/
-│   ├── setup.js               # Vitest 전역 설정
-│   ├── sample.test.jsx
-│   ├── PinballSound.test.jsx  # pinballSound.js 단위 테스트
-│   ├── pinball-restart.test.jsx # pinballRestart.js 단위 테스트
-│   ├── FriendPage.test.jsx
-│   ├── FriendList.test.jsx
-│   ├── FriendPageIntegration.test.jsx
-│   ├── FriendRequest.test.jsx
-│   ├── FriendSearch.test.jsx
-│   └── HeaderUserInfo.test.jsx
-```
-
 ## 라우팅
 
 | URL | 컴포넌트 | 설명 |
 |-----|----------|------|
-| `/` | `Dashboard` | 메인 대시보드 |
-| `/login` | `Login` | 로그인 |
-| `/Register` | `Register` | 회원가입 |
+| `/` | `HomePage` | 랜딩 페이지 (Aurora WebGL 배경, 랭킹 테이블) |
+| `/dashboard` | `Dashboard` | 게임 대시보드 (진입 시 Pinball 기본 표시) |
+| `/login` | `Login` | 로그인 → 성공 시 `/dashboard` 이동 |
+| `/Register` | `Register` | 3단계 회원가입 |
 | `/Pinball_test` | `Pinball` | 핀볼 게임 독립 페이지 |
 | `/admin` | `AdminPage` | Admin 메인 |
 | `/admin/users` | `AdminUserPage` | Admin 회원 관리 |
 | `/admin/statistics` | `AdminStatisticsPage` | Admin 통계 |
 
-Dashboard는 URL 변경 없이 내부 상태(`showPinball`, `showUserInfo`, `showFriendPage`)로 Pinball/UserInfo/FriendPage를 조건부 렌더링한다.
+## 디렉토리 구조
 
-## 인증 (AuthContext)
-
-- **저장소**: `localStorage` (`user` 키, `{ id, name }` 형식)
-- **페이지 로드 시**: `useEffect`로 localStorage 복원
-- **제공 값**: `isLoggedIn`, `user`, `login(userData)`, `logout()`
-- **접근**: `useAuth()` 훅 사용. `AuthProvider`는 `App.jsx`에서 전체 앱을 감싼다.
-
-```js
-// 사용 예시
-const { isLoggedIn, user, login, logout } = useAuth();
 ```
-
-## API 연동
-
-백엔드 FastAPI와 Axios로 통신. 상대 경로 사용 (`/api/v1/...`).
-
-인증이 필요한 엔드포인트는 요청 헤더에 API Key를 포함한다:
-```js
-headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
+src/
+├── App.jsx                    # 라우팅 정의, AuthProvider 래핑
+├── main.jsx                   # Vite 엔트리포인트
+│
+├── contexts/
+│   └── AuthContext.jsx        # 전역 인증 상태 (isLoggedIn, user, login, logout). useAuth() 훅
+│
+├── components/
+│   ├── HeaderUserInfo.jsx     # 헤더 우측 유저 정보 (로그인/로그아웃, 아바타 메뉴)
+│   └── Aurora/
+│       └── Aurora.jsx         # WebGL 오로라 배경 애니메이션 (ogl 셰이더). props: colorStops, amplitude, speed, blend
+│
+├── pages/
+│   ├── HomePage/
+│   │   └── HomePage.jsx       # 랜딩 페이지. Aurora 배경, 랭킹 테이블. GET /api/v1/monthly-scores
+│   │
+│   ├── Dashboard/
+│   │   └── Dashboard.jsx      # 게임 대시보드. 사이드바 메뉴: 게임하기·친구·계정. showPinball/showUserInfo/showFriendPage 상태로 메인 영역 전환
+│   │
+│   ├── Login/
+│   │   └── Login.jsx          # 로그인. POST /api/v1/login
+│   │
+│   ├── Register/
+│   │   └── Register.jsx       # 3단계 회원가입. POST /api/v1/register
+│   │
+│   ├── UserInfo/
+│   │   └── UserInfo.jsx       # 회원 정보 조회/수정/탈퇴. GET /api/v1/users/{id}
+│   │
+│   ├── FriendPage/
+│   │   └── FriendPage.jsx     # 친구 목록/검색/요청
+│   │
+│   ├── Pinball/
+│   │   ├── Pinball.jsx        # Matter.js 핀볼 게임 본체 (물리 엔진, 플리퍼, 범퍼, 점수, 스테이지)
+│   │   ├── WallOverlay.jsx    # 핀볼 벽 CSS 오버레이
+│   │   ├── stageConfigs.js    # 스테이지별 범퍼 배치 설정 및 공유 상수
+│   │   ├── pinballSound.js    # 사운드 재생 유틸 함수
+│   │   └── pinballRestart.js  # 게임 재시작 초기 상태 반환 (getRestartState)
+│   │
+│   └── admin/
+│       ├── AdminPage.jsx      # Admin 전체 레이아웃 (Sidebar + Header + Main)
+│       ├── AdminSidebar.jsx   # Admin 좌측 Drawer (260px)
+│       ├── AdminHeader.jsx    # Admin 상단 AppBar
+│       ├── AdminMain.jsx      # Admin 랜딩 콘텐츠
+│       ├── AdminUserPage.jsx  # Admin 회원 관리 레이아웃
+│       ├── AdminUserMain.jsx  # Admin 회원 DataGrid. 수정(연필)·삭제(휴지통) Dialog. GET/PUT/DELETE /api/v1/users
+│       ├── AdminStatisticsPage.jsx  # Admin 통계 레이아웃
+│       └── AdminStatisticsMain.jsx  # Admin 통계 콘텐츠
+│
+└── test/
+    ├── setup.js                       # Vitest 전역 설정 (jsdom)
+    ├── AdminUserMain.test.jsx         # AdminUserMain 테스트 17개. @mui/x-data-grid mock 사용
+    ├── HomePage.test.jsx              # HomePage 랭킹 API 연동 테스트 4개. Aurora mock 사용
+    ├── HeaderUserInfo.test.jsx
+    ├── PinballSound.test.jsx
+    ├── pinball-restart.test.jsx
+    ├── FriendPage.test.jsx / FriendList / FriendRequest / FriendSearch / FriendPageIntegration
+    └── sample.test.jsx
 ```
-
-## Pinball 게임 구조
-
-`pages/Pinball/` 내에 게임 관련 파일이 모두 위치한다.
-
-- **`Pinball.jsx`**: Matter.js Engine/Render/Runner 생성 및 게임 루프 관리. `useEffect`로 마운트 시 초기화, 언마운트 시 정리.
-- **`stageConfigs.js`**: 스테이지별 범퍼 위치 배열(`STAGE_CONFIGS`)과 공유 상수(`BUMPER_RADIUS`, `BUMPER_OPTIONS`) 정의.
-- **`pinballSound.js`**: Audio 객체를 인자로 받아 재생하는 순수 함수들. `currentTime = 0` 후 `play()` 호출.
-- **`pinballRestart.js`**: `getRestartState()` — 재시작 시 초기 상태 객체 반환 (`score: 0`, `lives: 3`, `stage: 1`, `overlayState: null`).
-- **`WallOverlay.jsx`**: Matter.js 캔버스 위에 절대 위치로 렌더링되는 CSS 벽 컴포넌트.
-
-Matter.js 캔버스는 `transparent` 배경, 그 위를 감싸는 MUI `Box`에 배경이미지(`/images/pinball_back.png`)를 `backgroundSize: '100% 100%'`로 적용한다.
 
 ## 주의사항
 
-- `App.jsx`는 `src/pages/admin/`의 barrel export(`index.js`)를 통해 import한다.
-- Dashboard에 내장된 사이드바/헤더는 아직 별도 컴포넌트로 분리되지 않았다.
+- MUI v7은 Grid v2 방식: `item xs md` 대신 `size={{ xs: 12, md: 6 }}` 사용
+- `@mui/x-data-grid`는 CSS import 문제로 Vitest에서 mock 처리 필요
+- Aurora(`ogl` WebGL)는 Vitest 환경에서 mock 처리 필요
+- Dashboard 사이드바/헤더는 별도 컴포넌트로 분리되지 않음
