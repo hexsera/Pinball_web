@@ -21,5 +21,10 @@ export default defineConfig({
         secure: false,                     // HTTPS 인증서 검증 비활성화 (로컬 개발용)
       }
     }
-  }
+  },
+  // Vitest 설정
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+  },
 });

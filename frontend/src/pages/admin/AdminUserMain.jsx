@@ -1,22 +1,49 @@
 import { useState, useEffect } from 'react';
-import { Box, Toolbar, Container, Typography } from '@mui/material';
+import { Box, Toolbar, Container, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 
 const drawerWidth = 260;
 
-// 테이블 컬럼 정의
-const columns = [
-  //{ field: 'id', headerName: 'ID', width: 70 },
-  { field: 'email', headerName: '이메일', width: 200 },
-  { field: 'nickname', headerName: '닉네임', width: 130 },
-  { field: 'birth_date', headerName: '생년월일', width: 130 },
-  { field: 'role', headerName: '역할', width: 100 },
-];
-
 function AdminUserMain() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const handleEditClick = (user) => {
+    setSelectedUser(user);
+    setEditDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setEditDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  // 테이블 컬럼 정의
+  const columns = [
+    { field: 'email', headerName: '이메일', width: 200 },
+    { field: 'nickname', headerName: '닉네임', width: 130 },
+    { field: 'birth_date', headerName: '생년월일', width: 130 },
+    { field: 'role', headerName: '역할', width: 100 },
+    {
+      field: 'actions',
+      headerName: '',
+      width: 60,
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton
+          aria-label="수정"
+          size="small"
+          onClick={() => handleEditClick(params.row)}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+      ),
+    },
+  ];
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -62,6 +89,20 @@ function AdminUserMain() {
           />
         </Box>
       </Container>
+
+      <Dialog open={editDialogOpen} onClose={handleDialogClose}>
+        <DialogTitle>회원 수정</DialogTitle>
+        <DialogContent>
+          {selectedUser && (
+            <Typography>
+              {selectedUser.email} ({selectedUser.nickname})
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose}>닫기</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

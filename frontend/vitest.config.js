@@ -8,4 +8,9 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.js',
   },
+  resolve: {
+    alias: {
+      '\\.(css|less|scss|sass)$': '/dev/null',
+    },
+  },
 });
