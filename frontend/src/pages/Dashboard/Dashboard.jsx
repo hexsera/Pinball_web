@@ -15,15 +15,9 @@ import {
   ListItemText,
   Container,
   Grid,
-  TextField,
-  InputAdornment,
-  Avatar,
-  Badge,
   Paper,
   CardMedia,
   Button,
-  Menu,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -33,15 +27,9 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Dashboard,
   CalendarMonth,
   Person,
-  Description,
-  BarChart,
   Lock,
-  Search,
-  Notifications,
-  Mail,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -60,7 +48,7 @@ function Maindashboard() {
   const [openMenus, setOpenMenus] = useState({});
   const [menuIndex, setMenuIndex] = useState(0);
 
-  const [showPinball, setShowPinball] = useState(false);
+  const [showPinball, setShowPinball] = useState(true);
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [showFriend, setShowFriend] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -120,37 +108,13 @@ function Maindashboard() {
 
   // 메뉴 항목 데이터
   const menuItems = [
-    { text: '메인페이지', icon: <Dashboard />, path: '/' },
     { text: '게임하기', icon: <CalendarMonth />, path: '/calendar' },
     { text: '친구', icon: <Person />, path: '/profile' },
-    {
-      text: '소식',
-      icon: <Description />,
-      submenu: ['Form Elements', 'Form Layout'],
-    },
-
-    {
-      text: '통계',
-      icon: <BarChart />,
-      submenu: ['Basic Chart', 'Advanced Chart'],
-    },
-
-    {
-      text: '계정',
-      icon: <Lock />,
-      submenu: ['Sign In', 'Sign Up', 'Reset Password'],
-    },
+    { text: '계정', icon: <Lock />, submenu: ['Sign In', 'Sign Up', 'Reset Password'] },
   ];
   
   function handleMenuClick (itemtext, index) {
     setMenuIndex(index);
-    if (itemtext == '메인페이지')
-    {
-        setShowPinball(false);
-        setShowUserInfo(false);
-        setShowFriend(false);
-    }
-
     if (itemtext == '게임하기')
     {
       setShowPinball(true);
@@ -171,17 +135,7 @@ function Maindashboard() {
         setShowFriend(true);
       }
     }
-    if (itemtext == '소식')
-    {
 
-    }
-    if (itemtext == '통계')
-    {
-      if (isLoggedIn == false)
-      {
-        navigate('/login')
-      }
-    }
     if (itemtext == '계정')
     {
       if (isLoggedIn == false)
@@ -264,141 +218,93 @@ function Maindashboard() {
     </Box>
   );
 
-  const mainele = (
-    <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Paper
-            sx={{
-                p: 3,
-                height: 400,
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-                border: '1px solid #e5e7eb',
-            }}
-            >
-            {isLoggedIn?
-            (
-              <>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                로그인 했으니깐 게임하러 가기!!!
-              </Typography>
-              <Button variant="contained"
-                /* onClick={()=>handleMenuClick('게임하기', 1)}> */
-                onClick={()=>navigate("/Pinball_test")}>
-                  게 임 하 기
-              </Button>
-              </>
-              
-            ) :
-            (
-              <>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                로그인 하고 세상에서 가장 재미있는 핀볼게임 하러가기!!!!!!
-                
-              </Typography>
-              <Button variant="contained"
-              onClick={()=>navigate("/login")}>
-                  로 그 인 하 기
-              </Button>
-              </>
-            )
-          }
-        
-        </Paper>
-        <Paper
-            sx={{
-                p: 3,
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-                border: '1px solid #e5e7eb',
-                maxHeight: 500,
-            }}
-            >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                한달 랭킹 TOP 10
-            </Typography>
-            {isLoadingRanking ? (
-                <Typography sx={{ py: 3, textAlign: 'center' }}>
-                    로딩 중...
-                </Typography>
-            ) : rankingError ? (
-                <Typography sx={{ py: 3, textAlign: 'center', color: 'error.main' }}>
-                    {rankingError}
-                </Typography>
-            ) : (
-                <TableContainer sx={{
-                    maxHeight: 400,
-                    overflow: 'auto',
-                    '&::-webkit-scrollbar': {
-                        width: '8px',
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                        backgroundColor: '#e5e7eb',
-                        borderRadius: '4px',
-                    },
-                    '&::-webkit-scrollbar-thumb:hover': {
-                        backgroundColor: '#d1d5db',
-                    },
-                }}>
-                    <Table size="small" stickyHeader>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }}>순위</TableCell>
-                                <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }}>닉네임</TableCell>
-                                <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }} align="right">점수</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {monthlyRankingData.map((row) => (
-                                <TableRow key={row.rank}>
-                                    <TableCell>{row.rank}</TableCell>
-                                    <TableCell>{row.nickname}</TableCell>
-                                    <TableCell align="right">{row.score.toLocaleString()}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            )}
-        </Paper>
-        <Paper
-            sx={{
-                p: 3,
-
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-                border: '1px solid #e5e7eb',
-            }}
-            >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                이번주 방문자 수
-            </Typography>
-            <CardMedia
-                component="img"
-
-                image="/images/graph.png"
-                alt="로고"
-                sx={{ marginBottom: 2, objectFit: 'contain' }}
-            />
-
-        </Paper>
-        <Paper
-            sx={{
-                p: 3,
-
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-                border: '1px solid #e5e7eb',
-            }}
-            >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-                월간 최고 기록
-            </Typography>
-            <CardMedia
-                component="img"
-                
-                image="/images/graph2.png"
-                alt="로고"
-                sx={{ marginBottom: 2, objectFit: 'contain' }}
-            />
-        </Paper>
-    </Grid>
-  );
+  // const mainele = (
+  //   <Grid container spacing={3} sx={{ mb: 3 }}>
+  //       <Paper
+  //           sx={{
+  //               p: 3,
+  //               height: 400,
+  //               boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+  //               border: '1px solid #e5e7eb',
+  //           }}
+  //           >
+  //           {isLoggedIn?
+  //           (
+  //             <>
+  //             <Typography variant="h6" fontWeight={600} gutterBottom>
+  //               로그인 했으니깐 게임하러 가기!!!
+  //             </Typography>
+  //             <Button variant="contained"
+  //               onClick={()=>navigate("/Pinball_test")}>
+  //                 게 임 하 기
+  //             </Button>
+  //             </>
+  //           ) :
+  //           (
+  //             <>
+  //             <Typography variant="h6" fontWeight={600} gutterBottom>
+  //               로그인 하고 세상에서 가장 재미있는 핀볼게임 하러가기!!!!!!
+  //             </Typography>
+  //             <Button variant="contained"
+  //             onClick={()=>navigate("/login")}>
+  //                 로 그 인 하 기
+  //             </Button>
+  //             </>
+  //           )
+  //         }
+  //       </Paper>
+  //       <Paper
+  //           sx={{
+  //               p: 3,
+  //               boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+  //               border: '1px solid #e5e7eb',
+  //               maxHeight: 500,
+  //           }}
+  //           >
+  //           <Typography variant="h6" fontWeight={600} gutterBottom>
+  //               한달 랭킹 TOP 10
+  //           </Typography>
+  //           {isLoadingRanking ? (
+  //               <Typography sx={{ py: 3, textAlign: 'center' }}>
+  //                   로딩 중...
+  //               </Typography>
+  //           ) : rankingError ? (
+  //               <Typography sx={{ py: 3, textAlign: 'center', color: 'error.main' }}>
+  //                   {rankingError}
+  //               </Typography>
+  //           ) : (
+  //               <TableContainer sx={{ maxHeight: 400, overflow: 'auto' }}>
+  //                   <Table size="small" stickyHeader>
+  //                       <TableHead>
+  //                           <TableRow>
+  //                               <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }}>순위</TableCell>
+  //                               <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }}>닉네임</TableCell>
+  //                               <TableCell sx={{ fontWeight: 600, backgroundColor: '#F9FAFB' }} align="right">점수</TableCell>
+  //                           </TableRow>
+  //                       </TableHead>
+  //                       <TableBody>
+  //                           {monthlyRankingData.map((row) => (
+  //                               <TableRow key={row.rank}>
+  //                                   <TableCell>{row.rank}</TableCell>
+  //                                   <TableCell>{row.nickname}</TableCell>
+  //                                   <TableCell align="right">{row.score.toLocaleString()}</TableCell>
+  //                               </TableRow>
+  //                           ))}
+  //                       </TableBody>
+  //                   </Table>
+  //               </TableContainer>
+  //           )}
+  //       </Paper>
+  //       <Paper sx={{ p: 3, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)', border: '1px solid #e5e7eb' }}>
+  //           <Typography variant="h6" fontWeight={600} gutterBottom>이번주 방문자 수</Typography>
+  //           <CardMedia component="img" image="/images/graph.png" alt="로고" sx={{ marginBottom: 2, objectFit: 'contain' }} />
+  //       </Paper>
+  //       <Paper sx={{ p: 3, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)', border: '1px solid #e5e7eb' }}>
+  //           <Typography variant="h6" fontWeight={600} gutterBottom>월간 최고 기록</Typography>
+  //           <CardMedia component="img" image="/images/graph2.png" alt="로고" sx={{ marginBottom: 2, objectFit: 'contain' }} />
+  //       </Paper>
+  //   </Grid>
+  // );
 
   return (
     <Box sx={{ display: 'flex'}}>
@@ -415,7 +321,7 @@ function Maindashboard() {
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton
               color="inherit"
               edge="start"
@@ -424,19 +330,6 @@ function Maindashboard() {
             >
               <MenuIcon />
             </IconButton>
-
-            <TextField
-              placeholder="Type to search..."
-              size="small"
-              sx={{ width: 300, display: { xs: 'none', md: 'block' } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
           </Box>
           <HeaderUserInfo />
         </Toolbar>
@@ -498,7 +391,7 @@ function Maindashboard() {
       >
       <Toolbar />
       <Container maxWidth="xl">
-        {showPinball ? <Pinball /> : showUserInfo ? <UserInfo /> : showFriend ? <FriendPage /> : mainele}
+        {showPinball ? <Pinball /> : showUserInfo ? <UserInfo /> : showFriend ? <FriendPage /> : null}
       </Container>
       </Box>
     </Box>
