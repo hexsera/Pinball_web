@@ -32,7 +32,7 @@ function Login() {
         if (response.data.role === 'admin') {
           navigate('/admin');  // 관리자는 관리자 페이지로
         } else {
-          navigate('/');  // 일반 사용자는 대시보드로
+          navigate('/dashboard');  // 일반 사용자는 대시보드로
         }
       }
     } catch (error) {

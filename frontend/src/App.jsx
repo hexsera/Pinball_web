@@ -1,6 +1,7 @@
 import Pinball from './pages/Pinball';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import HomePage from './pages/HomePage';
 import { AuthProvider } from './contexts';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -19,7 +20,8 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/Register" element={<Register/>} />
             <Route path="/Pinball_test" element={<Pinball/>} />
