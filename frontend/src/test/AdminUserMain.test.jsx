@@ -28,6 +28,7 @@ vi.mock('axios', () => ({
   default: {
     get: vi.fn(),
     put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
@@ -192,6 +193,76 @@ describe('AdminUserMain - dialog 오픈 시 GET API 호출', () => {
   });
 });
 
+describe('AdminUserMain - 삭제 버튼', () => {
+  beforeEach(() => {
+    axios.get.mockResolvedValue({ data: mockUsers });
+  });
+
+  it('각 레코드마다 삭제 버튼이 렌더링된다', async () => {
+    render(<AdminUserMain />);
+
+    await waitFor(() => {
+      const deleteButtons = screen.getAllByRole('button', { name: /삭제/i });
+      expect(deleteButtons).toHaveLength(mockUsers.length);
+    });
+  });
+
+  it('삭제 버튼 클릭 시 "정말로 삭제 합니까?" 확인 Dialog가 열린다', async () => {
+    const user = userEvent.setup();
+    render(<AdminUserMain />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /삭제/i })).toHaveLength(mockUsers.length);
+    });
+
+    const deleteButtons = screen.getAllByRole('button', { name: /삭제/i });
+    await user.click(deleteButtons[0]);
+
+    expect(screen.getByText(/정말로 삭제 합니까\?/i)).toBeInTheDocument();
+  });
+});
+
+describe('AdminUserMain - 삭제 API 연동', () => {
+  beforeEach(() => {
+    axios.get.mockResolvedValue({ data: mockUsers });
+    axios.delete.mockResolvedValue({});
+  });
+
+  async function openDeleteDialog() {
+    const user = userEvent.setup();
+    render(<AdminUserMain />);
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /삭제/i })).toHaveLength(mockUsers.length);
+    });
+    const deleteButtons = screen.getAllByRole('button', { name: /삭제/i });
+    await user.click(deleteButtons[0]);
+    return user;
+  }
+
+  it('삭제 확인 클릭 시 DELETE /api/v1/users/{user_id}를 호출한다', async () => {
+    const user = await openDeleteDialog();
+
+    await user.click(screen.getByRole('button', { name: /^삭제$/ }));
+
+    expect(axios.delete).toHaveBeenCalledWith(
+      `/api/v1/users/${mockUsers[0].id}`,
+      expect.objectContaining({ headers: expect.any(Object) })
+    );
+  });
+
+  it('삭제 확인 후 DataGrid가 새로고침된다', async () => {
+    const user = await openDeleteDialog();
+
+    const callCountBefore = axios.get.mock.calls.length;
+
+    await user.click(screen.getByRole('button', { name: /^삭제$/ }));
+
+    await waitFor(() => {
+      expect(axios.get.mock.calls.length).toBeGreaterThan(callCountBefore);
+    });
+  });
+});
+
 describe('AdminUserMain - 저장 API 연동', () => {
   beforeEach(() => {
     axios.get.mockImplementation((url) => {
@@ -217,7 +288,8 @@ describe('AdminUserMain - 저장 API 연동', () => {
 
     expect(axios.put).toHaveBeenCalledWith(
       `/api/v1/users/${mockUsers[0].id}`,
-      expect.any(Object)
+      expect.any(Object),
+      expect.objectContaining({ headers: expect.any(Object) })
     );
   });
 });

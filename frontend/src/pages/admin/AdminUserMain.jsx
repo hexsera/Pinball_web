@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Toolbar, Container, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, InputLabel, FormControl, MenuItem } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 
@@ -10,8 +11,21 @@ function AdminUserMain() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editForm, setEditForm] = useState({ nickname: '', birth_date: '', password: '', role: '' });
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get('/api/v1/users');
+      setUsers(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error('회원 목록 조회 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEditClick = async (user) => {
     setSelectedUser(user);
@@ -31,15 +45,41 @@ function AdminUserMain() {
     setSelectedUser(null);
   };
 
+  const handleDeleteClick = (user) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setDeleteDialogOpen(false);
+    setSelectedUser(null);
+  };
+
   const handleSave = async () => {
     if (!selectedUser) return;
     const body = { ...editForm };
     if (!body.password) delete body.password;
     try {
-      await axios.put(`/api/v1/users/${selectedUser.id}`, body);
+      await axios.put(`/api/v1/users/${selectedUser.id}`, body, {
+        headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
+      });
       handleDialogClose();
+      await fetchUsers();
     } catch (error) {
       console.error('회원 정보 수정 실패:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedUser) return;
+    try {
+      await axios.delete(`/api/v1/users/${selectedUser.id}`, {
+        headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
+      });
+      handleDeleteDialogClose();
+      await fetchUsers();
+    } catch (error) {
+      console.error('회원 삭제 실패:', error);
     }
   };
 
@@ -52,32 +92,30 @@ function AdminUserMain() {
     {
       field: 'actions',
       headerName: '',
-      width: 60,
+      width: 120,
       sortable: false,
       renderCell: (params) => (
-        <IconButton
-          aria-label="수정"
-          size="small"
-          onClick={() => handleEditClick(params.row)}
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
+        <>
+          <IconButton
+            aria-label="수정"
+            size="small"
+            onClick={() => handleEditClick(params.row)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            aria-label="삭제"
+            size="small"
+            onClick={() => handleDeleteClick(params.row)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </>
       ),
     },
   ];
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await axios.get('/api/v1/users');
-        setUsers(response.data);
-        console.log(response.data);
-      } catch (error) {
-        console.error('회원 목록 조회 실패:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
 
@@ -109,6 +147,17 @@ function AdminUserMain() {
         </Box>
       </Container>
 
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteDialogClose}>
+        <DialogTitle>회원 삭제</DialogTitle>
+        <DialogContent>
+          <Typography>정말로 삭제 합니까?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose}>취소</Button>
+          <Button variant="contained" color="error" onClick={handleDelete}>삭제</Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={editDialogOpen} onClose={handleDialogClose}>
         <DialogTitle>회원 수정</DialogTitle>
         <DialogContent>
@@ -133,6 +182,8 @@ function AdminUserMain() {
             type="password"
             fullWidth
             margin="dense"
+            value={editForm.password}
+            onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
           />
           <FormControl fullWidth margin="dense">
             <InputLabel id="role-label">역할</InputLabel>
