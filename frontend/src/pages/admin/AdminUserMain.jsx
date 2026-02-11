@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Toolbar, Container, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { Box, Toolbar, Container, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, InputLabel, FormControl, MenuItem } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
@@ -93,14 +93,35 @@ function AdminUserMain() {
       <Dialog open={editDialogOpen} onClose={handleDialogClose}>
         <DialogTitle>회원 수정</DialogTitle>
         <DialogContent>
-          {selectedUser && (
-            <Typography>
-              {selectedUser.email} ({selectedUser.nickname})
-            </Typography>
-          )}
+          <TextField
+            label="닉네임"
+            fullWidth
+            margin="dense"
+          />
+          <TextField
+            label="생년월일"
+            type="date"
+            fullWidth
+            margin="dense"
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="비밀번호"
+            type="password"
+            fullWidth
+            margin="dense"
+          />
+          <FormControl fullWidth margin="dense">
+            <InputLabel id="role-label">역할</InputLabel>
+            <Select labelId="role-label" label="역할">
+              <MenuItem value="user">user</MenuItem>
+              <MenuItem value="admin">admin</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialogClose}>닫기</Button>
+          <Button onClick={handleDialogClose}>취소</Button>
+          <Button variant="contained">저장</Button>
         </DialogActions>
       </Dialog>
     </Box>
