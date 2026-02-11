@@ -119,3 +119,105 @@ describe('AdminUserMain - 수정 폼', () => {
     });
   });
 });
+
+describe('AdminUserMain - 수정 폼 자동 채움', () => {
+  beforeEach(() => {
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') return Promise.resolve({ data: mockUsers });
+      if (url === `/api/v1/users/${mockUsers[0].id}`) return Promise.resolve({ data: mockUsers[0] });
+      if (url === `/api/v1/users/${mockUsers[1].id}`) return Promise.resolve({ data: mockUsers[1] });
+      return Promise.resolve({ data: {} });
+    });
+  });
+
+  async function openEditDialogForUser(userIndex = 0) {
+    const user = userEvent.setup();
+    render(<AdminUserMain />);
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /수정/i })).toHaveLength(mockUsers.length);
+    });
+    const editButtons = screen.getAllByRole('button', { name: /수정/i });
+    await user.click(editButtons[userIndex]);
+    return user;
+  }
+
+  it('Dialog를 열면 닉네임 필드에 선택한 유저의 닉네임이 채워진다', async () => {
+    await openEditDialogForUser(0);
+    const nicknameInput = screen.getByLabelText(/닉네임/i);
+    expect(nicknameInput.value).toBe(mockUsers[0].nickname);
+  });
+
+  it('Dialog를 열면 생년월일 필드에 선택한 유저의 생년월일이 채워진다', async () => {
+    await openEditDialogForUser(0);
+    const birthDateInput = screen.getByLabelText(/생년월일/i);
+    expect(birthDateInput.value).toBe(mockUsers[0].birth_date);
+  });
+
+  it('Dialog를 열면 역할 필드에 선택한 유저의 역할이 채워진다', async () => {
+    await openEditDialogForUser(0);
+    // MUI Select는 hidden input에 value를 저장
+    const hiddenInput = document.querySelector('input[name="role"]') ||
+      document.querySelector('.MuiSelect-nativeInput');
+    if (hiddenInput) {
+      expect(hiddenInput.value).toBe(mockUsers[0].role);
+    } else {
+      // MUI Select 표시 텍스트로 검증
+      const dialog = screen.getByRole('dialog');
+      expect(dialog.textContent).toContain(mockUsers[0].role);
+    }
+  });
+});
+
+describe('AdminUserMain - dialog 오픈 시 GET API 호출', () => {
+  beforeEach(() => {
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') return Promise.resolve({ data: mockUsers });
+      if (url === `/api/v1/users/${mockUsers[0].id}`) return Promise.resolve({ data: mockUsers[0] });
+      return Promise.resolve({ data: {} });
+    });
+  });
+
+  it('수정 버튼 클릭 시 GET /api/v1/users/{user_id}를 호출한다', async () => {
+    const user = userEvent.setup();
+    render(<AdminUserMain />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /수정/i })).toHaveLength(mockUsers.length);
+    });
+
+    const editButtons = screen.getAllByRole('button', { name: /수정/i });
+    await user.click(editButtons[0]);
+
+    expect(axios.get).toHaveBeenCalledWith(`/api/v1/users/${mockUsers[0].id}`);
+  });
+});
+
+describe('AdminUserMain - 저장 API 연동', () => {
+  beforeEach(() => {
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') return Promise.resolve({ data: mockUsers });
+      if (url === `/api/v1/users/${mockUsers[0].id}`) return Promise.resolve({ data: mockUsers[0] });
+      return Promise.resolve({ data: {} });
+    });
+    axios.put.mockResolvedValue({ data: { ...mockUsers[0], nickname: '수정된닉네임' } });
+  });
+
+  it('저장 버튼 클릭 시 PUT /api/v1/users/{user_id}를 호출한다', async () => {
+    const user = userEvent.setup();
+    render(<AdminUserMain />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /수정/i })).toHaveLength(mockUsers.length);
+    });
+
+    const editButtons = screen.getAllByRole('button', { name: /수정/i });
+    await user.click(editButtons[0]);
+
+    await user.click(screen.getByRole('button', { name: /저장/i }));
+
+    expect(axios.put).toHaveBeenCalledWith(
+      `/api/v1/users/${mockUsers[0].id}`,
+      expect.any(Object)
+    );
+  });
+});

@@ -11,15 +11,36 @@ function AdminUserMain() {
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [editForm, setEditForm] = useState({ nickname: '', birth_date: '', password: '', role: '' });
 
-  const handleEditClick = (user) => {
+  const handleEditClick = async (user) => {
     setSelectedUser(user);
+    try {
+      const response = await axios.get(`/api/v1/users/${user.id}`);
+      const data = response.data;
+      setEditForm({ nickname: data.nickname, birth_date: data.birth_date, password: '', role: data.role });
+    } catch (error) {
+      console.error('회원 정보 조회 실패:', error);
+      setEditForm({ nickname: user.nickname, birth_date: user.birth_date, password: '', role: user.role });
+    }
     setEditDialogOpen(true);
   };
 
   const handleDialogClose = () => {
     setEditDialogOpen(false);
     setSelectedUser(null);
+  };
+
+  const handleSave = async () => {
+    if (!selectedUser) return;
+    const body = { ...editForm };
+    if (!body.password) delete body.password;
+    try {
+      await axios.put(`/api/v1/users/${selectedUser.id}`, body);
+      handleDialogClose();
+    } catch (error) {
+      console.error('회원 정보 수정 실패:', error);
+    }
   };
 
   // 테이블 컬럼 정의
@@ -48,9 +69,7 @@ function AdminUserMain() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('/api/v1/users', {
-          headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
-        });
+        const response = await axios.get('/api/v1/users');
         setUsers(response.data);
         console.log(response.data);
       } catch (error) {
@@ -97,13 +116,17 @@ function AdminUserMain() {
             label="닉네임"
             fullWidth
             margin="dense"
+            value={editForm.nickname}
+            onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })}
           />
           <TextField
             label="생년월일"
             type="date"
             fullWidth
             margin="dense"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
+            value={editForm.birth_date}
+            onChange={(e) => setEditForm({ ...editForm, birth_date: e.target.value })}
           />
           <TextField
             label="비밀번호"
@@ -113,7 +136,12 @@ function AdminUserMain() {
           />
           <FormControl fullWidth margin="dense">
             <InputLabel id="role-label">역할</InputLabel>
-            <Select labelId="role-label" label="역할">
+            <Select
+              labelId="role-label"
+              label="역할"
+              value={editForm.role}
+              onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+            >
               <MenuItem value="user">user</MenuItem>
               <MenuItem value="admin">admin</MenuItem>
             </Select>
@@ -121,7 +149,7 @@ function AdminUserMain() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose}>취소</Button>
-          <Button variant="contained">저장</Button>
+          <Button variant="contained" onClick={handleSave}>저장</Button>
         </DialogActions>
       </Dialog>
     </Box>
