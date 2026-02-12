@@ -16,7 +16,7 @@ from app.schemas.user import (
 # 기존 models.py 사용
 import sys
 sys.path.insert(0, '/code')
-from models import User, MonthlyScore
+from models import User, MonthlyScore, Friendship, HighScore
 
 router = APIRouter()
 
@@ -131,6 +131,17 @@ def delete_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with id {user_id} not found"
         )
+
+    # FK 참조 테이블 데이터 먼저 삭제
+    db.query(Friendship).filter(
+        (Friendship.requester_id == user_id) | (Friendship.receiver_id == user_id)
+    ).delete(synchronize_session=False)
+
+    db.query(MonthlyScore).filter(MonthlyScore.user_id == user_id)\
+        .delete(synchronize_session=False)
+
+    db.query(HighScore).filter(HighScore.user_id == user_id)\
+        .delete(synchronize_session=False)
 
     db.delete(user)
     db.commit()
