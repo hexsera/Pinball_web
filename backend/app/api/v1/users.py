@@ -2,6 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from typing import Optional
+from fastapi import Query
 
 from app.api.deps import get_db
 from app.schemas.user import (
@@ -14,7 +16,7 @@ from app.schemas.user import (
 # 기존 models.py 사용
 import sys
 sys.path.insert(0, '/code')
-from models import User
+from models import User, MonthlyScore
 
 router = APIRouter()
 
@@ -50,10 +52,17 @@ def create_user(
 
 @router.get("/", response_model=List[UserResponse])
 def get_all_users(
+    nickname: Optional[str] = Query(None, description="검색할 닉네임"),
     db: Session = Depends(get_db)
 ):
+    
+    query = db.query(User)
+
+    if nickname:
+        query = query.filter(User.nickname.contains(nickname))
+
     """전체 사용자 조회"""
-    users = db.query(User).all()
+    users = query.all()
     return users
 
 
@@ -100,6 +109,8 @@ def update_user(
     for field, value in update_data.items():
         if value is not None:
             setattr(user, field, value)
+
+
 
     db.commit()
     db.refresh(user)
