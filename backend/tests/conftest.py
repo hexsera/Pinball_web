@@ -7,7 +7,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from database import Base, get_db
+#from app.db.base import Base
+from database import Base
+from app.api.deps import get_db
 from main import app
 
 # 테스트용 PostgreSQL 데이터베이스

@@ -2,6 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from datetime import datetime, date
+from calendar import monthrange
+
 from app.api.deps import get_db
 from app.schemas.monthly_score import (
     MonthlyScoreCreateRequest,
@@ -61,7 +64,20 @@ def get_monthly_scores(
     db: Session = Depends(get_db)
 ):
     """전체 월간 점수 조회 (score 내림차순)"""
-    scores = db.query(MonthlyScore).order_by(
+    now = datetime.now()
+    year = now.year
+    month = now.month
+
+    start_date = date(year, month, 1)
+    _, last_day = monthrange(year, month)
+    end_date = date(year, month, last_day)
+
+
+
+    scores = db.query(MonthlyScore).filter(
+        MonthlyScore.created_at >= start_date,
+        MonthlyScore.created_at <= end_date
+    ).order_by(
         MonthlyScore.score.desc()
     ).all()
 
