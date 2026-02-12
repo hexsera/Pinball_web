@@ -41,7 +41,7 @@ if os.getenv("TESTING") != "1":
     startup()
 
 # FastAPI 앱 생성
-app = FastAPI(title="Hexsera API", version="1.0.0")
+app = FastAPI(title="Hexsera API", version="1.0.0", redirect_slashes=False)
 
 # 라우터 등록
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])

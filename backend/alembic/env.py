@@ -25,7 +25,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from database import Base
+from app.db.base import Base  # 모든 모델이 등록된 Base
 from models import User  # User 모델을 명시적으로 import하여 autogenerate가 인식하도록 함
 target_metadata = Base.metadata
 

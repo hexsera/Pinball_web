@@ -7,8 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-#from app.db.base import Base
-from database import Base
+from app.db.base import Base
 from app.api.deps import get_db
 from main import app
 

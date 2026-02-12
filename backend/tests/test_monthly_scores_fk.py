@@ -4,7 +4,7 @@ MonthlyScore와 User 간의 Foreign Key 관계를 테스트
 import pytest
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
-from database import engine
+from app.db.session import engine
 from models import MonthlyScore, User
 
 
