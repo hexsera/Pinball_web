@@ -13,6 +13,11 @@ import pytest
 
 
 def test_create_high_score_success(client, db_session):
+    """client 확인용"""
+    response = client.get("/api/debug/db-info")
+    data = response.json()
+    print(data)
+
     """최초 최고 기록 생성 성공 케이스"""
     response = client.post(
         "/api/v1/high-scores",

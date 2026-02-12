@@ -5,6 +5,14 @@ from app.db.session import engine, SessionLocal, wait_for_db
 from app.db.base import Base
 from app.api.v1 import users, auth, scores, monthly_scores, high_scores, game_visits, friends
 
+#---
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
+from app.api.deps import get_db
+
+#---
+
 # 기존 seed.py 사용
 from seed import seed_admin
 
@@ -54,3 +62,13 @@ def health_check():
 @app.get("/api/test")
 def api_test():
     return {"status": "ok", "message": "API test endpoint"}
+
+@app.get("/api/debug/db-info")
+def get_db_info(db: Session = Depends(get_db)):
+    db_name = db.execute(text("SELECT current_database();")).scalar()
+    connection_url = db.get_bind().url.render_as_string(hide_password=True)
+    
+    return {
+        "database_name": db_name,
+        "connection_url": connection_url
+    }
