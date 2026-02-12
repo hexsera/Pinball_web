@@ -109,8 +109,10 @@ def update_user(
     for field, value in update_data.items():
         if value is not None:
             setattr(user, field, value)
-
-
+            if field == "nickname":
+                month = db.query(MonthlyScore).filter(MonthlyScore.user_id == user_id).all()
+                for i in month:
+                    i.nickname = value
 
     db.commit()
     db.refresh(user)
