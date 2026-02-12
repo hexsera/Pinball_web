@@ -21,7 +21,7 @@ from models import User, MonthlyScore, Friendship, HighScore
 router = APIRouter()
 
 
-@router.post("/", response_model=UserResponse)
+@router.post("", response_model=UserResponse)
 def create_user(
     user: UserCreateRequest,
     db: Session = Depends(get_db)
@@ -50,7 +50,7 @@ def create_user(
     return db_user
 
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("", response_model=List[UserResponse])
 def get_all_users(
     nickname: Optional[str] = Query(None, description="검색할 닉네임"),
     db: Session = Depends(get_db)

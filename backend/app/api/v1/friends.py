@@ -24,7 +24,7 @@ router = APIRouter()
 VALID_FRIEND_STATUSES = {"pending", "accepted", "rejected", "all"}
 
 
-@router.post("/", response_model=FriendRequestResponse)
+@router.post("", response_model=FriendRequestResponse)
 def create_friend_request(request: FriendRequestRequest, db: Session = Depends(get_db)):
     """친구 추가 요청 (중복 및 역방향 검증)"""
     # 자기 자신에게 친구 요청 방지
@@ -114,7 +114,7 @@ def create_friend_request(request: FriendRequestRequest, db: Session = Depends(g
     )
 
 
-@router.get("/", response_model=FriendRequestListResponse)
+@router.get("", response_model=FriendRequestListResponse)
 def get_friend_requests(user_id: int, friend_status: str = "pending", db: Session = Depends(get_db)):
     """특정 사용자의 친구 요청 조회 (양방향, status 필터)"""
     # status 유효성 검증

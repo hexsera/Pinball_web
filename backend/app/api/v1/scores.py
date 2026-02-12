@@ -13,7 +13,7 @@ from models import Score
 router = APIRouter()
 
 
-@router.post("/", response_model=ScoreResponse, status_code=201)
+@router.post("", response_model=ScoreResponse, status_code=201)
 def create_score(score_data: ScoreCreateRequest, db: Session = Depends(get_db)):
     """점수 기록 생성 (user_id를 id로 사용)"""
     db_score = Score(

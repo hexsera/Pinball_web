@@ -22,7 +22,7 @@ from models import User, MonthlyScore
 router = APIRouter()
 
 
-@router.post("/", response_model=MonthlyScoreResponse)
+@router.post("", response_model=MonthlyScoreResponse)
 def create_or_update_monthly_score(
     score_data: MonthlyScoreCreateRequest,
     db: Session = Depends(get_db)
@@ -59,7 +59,7 @@ def create_or_update_monthly_score(
         return new_score
 
 
-@router.get("/", response_model=MonthlyScoreListResponse)
+@router.get("", response_model=MonthlyScoreListResponse)
 def get_monthly_scores(
     db: Session = Depends(get_db)
 ):

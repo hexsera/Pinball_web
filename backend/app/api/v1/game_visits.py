@@ -44,7 +44,7 @@ def get_client_ip(request: Request) -> str:
 router = APIRouter()
 
 
-@router.post("/", response_model=GameVisitCreateResponse, status_code=201)
+@router.post("", response_model=GameVisitCreateResponse, status_code=201)
 def create_game_visit(
     visit_data: GameVisitCreateRequest,
     request: Request,
@@ -97,7 +97,7 @@ def create_game_visit(
         )
 
 
-@router.put("/", response_model=GameVisitUpdateResponse)
+@router.put("", response_model=GameVisitUpdateResponse)
 def update_game_visit(
     visit_data: GameVisitUpdateRequest,
     db: Session = Depends(get_db)
@@ -130,7 +130,7 @@ def update_game_visit(
     )
 
 
-@router.get("/", response_model=DailyVisitStatsResponse)
+@router.get("", response_model=DailyVisitStatsResponse)
 def get_daily_visit_stats(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
@@ -180,7 +180,7 @@ def get_daily_visit_stats(
     )
 
 
-@router.delete("/", response_model=GameVisitDeleteResponse)
+@router.delete("", response_model=GameVisitDeleteResponse)
 def delete_game_visits(
     delete_data: GameVisitDeleteRequest,
     db: Session = Depends(get_db)
