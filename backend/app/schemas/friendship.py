@@ -20,8 +20,13 @@ class FriendRequestData(BaseModel):
     """친구 요청 데이터 (조회용)"""
     id: int
     requester_id: int
+    requester_nickname: str
     receiver_id: int
+    receiver_nickname: str
     status: str
+    
+    class Config:
+        from_attributes = True
 
 
 class FriendRequestListResponse(BaseModel):

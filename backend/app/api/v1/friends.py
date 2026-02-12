@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy.orm import aliased
 
 from app.api.deps import get_db
 from app.schemas.friendship import (
@@ -123,6 +124,20 @@ def get_friend_requests(user_id: int, friend_status: str = "pending", db: Sessio
             detail=f"Invalid status. Allowed values: {sorted(VALID_FRIEND_STATUSES)}"
         )
 
+    Requester = aliased(User, name="requester")
+    Receiver = aliased(User, name="receiver")
+
+    # 기본 쿼리 작성: Friendship과 두 명의 User 정보를 조인
+    query = db.query(
+        Friendship,
+        Requester.nickname.label("requester_nickname"),
+        Receiver.nickname.label("receiver_nickname")
+    ).join(
+        Requester, Friendship.requester_id == Requester.id
+    ).join(
+        Receiver, Friendship.receiver_id == Receiver.id
+    )
+
     # 양방향 조건: user_id가 requester_id 또는 receiver_id인 경우
     direction_filter = or_(
         Friendship.requester_id == user_id,
@@ -131,25 +146,29 @@ def get_friend_requests(user_id: int, friend_status: str = "pending", db: Sessio
 
     # status 필터 구성: "all"이면 status 필터 미적용
     if friend_status == "all":
-        query = db.query(Friendship).filter(direction_filter)
+        query = query.filter(direction_filter)
     else:
-        query = db.query(Friendship).filter(
+        query = query.filter(
             direction_filter,
             Friendship.status == friend_status
         )
 
     requests = query.all()
+    print(requests)
 
     # FriendRequestData 형식으로 변환
     request_data = [
         FriendRequestData(
-            id=req.id,
-            requester_id=req.requester_id,
-            receiver_id=req.receiver_id,
-            status=req.status
+            id=req.Friendship.id,
+            requester_id=req.Friendship.requester_id,
+            requester_nickname=req.requester_nickname,
+            receiver_id=req.Friendship.receiver_id,
+            receiver_nickname=req.receiver_nickname,
+            status=req.Friendship.status
         )
         for req in requests
     ]
+
 
     return FriendRequestListResponse(requests=request_data)
 
