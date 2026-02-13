@@ -885,23 +885,20 @@ display: 'flex',
             {/* CSS 벽 오버레이 (Canvas 아래, z-index:1) */}
             <WallOverlay />
 
-            {/* 점수 컴포넌트 (게임 영역 내부, 반투명 흰색) */}
+            {/* 점수 컴포넌트 (게임 영역 내부, 투명) */}
             <Box sx={{
               position: 'absolute',
-              top: '10px',
+              top: '100px',
               left: '50%',
               transform: 'translateX(-50%)',
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
-              borderRadius: '8px',
-              padding: '6px 20px',
               zIndex: 5
             }}>
               <Typography sx={{
-                fontSize: '28px',
+                fontSize: '92px',
                 fontWeight: 'bold',
-                color: '#000000'
+                color: '#ffffffa1'
               }}>
-                SCORE: {score}
+                {score}
               </Typography>
             </Box>
 
