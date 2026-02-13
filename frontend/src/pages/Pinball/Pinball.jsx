@@ -28,6 +28,8 @@ function Pinball() {
   const engineRef = useRef(null);
   const loadStageMapRef = useRef(null);
   const plungerRef = useRef(null);
+  const plungerStartRef = useRef(null);
+  const plungerReleaseRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -39,6 +41,11 @@ function Pinball() {
     height: window.innerHeight
   });
   const [gameScale, setGameScale] = useState(1);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const isLeftKeyPressedRef = useRef(false);
+  const isRightKeyPressedRef = useRef(false);
+  const isSpacePressedRef = useRef(false);
+  const spaceHoldStartTimeRef = useRef(0);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -130,6 +137,11 @@ function Pinball() {
 
     setGameScale(optimalScale);
   }, [windowSize]);
+
+  // 터치 디바이스 감지
+  useEffect(() => {
+    setIsTouchDevice(navigator.maxTouchPoints > 0);
+  }, []);
 
   // 게임 방문 기록 API 호출
   useEffect(() => {
@@ -342,11 +354,11 @@ function Pinball() {
     const RIGHT_FLIPPER_MAX_ANGLE = 35 * Math.PI / 180;   // 30도 (라디안)
     const FLIPPER_SPEED = 0.3;
 
-    // 키 누름 상태 변수
-    let isLeftKeyPressed = false;
-    let isRightKeyPressed = false;
-    let isSpacePressed = false;
-    let spaceHoldStartTime = 0;
+    // 키 누름 상태 변수 (ref를 직접 사용)
+    const isLeftKeyPressed = isLeftKeyPressedRef;
+    const isRightKeyPressed = isRightKeyPressedRef;
+    const isSpacePressed = isSpacePressedRef;
+    const spaceHoldStartTime = spaceHoldStartTimeRef;
 
     // 맵 로딩 함수
     const loadStageMap = (stageNumber) => {
@@ -502,7 +514,7 @@ function Pinball() {
       }); */
 
       // 왼쪽 플리퍼 제어
-      if (isLeftKeyPressed) {
+      if (isLeftKeyPressed.current) {
         // 왼쪽 키를 누르고 있으면 반시계방향으로 회전
         Body.setAngularVelocity(leftFlipper, -FLIPPER_SPEED);
       } else {
@@ -519,7 +531,7 @@ function Pinball() {
       }
 
       // 오른쪽 플리퍼 제어
-      if (isRightKeyPressed) {
+      if (isRightKeyPressed.current) {
         // 오른쪽 키를 누르고 있으면 시계방향으로 회전
         Body.setAngularVelocity(rightFlipper, FLIPPER_SPEED);
       } else {
@@ -535,7 +547,7 @@ function Pinball() {
       }
 
       // Plunger 시각적 당기기 (스페이스바 누르고 있을 때)
-      if (isSpacePressed) {
+      if (isSpacePressed.current) {
         const currentY = plunger.position.y;
         if (currentY < PLUNGER_MAX_PULL_Y) {
           Body.setPosition(plunger, {
@@ -608,6 +620,34 @@ function Pinball() {
       });
     });
 
+    // 플런저 충전 시작 (버튼 onPointerDown에서 호출)
+    plungerStartRef.current = () => {
+      if (!isSpacePressed.current) {
+        isSpacePressed.current = true;
+        spaceHoldStartTime.current = Date.now();
+      }
+    };
+
+    // 플런저 발사 (버튼 onPointerUp/onPointerLeave에서 호출)
+    plungerReleaseRef.current = () => {
+      if (isSpacePressed.current) {
+        isSpacePressed.current = false;
+
+        const holdDuration = Math.min(Date.now() - spaceHoldStartTime.current, 1500);
+        const chargeRatio = Math.max(holdDuration / 1500, 0.1);
+        const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
+
+        const ballInLane = ball.position.x > 640 && ball.position.x < 685 &&
+                           ball.position.y > 900 && ball.position.y < 1080;
+
+        if (ballInLane) {
+          Body.setVelocity(ball, { x: 0, y: -launchSpeed });
+        }
+
+        Body.setPosition(plunger, { x: PLUNGER_X, y: PLUNGER_REST_Y });
+      }
+    };
+
     // 엔진과 렌더러 시작
     const runner = Runner.create();
     Runner.run(runner, engine);
@@ -616,20 +656,20 @@ function Pinball() {
     const handleKeyDown = (event) => {
   if (event.key === 'ArrowLeft') {
     console.log('왼쪽 방향키 눌림');
-    isLeftKeyPressed = true;
+    isLeftKeyPressed.current = true;
     playFlipperSound(fliperSoundRef.current);
   }
   if (event.key === 'ArrowRight') {
     console.log('오른쪽 방향키 눌림');
-    isRightKeyPressed = true;
+    isRightKeyPressed.current = true;
     playFlipperSound(fliperSoundRef.current);
   }
   // 스페이스바로 Plunger 충전
   if (event.key === ' ' || event.code === 'Space') {
     event.preventDefault();
-    if (!isSpacePressed) {
-      isSpacePressed = true;
-      spaceHoldStartTime = Date.now();
+    if (!isSpacePressed.current) {
+      isSpacePressed.current = true;
+      spaceHoldStartTime.current = Date.now();
       console.log('스페이스바 눌림 - Plunger 충전 시작');
     }
   }
@@ -669,28 +709,28 @@ const handleTouchStart = (event) => {
 
   if (touchX < centerX) {
     console.log('왼쪽 터치');
-    isLeftKeyPressed = true;
+    isLeftKeyPressed.current = true;
     playFlipperSound(fliperSoundRef.current);
   } else {
     console.log('오른쪽 터치');
-    isRightKeyPressed = true;
+    isRightKeyPressed.current = true;
     playFlipperSound(fliperSoundRef.current);
   }
 };
 
 const handleKeyUp = (event) => {
   if (event.key === 'ArrowLeft') {
-    isLeftKeyPressed = false;
+    isLeftKeyPressed.current = false;
   }
   if (event.key === 'ArrowRight') {
-    isRightKeyPressed = false;
+    isRightKeyPressed.current = false;
   }
   // 스페이스바 발사
   if (event.key === ' ' || event.code === 'Space') {
-    if (isSpacePressed) {
-      isSpacePressed = false;
+    if (isSpacePressed.current) {
+      isSpacePressed.current = false;
 
-      const holdDuration = Math.min(Date.now() - spaceHoldStartTime, 1500);
+      const holdDuration = Math.min(Date.now() - spaceHoldStartTime.current, 1500);
       const chargeRatio = Math.max(holdDuration / 1500, 0.1);
       const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
 
@@ -710,14 +750,14 @@ const handleKeyUp = (event) => {
 };
 
 const handleTouchEnd = () => {
-  isLeftKeyPressed = false;
-  isRightKeyPressed = false;
+  isLeftKeyPressed.current = false;
+  isRightKeyPressed.current = false;
 };
 
 window.addEventListener('keydown', handleKeyDown);
 window.addEventListener('keyup', handleKeyUp);
 
-if (sceneRef.current) {
+if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
   sceneRef.current.addEventListener('touchstart', handleTouchStart);
   sceneRef.current.addEventListener('touchend', handleTouchEnd);
 }
@@ -753,7 +793,7 @@ if (sceneRef.current) {
   Events.off(render, 'afterRender');
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('keyup', handleKeyUp);
-  if (sceneRef.current) {
+  if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
     sceneRef.current.removeEventListener('touchstart', handleTouchStart);
     sceneRef.current.removeEventListener('touchend', handleTouchEnd);
   }
@@ -887,6 +927,63 @@ display: 'flex',
             </Box>
 
             <div ref={sceneRef} style={{ position: 'relative', zIndex: 2 }} />
+
+            {/* 모바일 조작 버튼 (터치 디바이스에서만 표시) */}
+            {isTouchDevice && (
+              <Box sx={{
+                position: 'absolute',
+                bottom: '40px',
+                left: 0,
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0 40px',
+                zIndex: 20,
+                pointerEvents: 'none',
+                boxSizing: 'border-box',
+              }}>
+                {/* 왼쪽 플리퍼 버튼 */}
+                <Box
+                  onPointerDown={() => { isLeftKeyPressedRef.current = true; playFlipperSound(fliperSoundRef.current); }}
+                  onPointerUp={() => { isLeftKeyPressedRef.current = false; }}
+                  onPointerLeave={() => { isLeftKeyPressedRef.current = false; }}
+                  sx={{
+                    width: '100px', height: '100px', borderRadius: '50%',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    pointerEvents: 'auto',
+                    userSelect: 'none',
+                    touchAction: 'none',
+                  }}
+                />
+                {/* 플런저 버튼 */}
+                <Box
+                  onPointerDown={() => { plungerStartRef.current && plungerStartRef.current(); }}
+                  onPointerUp={() => { plungerReleaseRef.current && plungerReleaseRef.current(); }}
+                  onPointerLeave={() => { plungerReleaseRef.current && plungerReleaseRef.current(); }}
+                  sx={{
+                    width: '100px', height: '100px', borderRadius: '50%',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    pointerEvents: 'auto',
+                    userSelect: 'none',
+                    touchAction: 'none',
+                  }}
+                />
+                {/* 오른쪽 플리퍼 버튼 */}
+                <Box
+                  onPointerDown={() => { isRightKeyPressedRef.current = true; playFlipperSound(fliperSoundRef.current); }}
+                  onPointerUp={() => { isRightKeyPressedRef.current = false; }}
+                  onPointerLeave={() => { isRightKeyPressedRef.current = false; }}
+                  sx={{
+                    width: '100px', height: '100px', borderRadius: '50%',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    pointerEvents: 'auto',
+                    userSelect: 'none',
+                    touchAction: 'none',
+                  }}
+                />
+              </Box>
+            )}
 
             {/* 인게임 오버레이 (게임 캔버스 영역 위) */}
             {overlayState && (
