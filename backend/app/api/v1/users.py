@@ -16,7 +16,7 @@ from app.schemas.user import (
 # 기존 models.py 사용
 import sys
 sys.path.insert(0, '/code')
-from models import User, MonthlyScore, Friendship, HighScore
+from models import User, MonthlyScore, Friendship, HighScore, GameVisit
 
 router = APIRouter()
 
@@ -133,6 +133,10 @@ def delete_user(
         )
 
     # FK 참조 테이블 데이터 먼저 삭제
+    # GameVisit의 user_id를 NULL로 설정 (방문 기록 보존, FK 위반 방지)
+    db.query(GameVisit).filter(GameVisit.user_id == user_id)\
+        .update({"user_id": None}, synchronize_session=False)
+
     db.query(Friendship).filter(
         (Friendship.requester_id == user_id) | (Friendship.receiver_id == user_id)
     ).delete(synchronize_session=False)

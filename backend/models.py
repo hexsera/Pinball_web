@@ -58,7 +58,7 @@ class GameVisit(Base):
     __tablename__ = "game_visits"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)
     ip_address = Column(String(45), nullable=False, index=True)
     is_visits = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)

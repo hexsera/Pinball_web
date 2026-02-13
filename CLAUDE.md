@@ -65,7 +65,7 @@ docker-compose logs -f fastapi
 
 ### 주요 설계 결정
 
-**인증**: localStorage 기반 세션. 로그인 시 `{user_id, email, nickname, role}` 반환. 관리자/보호된 엔드포인트는 `X-API-Key` 헤더 필요.
+**인증**: localStorage 기반 세션. 로그인 시 `{user_id, email, nickname, role}` 반환.
 
 **HTTPS / 리다이렉트 문제**: Mixed Content 오류 방지를 위해 FastAPI에 `redirect_slashes=False` 설정, 모든 라우터 경로를 `"/"`가 아닌 `""`로 지정해 307 리다이렉트를 차단.
 
