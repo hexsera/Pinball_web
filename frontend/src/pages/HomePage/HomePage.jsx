@@ -54,7 +54,7 @@ function HomePage() {
             🎯 HEXSERA PINBALL
           </Typography>
           <Box>
-            <Button onClick={() => navigate('/dashboard')} sx={{ color: COLORS.text }}>
+            <Button onClick={() => navigate('/pinball')} sx={{ color: COLORS.text }}>
               게임하기
             </Button>
             <Button
@@ -87,7 +87,7 @@ function HomePage() {
             <Button
               variant="contained"
               size="large"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/pinball')}
               sx={{ backgroundColor: COLORS.primary, width: 'fit-content', px: 4, py: 1.5 }}
             >
               ▶ 지금 바로 플레이하기

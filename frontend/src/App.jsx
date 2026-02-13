@@ -1,4 +1,3 @@
-import Pinball from './pages/Pinball';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import HomePage from './pages/HomePage';
@@ -8,6 +7,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import { AdminPage, AdminUserPage, AdminStatisticsPage } from './pages/admin';
+import PinballPage from './pages/PinballPage';
 
 const theme = createTheme();
 
@@ -24,7 +24,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/Register" element={<Register/>} />
-            <Route path="/Pinball_test" element={<Pinball/>} />
+            <Route path="/pinball" element={<PinballPage />} />
             <Route path="/admin" element={<AdminPage/>} />
             <Route path="/admin/users" element={<AdminUserPage/>} />
             <Route path="/admin/statistics" element={<AdminStatisticsPage/>} />

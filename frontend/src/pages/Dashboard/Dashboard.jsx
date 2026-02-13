@@ -33,7 +33,6 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
-import Pinball from '../Pinball';
 import UserInfo from '../UserInfo';
 import FriendPage from '../FriendPage';
 import HeaderUserInfo from '../../components/HeaderUserInfo';
@@ -48,7 +47,6 @@ function Maindashboard() {
   const [openMenus, setOpenMenus] = useState({});
   const [menuIndex, setMenuIndex] = useState(0);
 
-  const [showPinball, setShowPinball] = useState(true);
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [showFriend, setShowFriend] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -117,9 +115,7 @@ function Maindashboard() {
     setMenuIndex(index);
     if (itemtext == '게임하기')
     {
-      setShowPinball(true);
-      setShowUserInfo(false);
-      setShowFriend(false);
+      navigate('/pinball');
     }
 
     if (itemtext == '친구')
@@ -391,7 +387,7 @@ function Maindashboard() {
       >
       <Toolbar />
       <Container maxWidth="xl">
-        {showPinball ? <Pinball /> : showUserInfo ? <UserInfo /> : showFriend ? <FriendPage /> : null}
+        {showUserInfo ? <UserInfo /> : showFriend ? <FriendPage /> : null}
       </Container>
       </Box>
     </Box>
