@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Matter from 'matter-js';
 import axios from 'axios';
 import { Button, Box, Typography, IconButton } from '@mui/material';
+import { keyframes } from '@mui/system';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -10,6 +11,17 @@ import { STAGE_CONFIGS, BUMPER_RADIUS } from './stageConfigs';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from './pinballSound';
 import { getRestartState } from './pinballRestart';
 import WallOverlay from './WallOverlay';
+
+const scorePopAnimation = keyframes`
+  0% {
+    font-size: 120px;
+    color: #ffffffee;
+  }
+  100% {
+    font-size: 92px;
+    color: #ffffffb2;
+  }
+`;
 
 function Pinball() {
   const { user } = useAuth();
@@ -32,6 +44,7 @@ function Pinball() {
   const plungerReleaseRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
+  const [scoreAnimKey, setScoreAnimKey] = useState(0);
   const [lives, setLives] = useState(3);
   const [stage, setStage] = useState(1);
   const [overlayState, setOverlayState] = useState(null);
@@ -47,6 +60,11 @@ function Pinball() {
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
+
+  const addScore = (points) => {
+    setScore(prev => prev + points);
+    setScoreAnimKey(prev => prev + 1);
+  };
 
   // 음악 재생/정지 토글 핸들러
   const handleToggleMusic = () => {
@@ -455,7 +473,7 @@ function Pinball() {
         if ((bodyA.label === 'target' && bodyB === ball) ||
             (bodyB.label === 'target' && bodyA === ball)) {
           console.log('target 충돌했음');
-          setScore(prev => prev + 300);
+          addScore(300);
         }
 
         // 죽음구역 충돌 감지
@@ -893,11 +911,17 @@ display: 'flex',
               transform: 'translateX(-50%)',
               zIndex: 5
             }}>
-              <Typography sx={{
-                fontSize: '92px',
-                fontWeight: 'bold',
-                color: '#ffffffa1'
-              }}>
+              <Typography
+                key={scoreAnimKey}
+                sx={{
+                  fontSize: '92px',
+                  fontWeight: 'bold',
+                  color: '#ffffffa1',
+                  animation: scoreAnimKey > 0
+                    ? `${scorePopAnimation} 3s ease-out forwards`
+                    : 'none',
+                }}
+              >
                 {score}
               </Typography>
             </Box>
