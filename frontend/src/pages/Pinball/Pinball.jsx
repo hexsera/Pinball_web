@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Matter from 'matter-js';
 import axios from 'axios';
 import { Button, Box, Typography, IconButton } from '@mui/material';
@@ -36,11 +36,6 @@ function Pinball() {
   const [stage, setStage] = useState(1);
   const [overlayState, setOverlayState] = useState(null);
   const [bestScore, setBestScore] = useState(null);
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight
-  });
-  const [gameScale, setGameScale] = useState(1);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const isLeftKeyPressedRef = useRef(false);
   const isRightKeyPressedRef = useRef(false);
@@ -121,22 +116,6 @@ function Pinball() {
       loadStageMapRef.current(1);
     }
   };
-
-  // 최적 스케일 계산 함수
-  const calculateScale = useCallback(() => {
-    const canvasWidth = 700;
-    const canvasHeight = 1200;
-    const padding = 120; // 여백
-
-    // 화면 너비/높이 기준으로 각각 계산
-    const scaleByWidth = (windowSize.width - padding) / canvasWidth;
-    const scaleByHeight = (windowSize.height - padding) / canvasHeight;
-
-    // 둘 중 작은 값을 선택하여 화면에 꽉 차지 않도록
-    const optimalScale = Math.min(scaleByWidth, scaleByHeight, 1);
-
-    setGameScale(optimalScale);
-  }, [windowSize]);
 
   // 터치 디바이스 감지
   useEffect(() => {
@@ -803,31 +782,10 @@ if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
 };
   }, []);
 
-  // 창 크기 변경 이벤트 리스너
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
   // score 상태가 변경될 때마다 scoreRef에 동기화
   useEffect(() => {
     scoreRef.current = score;
   }, [score]);
-
-  // windowSize 변경 시 스케일 재계산
-  useEffect(() => {
-    calculateScale();
-  }, [windowSize, calculateScale]);
 
   /*
 display: 'flex',
@@ -846,8 +804,6 @@ display: 'flex',
           position: 'relative',
           width: '700px',
           height: '1200px',
-          transform: `scale(${gameScale})`,
-          transformOrigin: 'top center'
         }}>
           {/* UI 영역 (상단 300px) */}
           <Box sx={{

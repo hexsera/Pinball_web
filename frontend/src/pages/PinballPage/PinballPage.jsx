@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, AppBar, Toolbar, IconButton } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
@@ -6,6 +7,31 @@ import HeaderUserInfo from '../../components/HeaderUserInfo';
 
 function PinballPage() {
   const navigate = useNavigate();
+
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+  const [gameScale, setGameScale] = useState(1);
+
+  const calculateScale = useCallback(() => {
+    const canvasWidth = 700;
+    const canvasHeight = 1200;
+    const padding = 120;
+    const scaleByWidth = (windowSize.width - padding) / canvasWidth;
+    const scaleByHeight = (windowSize.height - padding) / canvasHeight;
+    setGameScale(Math.min(scaleByWidth, scaleByHeight, 1));
+  }, [windowSize]);
+
+  useEffect(() => {
+    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    calculateScale();
+  }, [windowSize, calculateScale]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#0F172A' }}>
@@ -21,7 +47,9 @@ function PinballPage() {
 
       {/* 게임 영역 */}
       <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', pt: 2 }}>
-        <Pinball />
+        <Box sx={{ transform: `scale(${gameScale})`, transformOrigin: 'top center' }}>
+          <Pinball />
+        </Box>
       </Box>
     </Box>
   );
