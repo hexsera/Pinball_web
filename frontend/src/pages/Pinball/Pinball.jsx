@@ -41,6 +41,9 @@ function Pinball() {
   const isRightKeyPressedRef = useRef(false);
   const isSpacePressedRef = useRef(false);
   const spaceHoldStartTimeRef = useRef(0);
+  const [gameStarted, setGameStarted] = useState(false);
+  const gameStartedRef = useRef(false);
+  const runnerRef = useRef(null);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -56,6 +59,16 @@ function Pinball() {
         setIsPlaying(true);
       }
     }
+  };
+
+  // 게임 시작 함수 (시작 UI에서 Space/클릭 시 호출)
+  const startGame = () => {
+    if (gameStartedRef.current) return;
+    gameStartedRef.current = true;
+    setGameStarted(true);
+    engineRef.current.timing.timeScale = 1;
+    bgmRef.current?.play().catch(() => {});
+    setIsPlaying(true);
   };
 
   // 점수 전송 및 최고점수 갱신 함수
@@ -187,6 +200,7 @@ function Pinball() {
             y: 1
         }
     });
+    engine.timing.timeScale = 0; // 게임 시작 전 물리 정지
     engineRef.current = engine;
 
     // 화면에 보여주기 위한 렌더러 만들기
@@ -291,7 +305,7 @@ function Pinball() {
     ballRef.current = ball;
 
     // 왼쪽 플리퍼 (회전축 x=270, 중심 = 회전축 + 길이절반50 = x=320)
-    const leftFlipper = Bodies.rectangle(320, 1090, 100, 20, {
+    const leftFlipper = Bodies.rectangle(265, 995, 100, 20, {
       chamfer: { radius: 10 },
       render: { fillStyle: '#f39c12' },
       density: 0.001,
@@ -300,7 +314,7 @@ function Pinball() {
     });
 
     // 오른쪽 플리퍼 (회전축 x=430, 중심 = 회전축 - 길이절반50 = x=380)
-    const rightFlipper = Bodies.rectangle(380, 1090, 100, 20, {
+    const rightFlipper = Bodies.rectangle(400, 995, 100, 20, {
       chamfer: { radius: 10 },
       render: { fillStyle: '#f39c12' },
       density: 0.001,
@@ -629,10 +643,19 @@ function Pinball() {
 
     // 엔진과 렌더러 시작
     const runner = Runner.create();
+    runnerRef.current = runner;
     Runner.run(runner, engine);
     Render.run(render);
 
     const handleKeyDown = (event) => {
+  // 게임 시작 전: Space만 인식하고 나머지 키 무시
+  if (!gameStartedRef.current) {
+    if (event.key === ' ' || event.code === 'Space') {
+      event.preventDefault();
+      startGame();
+    }
+    return;
+  }
   if (event.key === 'ArrowLeft') {
     console.log('왼쪽 방향키 눌림');
     isLeftKeyPressed.current = true;
@@ -932,12 +955,52 @@ display: 'flex',
                   onPointerLeave={() => { isRightKeyPressedRef.current = false; }}
                   sx={{
                     width: '100px', height: '100px', borderRadius: '50%',
-                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    backgroundColor: 'hsla(0, 0%, 100%, 0.20)',
                     pointerEvents: 'auto',
                     userSelect: 'none',
                     touchAction: 'none',
                   }}
                 />
+              </Box>
+            )}
+
+            {/* 게임 시작 UI 오버레이 */}
+            {!gameStarted && (
+              <Box
+                onClick={startGame}
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'rgba(0,0,0,0.85)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 10,
+                  cursor: 'pointer',
+                }}
+              >
+                <Typography sx={{
+                  fontSize: '92px',
+                  fontWeight: 'bold',
+                  color: '#e94560',
+                  textShadow: '0 0 20px #e94560, 0 0 40px #e94560',
+                  mb: 4,
+                }}>
+                  PINBALL
+                </Typography>
+                {!isTouchDevice && (
+                  <>
+                    <Typography sx={{ color: '#ffffff', fontSize: '32px', mb: 1 }}>← → : 플립퍼 작동</Typography>
+                    <Typography sx={{ color: '#ffffff', fontSize: '32px', mb: 4 }}>SPACE : 플런저 발사</Typography>
+                  </>
+                )}
+                <Typography sx={{ color: '#f39c12', fontSize: '32px', fontWeight: 'bold' }}>
+                  {isTouchDevice ? '화면을 터치해서 시작' : 'PRESS SPACE TO START'}
+                </Typography>
               </Box>
             )}
 
