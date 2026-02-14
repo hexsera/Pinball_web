@@ -41,10 +41,10 @@ npm test        # Vitest 테스트 실행
 | URL | 컴포넌트 | 설명 |
 |-----|----------|------|
 | `/` | `HomePage` | 랜딩 페이지 (Aurora WebGL 배경, 랭킹 테이블) |
-| `/dashboard` | `Dashboard` | 게임 대시보드 (진입 시 Pinball 기본 표시) |
+| `/pinball` | `PinballPage` | 핀볼 게임 전용 페이지 (홈 버튼 + 스케일 조정) |
+| `/dashboard` | `Dashboard` | 게임 대시보드 (사이드바: 친구·계정) |
 | `/login` | `Login` | 로그인 → 성공 시 `/dashboard` 이동 |
 | `/Register` | `Register` | 3단계 회원가입 |
-| `/Pinball_test` | `Pinball` | 핀볼 게임 독립 페이지 |
 | `/admin` | `AdminPage` | Admin 메인 |
 | `/admin/users` | `AdminUserPage` | Admin 회원 관리 |
 | `/admin/statistics` | `AdminStatisticsPage` | Admin 통계 |
@@ -69,7 +69,7 @@ src/
 │   │   └── HomePage.jsx       # 랜딩 페이지. Aurora 배경, 랭킹 테이블. GET /api/v1/monthly-scores
 │   │
 │   ├── Dashboard/
-│   │   └── Dashboard.jsx      # 게임 대시보드. 사이드바 메뉴: 게임하기·친구·계정. showPinball/showUserInfo/showFriendPage 상태로 메인 영역 전환
+│   │   └── Dashboard.jsx      # 게임 대시보드. 사이드바 메뉴: 게임하기(→/pinball 이동)·친구·계정. showUserInfo/showFriendPage 상태로 메인 영역 전환
 │   │
 │   ├── Login/
 │   │   └── Login.jsx          # 로그인. POST /api/v1/login
@@ -83,8 +83,12 @@ src/
 │   ├── FriendPage/
 │   │   └── FriendPage.jsx     # 친구 목록/검색/요청
 │   │
-│   ├── Pinball/
-│   │   ├── Pinball.jsx        # Matter.js 핀볼 게임 본체 (물리 엔진, 플리퍼, 범퍼, 점수, 스테이지)
+│   ├── PinballPage/
+│   │   ├── PinballPage.jsx    # 핀볼 전용 페이지 레이아웃 (홈 버튼, 스케일 조정, HeaderUserInfo)
+│   │   └── index.js           # 단축 export
+│   │
+   ├── Pinball/
+│   │   ├── Pinball.jsx        # Matter.js 핀볼 게임 본체 (물리 엔진, 플리퍼, 범퍼, 점수, 스테이지). 700×1200px 고정
 │   │   ├── WallOverlay.jsx    # 핀볼 벽 CSS 오버레이
 │   │   ├── stageConfigs.js    # 스테이지별 범퍼 배치 설정 및 공유 상수
 │   │   ├── pinballSound.js    # 사운드 재생 유틸 함수

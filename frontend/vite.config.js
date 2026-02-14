@@ -13,6 +13,7 @@ export default defineConfig({
   plugins: [react()],
   // 개발 서버 설정
   server: {
+    host: true,  // 0.0.0.0으로 바인딩 (외부 기기 접속 허용)
     // API 요청을 FastAPI 서버로 프록시 설정
     proxy: {
       '/api': {

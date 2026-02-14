@@ -32,7 +32,7 @@ FastAPI 백엔드 서버. PostgreSQL/MySQL 연동, SQLAlchemy ORM, Alembic 마�
 | `main.py` | FastAPI 앱 진입점. 라우터 등록, DB 초기화(create_all), 시딩(seed_admin) 실행 |
 | `models.py` | SQLAlchemy ORM 모델 정의 (User, Score, Friendship, MonthlyScore, GameVisit, HighScore) |
 | `seed.py` | Data Seeding — Admin 계정 자동 생성 (`seed_admin` 함수) |
-| `requirements.txt` | Python 패키지 의존성 |
+| `requirements.txt` | Python 패키지 의존성 (Faker==24.0.0 포함) |
 | `Dockerfile` | FastAPI 컨테이너 빌드 설정 |
 | `alembic.ini` | Alembic 설정 파일 |
 | `pytest.ini` | pytest 설정 (TESTING=1 환경변수 등) |
@@ -82,14 +82,25 @@ alembic/
 ├── README              # Alembic 기본 설명
 ├── env.py              # Alembic 환경 설정 (Base.metadata 연결, 환경변수 로드)
 ├── script.py.mako      # 마이그레이션 파일 템플릿
-├── versions/           # 마이그레이션 파일 (적용 순서대로)
-│   ├── eccd28617903_initial_postgresql_migration.py
-│   ├── 6fe36d8bc6a2_add_user_id_column_to_users_table.py
-│   ├── f38f15d3477d_add_foreign_key_constraints_to_.py
-│   ├── 45f71363a042_add_foreign_key_to_high_scores_user_id.py
-│   └── 0ceb423c2879_add_foreign_key_to_monthly_scores_user_.py
+├── versions/           # 마이그레이션 파일 (단일 초기 revision으로 통합)
+│   └── 60a77f2baf38_initial_schema.py
 └── versions_mysql_backup/  # MySQL 시절 마이그레이션 백업
 ```
+
+---
+
+## scripts/ 디렉토리
+
+```
+scripts/
+├── __init__.py
+└── mock/
+    ├── __init__.py
+    ├── seed_mock_data.py               # users 50명 + monthly_scores 50개 mock 삽입 (Faker 사용)
+    └── seed_friendships_gamevisits.py  # friendships 80건 + game_visits 200건 mock 삽입
+```
+
+실행: `docker compose exec fastapi python scripts/mock/<파일명>.py`
 
 ---
 
@@ -117,7 +128,7 @@ tests/
 | Score | scores | id(PK), user_id, score, created_at |
 | Friendship | friendships | id, requester_id(FK→users), receiver_id(FK→users), status, created_at |
 | MonthlyScore | monthly_scores | id, user_id(FK→users), nickname, score, created_at |
-| GameVisit | game_visits | id, user_id(nullable), ip_address, is_visits, created_at, updated_at |
+| GameVisit | game_visits | id, user_id(FK→users, nullable), ip_address, is_visits, created_at, updated_at |
 | HighScore | high_scores | id, user_id(FK→users, UNIQUE), score, created_at, updated_at |
 
 ---

@@ -895,7 +895,7 @@ display: 'flex',
             width: '700px',
             height: '1100px',
             overflow: 'hidden',
-            backgroundImage: 'url(/images/pinball_back.png)',
+            backgroundImage: 'url(/images/newbg.jpg)',
             backgroundSize: '100% 100%',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
