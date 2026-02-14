@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, AppBar, Toolbar, IconButton } from '@mui/material';
+import { Box, AppBar, Toolbar, IconButton, CircularProgress } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import HomeIcon from '@mui/icons-material/Home';
@@ -19,6 +19,7 @@ function PinballPage() {
     height: window.innerHeight
   });
   const [gameScale, setGameScale] = useState(1);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (appBarRef.current) {
@@ -76,8 +77,22 @@ function PinballPage() {
           marginBottom: `${scaledHeight - 1200}px`,
           marginLeft: 'auto',
           marginRight: 'auto',
+          position: 'relative',
         }}>
-          <Pinball />
+          <Box sx={{ visibility: isReady ? 'visible' : 'hidden' }}>
+            <Pinball onReady={() => setIsReady(true)} />
+          </Box>
+          {!isReady && (
+            <Box sx={{
+              position: 'absolute', top: 0, left: 0,
+              width: '100%', height: '100%',
+              backgroundColor: '#000000',
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              zIndex: 50,
+            }}>
+              <CircularProgress size={64} sx={{ color: '#e94560' }} />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

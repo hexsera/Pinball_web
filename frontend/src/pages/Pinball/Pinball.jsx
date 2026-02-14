@@ -23,7 +23,7 @@ const scorePopAnimation = keyframes`
   }
 `;
 
-function Pinball() {
+function Pinball({ onReady }) {
   const { user } = useAuth();
   const sceneRef = useRef(null);
   const bgmRef = useRef(null);
@@ -570,7 +570,12 @@ function Pinball() {
     });
 
     // 범퍼 네온 글로우 커스텀 렌더링
+    let firstFrameFired = false;
     Events.on(render, 'afterRender', () => {
+      if (!firstFrameFired) {
+        firstFrameFired = true;
+        onReady?.();
+      }
       const ctx = render.context;
       const bumperBodies = stageBodiesRef.current.filter(b => b.label === 'bumper');
 
