@@ -134,14 +134,14 @@ function Pinball({ onReady }) {
       const World = Matter.World;
       const Body = Matter.Body;
       World.add(engine.world, ball);
-      Body.setPosition(ball, { x: 662, y: 1020 });
+      Body.setPosition(ball, { x: 662, y: 990 });
       Body.setVelocity(ball, { x: 0, y: 0 });
       Body.setAngularVelocity(ball, 0);
     }
 
     // plunger 원래 위치로 복귀
     if (plungerRef.current && engineRef.current) {
-      Matter.Body.setPosition(plungerRef.current, { x: 662, y: 1050 });
+      Matter.Body.setPosition(plungerRef.current, { x: 662, y: 1020 });
     }
 
     // 스테이지 1 맵 다시 로딩
@@ -300,10 +300,18 @@ function Pinball({ onReady }) {
 
     // Plunger 상수
     const PLUNGER_X = 662;
-    const PLUNGER_REST_Y = 1050;
+    const PLUNGER_REST_Y = 1020;
     const PLUNGER_PULL_SPEED = 0.8;
     const PLUNGER_MAX_PULL_Y = 1080;
     const PLUNGER_MAX_LAUNCH_SPEED = 55;
+    const SHELF_Y = 1010; // 발판벽 y좌표 (플런저 위)
+
+    // 발판벽 (플런저 레인 내 공이 올라설 수평 발판)
+    const plungerShelf = Bodies.rectangle(PLUNGER_X, SHELF_Y, 80, 10, {
+      isStatic: true,
+      label: 'plungerShelf',
+      render: { fillStyle: '#16213e' }
+    });
 
     // Plunger Body (시각적 표현, isStatic)
     const plunger = Bodies.rectangle(PLUNGER_X, PLUNGER_REST_Y, 30, 15, {
@@ -313,8 +321,8 @@ function Pinball({ onReady }) {
     });
     plungerRef.current = plunger;
 
-    // 핀볼 공 만들기 (Plunger lane에서 시작)
-    const ball = Bodies.circle(662, 1020, 15, {
+    // 핀볼 공 만들기 (발판벽 위에서 시작)
+    const ball = Bodies.circle(662, SHELF_Y - 20, 15, {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
@@ -423,8 +431,9 @@ function Pinball({ onReady }) {
       rightFlipper,
       leftFlipperConstraint,
       rightFlipperConstraint,
-      plunger,              // Phase 1에서 추가
-      plungerLaneGuide      // Phase 1에서 추가
+      plunger,
+      plungerShelf,
+      plungerLaneGuide
     ]);
 
     // 스테이지 1 맵 로딩
@@ -489,8 +498,8 @@ function Pinball({ onReady }) {
 
           // livesRef로 최신 lives 값 확인
           if (livesRef.current > 0) {
-            // 공을 Plunger lane으로 이동
-            Body.setPosition(ball, { x: 662, y: 1020 });
+            // 공을 발판벽 위로 이동
+            Body.setPosition(ball, { x: 662, y: 990 });
 
             // 속도 초기화
             Body.setVelocity(ball, { x: 0, y: 0 });
@@ -579,6 +588,39 @@ function Pinball({ onReady }) {
         onReady?.();
       }
       const ctx = render.context;
+
+      // 발사 영역 디버그 렌더링 (빨간 반투명 사각형)
+      /* const LAUNCH_ZONE = { x: 630, y: SHELF_Y - 25, w: 65, h: 25 };
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
+      ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(LAUNCH_ZONE.x, LAUNCH_ZONE.y, LAUNCH_ZONE.w, LAUNCH_ZONE.h);
+      ctx.strokeRect(LAUNCH_ZONE.x, LAUNCH_ZONE.y, LAUNCH_ZONE.w, LAUNCH_ZONE.h);
+      ctx.restore(); */
+
+      // 플런저 스프링 코일 드로잉
+      const px = plunger.position.x;
+      const py = plunger.position.y + 8;
+      const bottomY = 1100;
+      const coilCount = 12;
+      const coilWidth = 12;
+      const segH = (bottomY - py) / coilCount;
+      ctx.save();
+      ctx.strokeStyle = '#b0b0b0';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#888888';
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      for (let i = 0; i < coilCount; i++) {
+        const dirX = (i % 2 === 0) ? coilWidth : -coilWidth;
+        ctx.lineTo(px + dirX, py + segH * (i + 0.5));
+        ctx.lineTo(px, py + segH * (i + 1));
+      }
+      ctx.stroke();
+      ctx.restore();
+
       const bumperBodies = stageBodiesRef.current.filter(b => b.label === 'bumper');
 
       bumperBodies.forEach((bumper) => {
@@ -727,8 +769,8 @@ function Pinball({ onReady }) {
         const chargeRatio = Math.max(holdDuration / 1500, 0.1);
         const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
 
-        const ballInLane = ball.position.x > 640 && ball.position.x < 685 &&
-                           ball.position.y > 900 && ball.position.y < 1080;
+        const ballInLane = ball.position.x > 630 && ball.position.x < 695 &&
+                           ball.position.y > SHELF_Y - 25 && ball.position.y < SHELF_Y;
 
         if (ballInLane) {
           Body.setVelocity(ball, { x: 0, y: -launchSpeed });
@@ -845,9 +887,9 @@ const handleKeyUp = (event) => {
       const chargeRatio = Math.max(holdDuration / 1500, 0.1);
       const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
 
-      // 공이 plunger lane 안에 있을 때만 발사
-      const ballInLane = ball.position.x > 640 && ball.position.x < 685 &&
-                         ball.position.y > 900 && ball.position.y < 1080;
+      // 공이 발판벽 위에 있을 때만 발사
+      const ballInLane = ball.position.x > 630 && ball.position.x < 695 &&
+                         ball.position.y > SHELF_Y - 50 && ball.position.y < SHELF_Y;
 
       if (ballInLane) {
         Body.setVelocity(ball, { x: 0, y: -launchSpeed });
