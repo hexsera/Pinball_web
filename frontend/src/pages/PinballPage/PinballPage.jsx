@@ -33,8 +33,10 @@ function PinballPage() {
     calculateScale();
   }, [windowSize, calculateScale]);
 
+  const scaledHeight = 1200 * gameScale;
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#0F172A' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: '#0F172A' }}>
       {/* 상단 헤더 */}
       <AppBar position="static" sx={{ backgroundColor: '#1E293B', boxShadow: 'none', borderBottom: '1px solid #334155' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
@@ -46,8 +48,16 @@ function PinballPage() {
       </AppBar>
 
       {/* 게임 영역 */}
-      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', pt: 2 }}>
-        <Box sx={{ transform: `scale(${gameScale})`, transformOrigin: 'top center' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', overflow: 'hidden', pt: 2 }}>
+        <Box sx={{
+          transform: `scale(${gameScale})`,
+          transformOrigin: 'top center',
+          width: 700,
+          height: 1200,
+          marginBottom: `${scaledHeight - 1200}px`,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}>
           <Pinball />
         </Box>
       </Box>
