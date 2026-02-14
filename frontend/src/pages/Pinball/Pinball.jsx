@@ -42,6 +42,8 @@ function Pinball({ onReady }) {
   const plungerRef = useRef(null);
   const plungerStartRef = useRef(null);
   const plungerReleaseRef = useRef(null);
+  const pressFlipperKeyRef = useRef(null);
+  const releaseFlipperKeyRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [scoreAnimKey, setScoreAnimKey] = useState(0);
@@ -670,6 +672,22 @@ function Pinball({ onReady }) {
     Runner.run(runner, engine);
     Render.run(render);
 
+    const pressFlipperKey = (keyRef) => {
+      if (!keyRef.current) {
+        playFlipperSound(fliperSoundRef.current);
+      }
+      keyRef.current = true;
+    };
+    pressFlipperKeyRef.current = pressFlipperKey;
+
+    const releaseFlipperKey = (keyRef) => {
+      if (keyRef.current) {
+        playFlipperSound(fliperSoundRef.current);
+      }
+      keyRef.current = false;
+    };
+    releaseFlipperKeyRef.current = releaseFlipperKey;
+
     const handleKeyDown = (event) => {
   // 게임 시작 전: Space만 인식하고 나머지 키 무시
   if (!gameStartedRef.current) {
@@ -681,13 +699,11 @@ function Pinball({ onReady }) {
   }
   if (event.key === 'ArrowLeft') {
     console.log('왼쪽 방향키 눌림');
-    isLeftKeyPressed.current = true;
-    playFlipperSound(fliperSoundRef.current);
+    pressFlipperKey(isLeftKeyPressed);
   }
   if (event.key === 'ArrowRight') {
     console.log('오른쪽 방향키 눌림');
-    isRightKeyPressed.current = true;
-    playFlipperSound(fliperSoundRef.current);
+    pressFlipperKey(isRightKeyPressed);
   }
   // 스페이스바로 Plunger 충전
   if (event.key === ' ' || event.code === 'Space') {
@@ -734,21 +750,19 @@ const handleTouchStart = (event) => {
 
   if (touchX < centerX) {
     console.log('왼쪽 터치');
-    isLeftKeyPressed.current = true;
-    playFlipperSound(fliperSoundRef.current);
+    pressFlipperKey(isLeftKeyPressed);
   } else {
     console.log('오른쪽 터치');
-    isRightKeyPressed.current = true;
-    playFlipperSound(fliperSoundRef.current);
+    pressFlipperKey(isRightKeyPressed);
   }
 };
 
 const handleKeyUp = (event) => {
   if (event.key === 'ArrowLeft') {
-    isLeftKeyPressed.current = false;
+    releaseFlipperKey(isLeftKeyPressed);
   }
   if (event.key === 'ArrowRight') {
-    isRightKeyPressed.current = false;
+    releaseFlipperKey(isRightKeyPressed);
   }
   // 스페이스바 발사
   if (event.key === ' ' || event.code === 'Space') {
@@ -775,8 +789,8 @@ const handleKeyUp = (event) => {
 };
 
 const handleTouchEnd = () => {
-  isLeftKeyPressed.current = false;
-  isRightKeyPressed.current = false;
+  releaseFlipperKey(isLeftKeyPressed);
+  releaseFlipperKey(isRightKeyPressed);
 };
 
 window.addEventListener('keydown', handleKeyDown);
@@ -950,9 +964,9 @@ display: 'flex',
               }}>
                 {/* 왼쪽 플리퍼 버튼 */}
                 <Box
-                  onPointerDown={() => { isLeftKeyPressedRef.current = true; playFlipperSound(fliperSoundRef.current); }}
-                  onPointerUp={() => { isLeftKeyPressedRef.current = false; }}
-                  onPointerLeave={() => { isLeftKeyPressedRef.current = false; }}
+                  onPointerDown={() => pressFlipperKeyRef.current?.(isLeftKeyPressedRef)}
+                  onPointerUp={() => releaseFlipperKeyRef.current?.(isLeftKeyPressedRef)}
+                  onPointerLeave={() => releaseFlipperKeyRef.current?.(isLeftKeyPressedRef)}
                   sx={{
                     width: '100px', height: '100px', borderRadius: '50%',
                     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -976,9 +990,9 @@ display: 'flex',
                 />
                 {/* 오른쪽 플리퍼 버튼 */}
                 <Box
-                  onPointerDown={() => { isRightKeyPressedRef.current = true; playFlipperSound(fliperSoundRef.current); }}
-                  onPointerUp={() => { isRightKeyPressedRef.current = false; }}
-                  onPointerLeave={() => { isRightKeyPressedRef.current = false; }}
+                  onPointerDown={() => pressFlipperKeyRef.current?.(isRightKeyPressedRef)}
+                  onPointerUp={() => releaseFlipperKeyRef.current?.(isRightKeyPressedRef)}
+                  onPointerLeave={() => releaseFlipperKeyRef.current?.(isRightKeyPressedRef)}
                   sx={{
                     width: '100px', height: '100px', borderRadius: '50%',
                     backgroundColor: 'hsla(0, 0%, 100%, 0.20)',
