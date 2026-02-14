@@ -26,7 +26,7 @@ export const STAGE_CONFIGS = {
       { x: 500, y: 350, radius: BUMPER_RADIUS, options: BUMPER_OPTIONS }
     ],
     targets: [
-      { x: 500, y: 590, radius: 40, options: { isStatic: true, restitution: 1.5, label: 'target', render: { fillStyle: '#87CEEB' } } }
+      { x: 350, y: 450, radius: 40, options: { isStatic: true, restitution: 1.5, label: 'target', render: { fillStyle: 'transparent', opacity: 0 } } }
     ]
   },
   2: {
@@ -42,8 +42,8 @@ export const STAGE_CONFIGS = {
       { x: 500, y: 700, radius: BUMPER_RADIUS, options: BUMPER_OPTIONS }
     ],
     targets: [
-      { x: 350, y: 350, radius: 35, options: { isStatic: true, restitution: 1.5, label: 'target', render: { fillStyle: '#87CEEB' } } },
-      { x: 200, y: 600, radius: 35, options: { isStatic: true, restitution: 1.5, label: 'target', render: { fillStyle: '#87CEEB' } } }
+      { x: 350, y: 350, radius: 35, options: { isStatic: true, restitution: 1.5, label: 'target', render: { fillStyle: 'transparent', opacity: 0 } } },
+      { x: 200, y: 600, radius: 35, options: { isStatic: true, restitution: 1.5, label: 'target', render: { fillStyle: 'transparent', opacity: 0 } } }
     ]
   }
 };

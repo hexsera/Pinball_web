@@ -636,6 +636,78 @@ function Pinball({ onReady }) {
 
         ctx.restore();
       });
+
+      // 타겟 pop bumper 스타일 렌더링
+      const targetBodies = stageBodiesRef.current.filter(b => b.label === 'target');
+
+      targetBodies.forEach((target) => {
+        const { x, y } = target.position;
+        const radius = target.circleRadius || 40;
+
+        ctx.save();
+
+        // ① 외곽 글로우 레이어 1 (가장 넓게 번짐)
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 10, 0, Math.PI * 2);
+        ctx.shadowColor = '#00aaff00';
+        ctx.shadowBlur = 30;
+        ctx.strokeStyle = 'rgba(186, 245, 255, 0.34)';
+        ctx.lineWidth = 8;
+        ctx.stroke();
+
+        // ② 외곽 글로우 레이어 2 (중간)
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 3, 0, Math.PI * 2);
+        ctx.shadowColor = '#33ccff00';
+        ctx.shadowBlur = 20;
+        ctx.strokeStyle = 'rgba(93, 182, 255, 0.69)';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // ③ 본체 (방사형 그라디언트: 중앙 밝은 하늘색 → 가장자리 진한 파란색)
+        const gradient = ctx.createRadialGradient(x, y, radius * 0.28, x, y, radius);
+        gradient.addColorStop(0, '#DDFAFF');
+        gradient.addColorStop(0.5, '#77DDFF');
+        gradient.addColorStop(1, '#2299CC');
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        //ctx.strokeStyle = '#1188BB';
+        //ctx.lineWidth = 5;
+        //ctx.stroke();
+
+        // ② 방사형 톱니 별 패턴 (하늘색 계열, innerRadius를 더 작게 → 톱니 깊이 증가)
+        ctx.fillStyle = 'rgba(0, 120, 180, 0.55)';
+        const numPoints = 16;
+        const outerRadius = radius;
+        const innerRadius = radius * 0.45;
+        ctx.beginPath();
+        for (let i = 0; i < numPoints * 2; i++) {
+          const r = (i % 2 === 0) ? outerRadius : innerRadius;
+          const angle = (i / (numPoints * 2)) * Math.PI * 2;
+          const px = x + r * Math.cos(angle);
+          const py = y + r * Math.sin(angle);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // ③ 내부 원 (톱니 중앙)
+        const innerCircleGrad = ctx.createRadialGradient(x, y, 0, x, y, innerRadius);
+        innerCircleGrad.addColorStop(0, '#EEFAFF');
+        innerCircleGrad.addColorStop(1, '#44BBEE');
+        ctx.beginPath();
+        ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
+        ctx.fillStyle = innerCircleGrad;
+        ctx.fill();
+        //ctx.strokeStyle = '#1188BB';
+        //ctx.lineWidth = 2;
+        //ctx.stroke();
+
+        ctx.restore();
+      });
     });
 
     // 플런저 충전 시작 (버튼 onPointerDown에서 호출)
