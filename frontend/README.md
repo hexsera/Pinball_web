@@ -121,3 +121,4 @@ src/
 - `@mui/x-data-grid`는 CSS import 문제로 Vitest에서 mock 처리 필요
 - Aurora(`ogl` WebGL)는 Vitest 환경에서 mock 처리 필요
 - Dashboard 사이드바/헤더는 별도 컴포넌트로 분리되지 않음
+- Pinball 로딩 스피너 오버레이 시 `display: none` 대신 `visibility: hidden` 사용 — `display: none`이면 `sceneRef.current`가 null이 되어 Matter.js 렌더러 초기화 실패
