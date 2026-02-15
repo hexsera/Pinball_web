@@ -1,6 +1,18 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import axios from 'axios';
 import FriendPage from '../pages/FriendPage';
+
+vi.mock('axios');
+
+beforeEach(() => {
+  axios.get.mockResolvedValue({ data: { requests: [] } });
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+  localStorage.clear();
+});
 
 describe('FriendPage 컴포넌트', () => {
   it('FriendPage가 렌더링된다', () => {

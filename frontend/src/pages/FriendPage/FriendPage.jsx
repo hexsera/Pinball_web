@@ -13,12 +13,22 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch (e) {
+    return null;
+  }
+};
 
 function FriendPage() {
   // 검색 관련 state
   const [searchNickname, setSearchNickname] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   // 친구 요청 관련 state
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -30,19 +40,11 @@ function FriendPage() {
   const [friendLoading, setFriendLoading] = useState(false);
   const [friendError, setFriendError] = useState(null);
 
+  // 친구 월간 점수 state: { [user_id]: score | null }
+  const [friendScores, setFriendScores] = useState({});
+
   // 액션 에러 state
   const [actionError, setActionError] = useState(null);
-
-  // 현재 사용자 정보 가져오기
-  const getCurrentUser = () => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    try {
-      return JSON.parse(userStr);
-    } catch (e) {
-      return null;
-    }
-  };
 
   // 친구 요청 목록 조회 (pending)
   const fetchPendingRequests = async () => {
@@ -54,12 +56,8 @@ function FriendPage() {
 
     try {
       const response = await axios.get('/api/friend-requests', {
-        params: {
-          user_id: user.id,
-          friend_status: 'pending'
-        }
+        params: { user_id: user.id, friend_status: 'pending' }
       });
-
       setPendingRequests(response.data.requests || []);
     } catch (error) {
       console.error('친구 요청 조회 실패:', error);
@@ -69,7 +67,7 @@ function FriendPage() {
     }
   };
 
-  // 친구 목록 조회 (accepted)
+  // 친구 목록 조회 (accepted) + 각 친구의 월간 점수 조회
   const fetchFriendList = async () => {
     const user = getCurrentUser();
     if (!user || !user.id) return;
@@ -79,13 +77,25 @@ function FriendPage() {
 
     try {
       const response = await axios.get('/api/friend-requests', {
-        params: {
-          user_id: user.id,
-          friend_status: 'accepted'
-        }
+        params: { user_id: user.id, friend_status: 'accepted' }
       });
 
-      setFriendList(response.data.requests || []);
+      const friends = response.data.requests || [];
+      setFriendList(friends);
+
+      const scores = {};
+      await Promise.all(friends.map(async (friendship) => {
+        const friendId = friendship.receiver_id === user.id
+          ? friendship.requester_id
+          : friendship.receiver_id;
+        try {
+          const scoreRes = await axios.get(`/api/v1/monthly-scores/${friendId}`);
+          scores[friendId] = scoreRes.data.score;
+        } catch {
+          scores[friendId] = null;
+        }
+      }));
+      setFriendScores(scores);
     } catch (error) {
       console.error('친구 목록 조회 실패:', error);
       setFriendError('친구 목록을 불러오는데 실패했습니다');
@@ -94,7 +104,6 @@ function FriendPage() {
     }
   };
 
-  // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchPendingRequests();
     fetchFriendList();
@@ -103,14 +112,11 @@ function FriendPage() {
   // 친구 승인 핸들러
   const handleAcceptFriend = async (request) => {
     setActionError(null);
-
     try {
       await axios.post('/api/friend-requests/accept', {
         requester_id: request.requester_id,
         receiver_id: request.receiver_id
       });
-
-      // 성공 시 목록 새로고침
       await fetchPendingRequests();
       await fetchFriendList();
     } catch (error) {
@@ -122,23 +128,17 @@ function FriendPage() {
   // 친구 거절 핸들러
   const handleRejectFriend = async (request) => {
     setActionError(null);
-
     try {
       await axios.post('/api/friend-requests/reject', {
         requester_id: request.requester_id,
         receiver_id: request.receiver_id
       });
-
-      // 성공 시 목록 새로고침
       await fetchPendingRequests();
     } catch (error) {
       console.error('친구 거절 실패:', error);
       setActionError(error.response?.data?.detail || '친구 거절에 실패했습니다');
     }
   };
-
-  // 검색 에러 state
-  const [searchError, setSearchError] = useState(null);
 
   // 검색 핸들러
   const handleSearch = async () => {
@@ -153,7 +153,6 @@ function FriendPage() {
     } catch (error) {
       console.error('검색 실패:', error);
       setSearchError('검색에 실패했습니다');
-      setHasSearched(false);
     }
   };
 
@@ -192,17 +191,8 @@ function FriendPage() {
     }
   };
 
-  // 상대방 ID 추출 (양방향 관계 처리)
-  const getFriendId = (friendship) => {
-    const user = getCurrentUser();
-    if (!user) return null;
-
-    if (friendship.requester_id === user.id) {
-      return friendship.receiver_id;
-    } else {
-      return friendship.requester_id;
-    }
-  };
+  const currentUser = getCurrentUser();
+  const receivedRequests = pendingRequests.filter(r => r.receiver_id === currentUser?.id);
 
   return (
     <Box
@@ -256,7 +246,6 @@ function FriendPage() {
       {/* 오른쪽 영역: 친구 요청 + 친구 목록 */}
       <Box data-testid="friend-right-area" sx={{ width: '40%' }}>
         <Paper sx={{ p: 2, minHeight: '200px' }}>
-          {/* 액션 에러 표시 */}
           {actionError && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError(null)}>
               {actionError}
@@ -277,29 +266,22 @@ function FriendPage() {
               <Typography color="text.secondary">받은 친구 요청이 없습니다</Typography>
             )}
 
-            {!pendingLoading && !pendingError && pendingRequests.length > 0 && (
+            {!pendingLoading && !pendingError && receivedRequests.length > 0 && (
               <List dense>
-                {pendingRequests.map((request) => (
+                {receivedRequests.map((request) => (
                   <ListItem
                     key={request.id}
-                    sx={{
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      mb: 1
-                    }}
+                    sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, mb: 1 }}
                   >
-                    <ListItemText
-                      primary={`요청 ID: ${request.id}`}
-                    />
+                    <ListItemText primary={request.requester_nickname} />
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button
                         variant="contained"
                         size="small"
-                        color="primary"
+                        color="success"
                         onClick={() => handleAcceptFriend(request)}
                       >
-                        친구 승인
+                        승인
                       </Button>
                       <Button
                         variant="outlined"
@@ -335,20 +317,25 @@ function FriendPage() {
             {!friendLoading && !friendError && friendList.length > 0 && (
               <List dense>
                 {friendList.map((friendship) => {
-                  const friendId = getFriendId(friendship);
+                  const isReceiver = friendship.receiver_id === currentUser?.id;
+                  const friendNickname = isReceiver
+                    ? friendship.requester_nickname
+                    : friendship.receiver_nickname;
+                  const friendId = isReceiver
+                    ? friendship.requester_id
+                    : friendship.receiver_id;
+                  const score = friendScores[friendId];
                   return (
                     <ListItem
                       key={friendship.id}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        mb: 1
-                      }}
+                      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, mb: 1 }}
+                      secondaryAction={
+                        <Typography variant="body2" color="text.secondary">
+                          최고점수:{score != null ? score : '-'}
+                        </Typography>
+                      }
                     >
-                      <ListItemText
-                        primary={`친구 ID: ${friendId}`}
-                      />
+                      <ListItemText primary={friendNickname} />
                     </ListItem>
                   );
                 })}

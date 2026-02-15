@@ -10,8 +10,8 @@ vi.mock('axios');
 // Mock 데이터
 const MOCK_PENDING_REQUESTS = {
   requests: [
-    { id: 1, requester_id: 3, receiver_id: 1, status: 'pending' },
-    { id: 2, requester_id: 5, receiver_id: 1, status: 'pending' },
+    { id: 1, requester_id: 3, requester_nickname: '홍길동', receiver_id: 1, receiver_nickname: '나', status: 'pending' },
+    { id: 2, requester_id: 5, requester_nickname: '박영희', receiver_id: 1, receiver_nickname: '나', status: 'pending' },
   ]
 };
 
@@ -89,9 +89,8 @@ describe('친구 요청 API 호출', () => {
     render(<FriendPage />);
 
     await waitFor(() => {
-      // 요청 ID 1, 2가 표시되는지 확인
       const rightArea = screen.getByTestId('friend-right-area');
-      expect(rightArea.textContent).toMatch(/요청 ID: 1|요청 ID: 2/);
+      expect(rightArea.textContent).toMatch(/홍길동|박영희/);
     });
   });
 
@@ -111,7 +110,7 @@ describe('친구 요청 API 호출', () => {
   });
 });
 
-describe('친구 승인 버튼', () => {
+describe('승인 버튼', () => {
   beforeEach(() => {
     localStorage.setItem('user', JSON.stringify({ id: 1, name: '테스트유저' }));
 
@@ -135,24 +134,24 @@ describe('친구 승인 버튼', () => {
     localStorage.clear();
   });
 
-  it('각 친구 요청 항목마다 "친구 승인" 버튼이 존재한다', async () => {
+  it('각 친구 요청 항목마다 "승인" 버튼이 존재한다', async () => {
     render(<FriendPage />);
 
     await waitFor(() => {
-      const approveButtons = screen.getAllByRole('button', { name: '친구 승인' });
+      const approveButtons = screen.getAllByRole('button', { name: '승인' });
       expect(approveButtons.length).toBe(2);
     });
   });
 
-  it('"친구 승인" 버튼 클릭 시 POST /api/friend-requests/accept 를 호출한다', async () => {
+  it('"승인" 버튼 클릭 시 POST /api/friend-requests/accept 를 호출한다', async () => {
     const user = userEvent.setup();
     render(<FriendPage />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: '친구 승인' }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('button', { name: '승인' }).length).toBeGreaterThan(0);
     });
 
-    const approveButtons = screen.getAllByRole('button', { name: '친구 승인' });
+    const approveButtons = screen.getAllByRole('button', { name: '승인' });
     await user.click(approveButtons[0]);
 
     await waitFor(() => {
@@ -163,7 +162,7 @@ describe('친구 승인 버튼', () => {
     });
   });
 
-  it('친구 승인 성공 후 해당 요청이 목록에서 사라진다', async () => {
+  it('승인 성공 후 해당 요청이 목록에서 사라진다', async () => {
     const user = userEvent.setup();
 
     // 첫 호출: pending 2건, 승인 후 호출: pending 1건
@@ -186,20 +185,20 @@ describe('친구 승인 버튼', () => {
     render(<FriendPage />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: '친구 승인' }).length).toBe(2);
+      expect(screen.getAllByRole('button', { name: '승인' }).length).toBe(2);
     });
 
-    const approveButtons = screen.getAllByRole('button', { name: '친구 승인' });
+    const approveButtons = screen.getAllByRole('button', { name: '승인' });
     await user.click(approveButtons[0]);
 
     // 승인 후 목록에서 제거되어 버튼이 1개만 남음
     await waitFor(() => {
-      const remainingButtons = screen.getAllByRole('button', { name: '친구 승인' });
+      const remainingButtons = screen.getAllByRole('button', { name: '승인' });
       expect(remainingButtons.length).toBe(1);
     });
   });
 
-  it('친구 승인 실패 시 에러 메시지가 표시된다', async () => {
+  it('승인 실패 시 에러 메시지가 표시된다', async () => {
     const user = userEvent.setup();
 
     axios.post.mockRejectedValue({
@@ -209,10 +208,10 @@ describe('친구 승인 버튼', () => {
     render(<FriendPage />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: '친구 승인' }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('button', { name: '승인' }).length).toBeGreaterThan(0);
     });
 
-    const approveButtons = screen.getAllByRole('button', { name: '친구 승인' });
+    const approveButtons = screen.getAllByRole('button', { name: '승인' });
     await user.click(approveButtons[0]);
 
     await waitFor(() => {
@@ -301,6 +300,113 @@ describe('친구 거절 버튼', () => {
     await waitFor(() => {
       const remainingButtons = screen.getAllByRole('button', { name: '거절' });
       expect(remainingButtons.length).toBe(1);
+    });
+  });
+});
+
+// ─── PRD2: 친구 요청/친구 목록 표시 수정 ─────────────────────────
+
+
+describe('친구 요청란 - receiver_id 필터링 및 닉네임 표시', () => {
+  beforeEach(() => {
+    localStorage.setItem('user', JSON.stringify({ id: 1, nickname: '나' }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('receiver_id가 내 id인 요청만 친구 요청란에 표시된다', async () => {
+    // pending 목록에 receiver_id=1(나에게 온 요청)과 receiver_id=99(다른 사람에게 온 요청) 혼재
+    axios.get.mockImplementation((url, config) => {
+      if (config?.params?.friend_status === 'pending') {
+        return Promise.resolve({
+          data: {
+            requests: [
+              { id: 1, requester_id: 3, requester_nickname: '홍길동', receiver_id: 1, receiver_nickname: '나', status: 'pending' },
+              { id: 2, requester_id: 7, requester_nickname: '외부인', receiver_id: 99, receiver_nickname: '다른사람', status: 'pending' },
+            ]
+          }
+        });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
+    render(<FriendPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('홍길동')).toBeInTheDocument();
+      expect(screen.queryByText('외부인')).not.toBeInTheDocument();
+    });
+  });
+
+  it('친구 요청란에 requester_nickname이 표시된다', async () => {
+    axios.get.mockImplementation((url, config) => {
+      if (config?.params?.friend_status === 'pending') {
+        return Promise.resolve({ data: MOCK_PENDING_REQUESTS });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
+    render(<FriendPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('홍길동')).toBeInTheDocument();
+      expect(screen.getByText('박영희')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('현재 친구 목록 - 상대방 닉네임 표시', () => {
+  beforeEach(() => {
+    localStorage.setItem('user', JSON.stringify({ id: 1, nickname: '나' }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('receiver_id가 내 id인 경우 requester_nickname을 친구 닉네임으로 표시한다', async () => {
+    axios.get.mockImplementation((url, config) => {
+      if (config?.params?.friend_status === 'accepted') {
+        return Promise.resolve({
+          data: {
+            requests: [
+              { id: 11, requester_id: 30, requester_nickname: '이영희', receiver_id: 1, receiver_nickname: '나', status: 'accepted' }
+            ]
+          }
+        });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
+    render(<FriendPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('이영희')).toBeInTheDocument();
+    });
+  });
+
+  it('requester_id가 내 id인 경우 receiver_nickname을 친구 닉네임으로 표시한다', async () => {
+    axios.get.mockImplementation((_url, config) => {
+      if (config?.params?.friend_status === 'accepted') {
+        return Promise.resolve({
+          data: {
+            requests: [
+              { id: 10, requester_id: 1, requester_nickname: '나', receiver_id: 20, receiver_nickname: '김철수', status: 'accepted' }
+            ]
+          }
+        });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
+    render(<FriendPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('김철수')).toBeInTheDocument();
     });
   });
 });
