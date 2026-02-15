@@ -42,11 +42,12 @@ npm test        # Vitest 테스트 실행
 |-----|----------|------|
 | `/` | `HomePage` | 랜딩 페이지 (Aurora WebGL 배경, 랭킹 테이블) |
 | `/pinball` | `PinballPage` | 핀볼 게임 전용 페이지 (홈 버튼 + 스케일 조정) |
-| `/dashboard` | `Dashboard` | 게임 대시보드 (사이드바: 친구·계정) |
+| `/dashboard` | `Dashboard` | 게임 대시보드 (DashboardHeader·DashboardSidebar 조합, 좌측 메뉴 안내) |
+| `/user/friend` | `FriendPage` | 친구 목록·검색·요청 (DashboardHeader·DashboardSidebar 직접 조합) |
+| `/user/account` | `UserInfo` | 회원 정보 조회/수정/탈퇴 (DashboardHeader·DashboardSidebar 직접 조합) |
 | `/login` | `Login` | 로그인 → 성공 시 `/dashboard` 이동 |
 | `/Register` | `Register` | 3단계 회원가입 |
-| `/admin` | `AdminPage` | Admin 메인 |
-| `/admin/users` | `AdminUserPage` | Admin 회원 관리 |
+| `/admin` | `AdminUserPage` | Admin 회원 관리 (진입점) |
 | `/admin/statistics` | `AdminStatisticsPage` | Admin 통계 |
 
 ## 디렉토리 구조
@@ -69,7 +70,9 @@ src/
 │   │   └── HomePage.jsx       # 랜딩 페이지. Aurora 배경, 랭킹 테이블. GET /api/v1/monthly-scores
 │   │
 │   ├── Dashboard/
-│   │   └── Dashboard.jsx      # 게임 대시보드. 사이드바 메뉴: 게임하기(→/pinball 이동)·친구·계정. showUserInfo/showFriendPage 상태로 메인 영역 전환
+│   │   ├── Dashboard.jsx      # 게임 대시보드. DashboardHeader·DashboardSidebar 조합, 로그인 안내만 표시
+│   │   ├── DashboardHeader.jsx  # 대시보드 공용 AppBar (모바일 토글, HeaderUserInfo)
+│   │   └── DashboardSidebar.jsx # 대시보드 공용 Drawer (게임하기→/pinball, 친구→/user/friend, 계정→/user/account)
 │   │
 │   ├── Login/
 │   │   └── Login.jsx          # 로그인. POST /api/v1/login
@@ -78,10 +81,10 @@ src/
 │   │   └── Register.jsx       # 3단계 회원가입. POST /api/v1/register
 │   │
 │   ├── UserInfo/
-│   │   └── UserInfo.jsx       # 회원 정보 조회/수정/탈퇴. GET /api/v1/users/{id}
+│   │   └── UserInfo.jsx       # 회원 정보 조회/수정/탈퇴. DashboardHeader·DashboardSidebar 직접 조합
 │   │
 │   ├── FriendPage/
-│   │   └── FriendPage.jsx     # 친구 목록/검색/요청
+│   │   └── FriendPage.jsx     # 친구 목록/검색/요청. DashboardHeader·DashboardSidebar 직접 조합
 │   │
 │   ├── PinballPage/
 │   │   ├── PinballPage.jsx    # 핀볼 전용 페이지 레이아웃 (홈 버튼, 스케일 조정, HeaderUserInfo)
@@ -95,7 +98,7 @@ src/
 │   │   └── pinballRestart.js  # 게임 재시작 초기 상태 반환 (getRestartState)
 │   │
 │   └── admin/
-│       ├── AdminPage.jsx      # Admin 전체 레이아웃 (Sidebar + Header + Main)
+│       ├── AdminPage.jsx      # Admin 전체 레이아웃 (Sidebar + Header + Main) — 현재 라우트에서 미사용
 │       ├── AdminSidebar.jsx   # Admin 좌측 Drawer (260px)
 │       ├── AdminHeader.jsx    # Admin 상단 AppBar
 │       ├── AdminMain.jsx      # Admin 랜딩 콘텐츠
@@ -109,6 +112,7 @@ src/
     ├── AdminUserMain.test.jsx         # AdminUserMain 테스트 17개. @mui/x-data-grid mock 사용
     ├── HomePage.test.jsx              # HomePage 랭킹 API 연동 테스트 4개. Aurora mock 사용
     ├── HeaderUserInfo.test.jsx
+    ├── Login.test.jsx
     ├── PinballSound.test.jsx
     ├── pinball-restart.test.jsx
     ├── FriendPage.test.jsx / FriendList / FriendRequest / FriendSearch / FriendPageIntegration
@@ -120,5 +124,5 @@ src/
 - MUI v7은 Grid v2 방식: `item xs md` 대신 `size={{ xs: 12, md: 6 }}` 사용
 - `@mui/x-data-grid`는 CSS import 문제로 Vitest에서 mock 처리 필요
 - Aurora(`ogl` WebGL)는 Vitest 환경에서 mock 처리 필요
-- Dashboard 사이드바/헤더는 별도 컴포넌트로 분리되지 않음
+- Dashboard·FriendPage·UserInfo는 `DashboardHeader`·`DashboardSidebar`를 각 페이지에서 직접 조합 (AdminPage 패턴)
 - Pinball 로딩 스피너 오버레이 시 `display: none` 대신 `visibility: hidden` 사용 — `display: none`이면 `sceneRef.current`가 null이 되어 Matter.js 렌더러 초기화 실패
