@@ -34,12 +34,14 @@ function HomePage() {
       });
   }, []);
 
+  
+
   return (
     <Box sx={{ position: 'relative', minHeight: '100vh', backgroundColor: COLORS.bg, display: 'flex', flexDirection: 'column' }}>
       {/* Aurora 배경 */}
       <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden'}}>
         <Aurora
-          colorStops={['#467ee5', '#7C3AED', '#908aff']}
+          colorStops={['#467ee5', '#7C3AED', '#908aff']} //#0F172A
           amplitude={1.2}
           speed={1.2}
           blend={0.35}
