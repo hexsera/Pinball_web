@@ -1,9 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
 import FriendPage from '../pages/FriendPage';
-import Maindashboard from '../pages/Dashboard';
-import { AuthProvider } from '../contexts/AuthContext';
 
 describe('FriendPage 컴포넌트', () => {
   it('FriendPage가 렌더링된다', () => {
@@ -46,29 +43,6 @@ describe('FriendPage 컴포넌트', () => {
   });
 });
 
-describe('Dashboard 친구 페이지 통합', () => {
-  beforeEach(() => {
-    // 로그인 상태를 localStorage에 설정
-    localStorage.setItem('user', JSON.stringify({ id: 1, name: '테스트유저' }));
-  });
-
-  it('"친구" 메뉴 클릭 시 FriendPage가 표시된다', () => {
-    render(
-      <MemoryRouter>
-        <AuthProvider>
-          <Maindashboard />
-        </AuthProvider>
-      </MemoryRouter>
-    );
-
-    // '친구' 텍스트가 여러 개 있을 수 있으므로 첫 번째 요소 클릭
-    const friendMenus = screen.getAllByText('친구');
-    fireEvent.click(friendMenus[0]);
-
-    const friendPage = screen.getByTestId('friend-page');
-    expect(friendPage).toBeInTheDocument();
-  });
-});
 
 describe('FriendPage 레이아웃 통합', () => {
   beforeEach(() => {

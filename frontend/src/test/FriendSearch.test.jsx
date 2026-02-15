@@ -1,72 +1,267 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
+import axios from 'axios';
 import FriendPage from '../pages/FriendPage';
 
-describe('FriendPage 검색기능', () => {
-  it('검색바가 존재한다', () => {
-    render(<FriendPage />);
-    const searchInput = screen.getByPlaceholderText('닉네임을 입력하세요');
-    expect(searchInput).toBeInTheDocument();
-  });
+vi.mock('axios');
 
-  it('검색 버튼이 존재한다', () => {
-    render(<FriendPage />);
-    const searchButton = screen.getByRole('button', { name: '검색' });
-    expect(searchButton).toBeInTheDocument();
-  });
+const mockCurrentUser = { id: 1, nickname: '나', email: 'me@test.com' };
 
-  it('검색바에 닉네임을 입력할 수 있다', async () => {
+beforeEach(() => {
+  localStorage.setItem('user', JSON.stringify(mockCurrentUser));
+  // 마운트 시 호출되는 친구 목록/요청 API 기본 응답
+  axios.get.mockImplementation((url) => {
+    if (url === '/api/friend-requests') {
+      return Promise.resolve({ data: { requests: [] } });
+    }
+    return Promise.resolve({ data: [] });
+  });
+});
+
+afterEach(() => {
+  localStorage.clear();
+  vi.clearAllMocks();
+});
+
+// ─── 검색 API 연결 ────────────────────────────────────────────
+
+describe('닉네임 검색 API 연결', () => {
+  it('닉네임 검색 시 GET /api/v1/users API를 호출한다', async () => {
     const user = userEvent.setup();
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
     render(<FriendPage />);
 
     const searchInput = screen.getByPlaceholderText('닉네임을 입력하세요');
-    await user.type(searchInput, '테스트유저');
+    await user.type(searchInput, '홍길동');
+    await user.click(screen.getByRole('button', { name: '검색' }));
 
-    expect(searchInput).toHaveValue('테스트유저');
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith(
+        '/api/v1/users',
+        expect.objectContaining({ params: expect.objectContaining({ nickname: '홍길동' }) })
+      );
+    });
   });
 
-  it('검색 버튼 클릭 시 사용자 리스트가 표시된다', async () => {
+  it('API 응답의 사용자 목록이 검색 결과로 표시된다', async () => {
     const user = userEvent.setup();
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({
+          data: [
+            { id: 10, nickname: '홍길동', email: 'hong@test.com', role: 'user' }
+          ]
+        });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
     render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
 
-    const searchInput = screen.getByPlaceholderText('닉네임을 입력하세요');
-    await user.type(searchInput, '테스트');
-
-    const searchButton = screen.getByRole('button', { name: '검색' });
-    await user.click(searchButton);
-
-    // Mock 데이터에 '테스트' 포함된 닉네임이 여러 개 표시됨
-    const results = await screen.findAllByText(/테스트유저/);
-    expect(results.length).toBeGreaterThan(0);
+    expect(await screen.findByText('홍길동')).toBeInTheDocument();
   });
 
-  it('검색 결과가 없으면 안내 메시지를 표시한다', async () => {
+  it('API 호출 실패 시 에러 메시지를 표시한다', async () => {
     const user = userEvent.setup();
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') {
+        return Promise.reject(new Error('Network Error'));
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
     render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
 
-    const searchInput = screen.getByPlaceholderText('닉네임을 입력하세요');
-    await user.type(searchInput, 'zzz존재하지않는닉네임zzz');
-
-    const searchButton = screen.getByRole('button', { name: '검색' });
-    await user.click(searchButton);
-
-    const message = await screen.findByText('검색 결과가 없습니다');
-    expect(message).toBeInTheDocument();
+    expect(await screen.findByText(/검색에 실패했습니다/)).toBeInTheDocument();
   });
 
-  it('검색 결과 각 항목에 "친구추가" 버튼이 존재한다', async () => {
+  it('검색 결과가 빈 배열이면 안내 메시지를 표시한다', async () => {
     const user = userEvent.setup();
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
     render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), 'zzz없는닉네임');
+    await user.click(screen.getByRole('button', { name: '검색' }));
 
-    const searchInput = screen.getByPlaceholderText('닉네임을 입력하세요');
-    await user.type(searchInput, '테스트');
+    expect(await screen.findByText('검색 결과가 없습니다')).toBeInTheDocument();
+  });
+});
 
-    const searchButton = screen.getByRole('button', { name: '검색' });
-    await user.click(searchButton);
+// ─── 친구추가 API 연결 ────────────────────────────────────────
 
-    // "친구추가" 버튼이 여러 개 존재 (검색 결과 개수만큼)
-    const addButtons = await screen.findAllByRole('button', { name: '친구추가' });
-    expect(addButtons.length).toBeGreaterThan(0);
+describe('친구추가 API 연결', () => {
+  it('"친구추가" 버튼 클릭 시 POST /api/friend-requests를 호출한다', async () => {
+    const user = userEvent.setup();
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({
+          data: [{ id: 10, nickname: '홍길동', email: 'hong@test.com', role: 'user' }]
+        });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+    axios.post.mockResolvedValue({ data: { message: 'Friend request sent successfully' } });
+
+    render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
+
+    const addButton = await screen.findByRole('button', { name: '친구추가' });
+    await user.click(addButton);
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        '/api/friend-requests',
+        expect.objectContaining({ requester_id: 1, receiver_id: 10 })
+      );
+    });
+  });
+
+  it('친구추가 API 호출 실패 시 에러를 표시한다', async () => {
+    const user = userEvent.setup();
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({
+          data: [{ id: 10, nickname: '홍길동', email: 'hong@test.com', role: 'user' }]
+        });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+    axios.post.mockRejectedValue({
+      response: { data: { detail: 'Friend request already sent' } }
+    });
+
+    render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
+
+    const addButton = await screen.findByRole('button', { name: '친구추가' });
+    await user.click(addButton);
+
+    expect(await screen.findByText(/Friend request already sent/)).toBeInTheDocument();
+  });
+});
+
+// ─── 버튼 상태 제어 ───────────────────────────────────────────
+
+describe('친구추가 버튼 상태 제어', () => {
+  it('현재 친구인 유저의 친구추가 버튼은 "요청됨"으로 표시된다', async () => {
+    const user = userEvent.setup();
+    // 검색 결과: id=10 유저
+    axios.get.mockImplementation((url, config) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({
+          data: [{ id: 10, nickname: '홍길동', email: 'hong@test.com', role: 'user' }]
+        });
+      }
+      if (url === '/api/friend-requests') {
+        const status = config?.params?.friend_status;
+        if (status === 'accepted') {
+          // 나(1)와 홍길동(10)이 이미 친구
+          return Promise.resolve({
+            data: { requests: [{ id: 99, requester_id: 1, receiver_id: 10, status: 'accepted' }] }
+          });
+        }
+        return Promise.resolve({ data: { requests: [] } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
+
+    expect(await screen.findByRole('button', { name: '요청됨' })).toBeInTheDocument();
+  });
+
+  it('pending 요청을 보낸 유저의 친구추가 버튼은 "요청됨"으로 표시된다', async () => {
+    const user = userEvent.setup();
+    axios.get.mockImplementation((url, config) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({
+          data: [{ id: 10, nickname: '홍길동', email: 'hong@test.com', role: 'user' }]
+        });
+      }
+      if (url === '/api/friend-requests') {
+        const status = config?.params?.friend_status;
+        if (status === 'pending') {
+          // 내가 홍길동에게 pending 요청을 보낸 상태
+          return Promise.resolve({
+            data: { requests: [{ id: 99, requester_id: 1, receiver_id: 10, status: 'pending' }] }
+          });
+        }
+        return Promise.resolve({ data: { requests: [] } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
+
+    expect(await screen.findByRole('button', { name: '요청됨' })).toBeInTheDocument();
+  });
+
+  it('"요청됨" 버튼은 비활성화(disabled) 상태이다', async () => {
+    const user = userEvent.setup();
+    axios.get.mockImplementation((url, config) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({
+          data: [{ id: 10, nickname: '홍길동', email: 'hong@test.com', role: 'user' }]
+        });
+      }
+      if (url === '/api/friend-requests') {
+        const status = config?.params?.friend_status;
+        if (status === 'accepted') {
+          return Promise.resolve({
+            data: { requests: [{ id: 99, requester_id: 1, receiver_id: 10, status: 'accepted' }] }
+          });
+        }
+        return Promise.resolve({ data: { requests: [] } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
+
+    const disabledButton = await screen.findByRole('button', { name: '요청됨' });
+    expect(disabledButton).toBeDisabled();
+  });
+
+  it('아직 친구가 아닌 유저의 친구추가 버튼은 활성화되어 있다', async () => {
+    const user = userEvent.setup();
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/v1/users') {
+        return Promise.resolve({
+          data: [{ id: 10, nickname: '홍길동', email: 'hong@test.com', role: 'user' }]
+        });
+      }
+      return Promise.resolve({ data: { requests: [] } });
+    });
+
+    render(<FriendPage />);
+    await user.type(screen.getByPlaceholderText('닉네임을 입력하세요'), '홍');
+    await user.click(screen.getByRole('button', { name: '검색' }));
+
+    const addButton = await screen.findByRole('button', { name: '친구추가' });
+    expect(addButton).not.toBeDisabled();
   });
 });

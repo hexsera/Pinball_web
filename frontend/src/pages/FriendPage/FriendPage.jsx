@@ -13,14 +13,6 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
-// Mock 사용자 데이터 (검색용)
-const MOCK_USERS = [
-  { id: 1, email: 'user1@test.com', nickname: '테스트유저1', birth_date: '2000-01-01', role: 'user' },
-  { id: 2, email: 'user2@test.com', nickname: '테스트유저2', birth_date: '2000-01-02', role: 'user' },
-  { id: 3, email: 'user3@test.com', nickname: '홍길동', birth_date: '2000-01-03', role: 'user' },
-  { id: 4, email: 'user4@test.com', nickname: '김철수', birth_date: '2000-01-04', role: 'user' },
-  { id: 5, email: 'user5@test.com', nickname: '박영희', birth_date: '2000-01-05', role: 'user' },
-];
 
 function FriendPage() {
   // 검색 관련 state
@@ -145,18 +137,59 @@ function FriendPage() {
     }
   };
 
+  // 검색 에러 state
+  const [searchError, setSearchError] = useState(null);
+
   // 검색 핸들러
-  const handleSearch = () => {
-    const results = MOCK_USERS.filter(user =>
-      user.nickname.includes(searchNickname)
-    );
-    setSearchResults(results);
-    setHasSearched(true);
+  const handleSearch = async () => {
+    setSearchError(null);
+    setHasSearched(false);
+    try {
+      const response = await axios.get('/api/v1/users', {
+        params: { nickname: searchNickname }
+      });
+      setSearchResults(response.data);
+      setHasSearched(true);
+    } catch (error) {
+      console.error('검색 실패:', error);
+      setSearchError('검색에 실패했습니다');
+      setHasSearched(false);
+    }
   };
 
-  // 친구 추가 핸들러 (기존 로직)
-  const handleAddFriend = (user) => {
-    console.log('친구 추가:', user.nickname);
+  // 친구추가 버튼 상태 계산
+  const getFriendButtonState = (targetUser) => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return { label: '친구추가', disabled: false };
+
+    const isAlreadyFriend = friendList.some(
+      (f) => f.requester_id === targetUser.id || f.receiver_id === targetUser.id
+    );
+    if (isAlreadyFriend) return { label: '요청됨', disabled: true };
+
+    const hasSentRequest = pendingRequests.some(
+      (f) => f.requester_id === currentUser.id && f.receiver_id === targetUser.id
+    );
+    if (hasSentRequest) return { label: '요청됨', disabled: true };
+
+    return { label: '친구추가', disabled: false };
+  };
+
+  // 친구 추가 핸들러
+  const handleAddFriend = async (targetUser) => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    setActionError(null);
+    try {
+      await axios.post('/api/friend-requests', {
+        requester_id: currentUser.id,
+        receiver_id: targetUser.id
+      });
+      await fetchPendingRequests();
+    } catch (error) {
+      console.error('친구 추가 실패:', error);
+      setActionError(error.response?.data?.detail || '친구 추가에 실패했습니다');
+    }
   };
 
   // 상대방 ID 추출 (양방향 관계 처리)
@@ -189,26 +222,33 @@ function FriendPage() {
             />
             <Button variant="contained" onClick={handleSearch}>검색</Button>
           </Box>
+          {searchError && (
+            <Alert severity="error" sx={{ mb: 1 }}>{searchError}</Alert>
+          )}
           {hasSearched && searchResults.length === 0 && (
             <Typography>검색 결과가 없습니다</Typography>
           )}
           <List>
-            {searchResults.map((user) => (
-              <ListItem
-                key={user.id}
-                secondaryAction={
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => handleAddFriend(user)}
-                  >
-                    친구추가
-                  </Button>
-                }
-              >
-                <ListItemText primary={user.nickname} secondary={user.email} />
-              </ListItem>
-            ))}
+            {searchResults.map((user) => {
+              const { label, disabled } = getFriendButtonState(user);
+              return (
+                <ListItem
+                  key={user.id}
+                  secondaryAction={
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={disabled}
+                      onClick={() => handleAddFriend(user)}
+                    >
+                      {label}
+                    </Button>
+                  }
+                >
+                  <ListItemText primary={user.nickname} secondary={user.email} />
+                </ListItem>
+              );
+            })}
           </List>
         </Paper>
       </Box>
