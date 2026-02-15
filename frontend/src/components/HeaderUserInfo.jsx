@@ -8,7 +8,7 @@ import { Notifications, Mail, Close } from '@mui/icons-material';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
-function HeaderUserInfo() {
+function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { isLoggedIn, user, logout } = useAuth();
@@ -92,10 +92,18 @@ function HeaderUserInfo() {
         </>
       ) : (
         <>
-          <Button variant="contained" onClick={() => navigate('/login')}>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/login')}
+            sx={buttonColor ? { backgroundColor: buttonColor, color: buttonTextColor } : {}}
+          >
             로그인
           </Button>
-          <Button variant="outlined" onClick={() => navigate('/Register')}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/Register')}
+            sx={buttonColor ? { color: buttonTextColor, borderColor: outlinedBorderColor } : {}}
+          >
             회원가입
           </Button>
         </>

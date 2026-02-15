@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import Aurora from '../../components/Aurora/Aurora';
+import HeaderUserInfo from '../../components/HeaderUserInfo';
 
 const COLORS = {
   bg: '#0F172A',
@@ -50,39 +51,49 @@ function HomePage() {
       {/* 네비게이션 바 */}
       <AppBar position="static" sx={{ backgroundColor: COLORS.card, borderBottom: `1px solid ${COLORS.border}` }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" sx={{ color: COLORS.text, fontWeight: 'bold' }}>
-            🎯 HEXSERA PINBALL
-          </Typography>
-          <Box>
-            <Button onClick={() => navigate('/pinball')} sx={{ color: COLORS.text }}>
+          {/* 좌측: 타이틀 + 게임하기 버튼 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: COLORS.text,
+                fontWeight: 'bold',
+                fontSize: { xs: '0.9rem', sm: '1.25rem' },
+                display: { xs: 'none', sm: 'block' },
+              }}
+            >
+              HEXSERA PINBALL
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/pinball')}
+              sx={{ backgroundColor: COLORS.primary, color: COLORS.text }}
+            >
               게임하기
             </Button>
-            <Button
-              onClick={() => navigate('/login')}
-              variant="outlined"
-              sx={{ color: COLORS.text, borderColor: COLORS.text, ml: 1 }}
-            >
-              로그인
-            </Button>
-            <Button
-              onClick={() => navigate('/Register')}
-              variant="contained"
-              sx={{ backgroundColor: COLORS.primary, ml: 1 }}
-            >
-              회원가입
-            </Button>
           </Box>
+          {/* 우측: HeaderUserInfo */}
+          <HeaderUserInfo
+            buttonColor={COLORS.primary}
+            buttonTextColor={COLORS.text}
+            outlinedBorderColor={COLORS.text}
+          />
         </Toolbar>
       </AppBar>
 
       {/* Hero 섹션 */}
       <Container maxWidth="lg" sx={{ flexGrow: 1, overflow: 'hidden' }}>
-      <Grid container spacing={4} sx={{ mt: 16 }}>
+      <Grid container spacing={4} sx={{ mt: { xs: 8, sm: 16 } }}>
         {/* 좌측: 타이틀 + CTA */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: { md: 6 } }}>
             <Typography variant="h3" sx={{ color: COLORS.text, fontWeight: 'bold' }}>
-              세상에서 가장 짜릿한<br />핀볼 게임을 경험하세요.
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                세상에서 가장 짜릿한<br />핀볼 게임을 경험하세요.
+              </Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                세상에서<br />가장 짜릿한<br />핀볼게임을<br />체험하세요
+              </Box>
             </Typography>
             <Button
               variant="contained"
