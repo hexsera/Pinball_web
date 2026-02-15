@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, IconButton, Badge, Avatar, Typography,
   Button, Menu, MenuItem, Divider
 } from '@mui/material';
 import { Notifications, Mail, Close } from '@mui/icons-material';
+import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
 function HeaderUserInfo() {
@@ -14,6 +15,15 @@ function HeaderUserInfo() {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarMenu, setAvatarMenu] = useState(false);
+  const [role, setRole] = useState(null);
+
+  useEffect(() => {
+    if (isLoggedIn && user?.id) {
+      axios.get(`/api/v1/users/${user.id}`)
+        .then(res => setRole(res.data.role))
+        .catch(() => setRole(null));
+    }
+  }, [isLoggedIn, user?.id]);
 
   function AvatarButtonClick(event) {
     setAnchorEl(event.currentTarget);
@@ -37,6 +47,9 @@ function HeaderUserInfo() {
     }
     handleAvatarMenuClose();
   }
+
+  const isAdmin = role === 'admin';
+  const pageNavLabel = location.pathname.startsWith('/admin') ? '메인 페이지 이동' : '관리 페이지 이동';
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -71,7 +84,9 @@ function HeaderUserInfo() {
             <Divider />
             <MenuItem onClick={() => { navigate('/dashboard', { state: { section: '계정' } }); handleAvatarMenuClose(); }}>계정설정</MenuItem>
             <MenuItem onClick={() => { navigate('/dashboard', { state: { section: '친구' } }); handleAvatarMenuClose(); }}>친구</MenuItem>
-            <MenuItem onClick={handlePageNavigation}>페이지 이동</MenuItem>
+            {isAdmin && (
+              <MenuItem onClick={handlePageNavigation}>{pageNavLabel}</MenuItem>
+            )}
             <MenuItem onClick={() => AvatarLogoutButton()}>로그아웃</MenuItem>
           </Menu>
         </>
