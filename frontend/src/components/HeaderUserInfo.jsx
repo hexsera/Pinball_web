@@ -37,6 +37,7 @@ function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
 
   function AvatarLogoutButton() {
     logout();
+    navigate('/');
   }
 
   function handlePageNavigation() {
@@ -74,11 +75,12 @@ function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
               </IconButton>
             </Box>
             <Divider />
-            <MenuItem onClick={() => { navigate('/dashboard', { state: { section: '계정' } }); handleAvatarMenuClose(); }}>계정설정</MenuItem>
-            <MenuItem onClick={() => { navigate('/dashboard', { state: { section: '친구' } }); handleAvatarMenuClose(); }}>친구</MenuItem>
+            <MenuItem onClick={() => { navigate('/user/friend'); handleAvatarMenuClose(); }}>친구</MenuItem>
+            <MenuItem onClick={() => { navigate('/user/account'); handleAvatarMenuClose(); }}>계정설정</MenuItem>
             {isAdmin && (
               <MenuItem onClick={handlePageNavigation}>{pageNavLabel}</MenuItem>
             )}
+            <Divider />
             <MenuItem onClick={() => AvatarLogoutButton()}>로그아웃</MenuItem>
           </Menu>
         </>

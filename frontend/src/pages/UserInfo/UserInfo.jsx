@@ -9,13 +9,18 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert
+  Alert,
+  Toolbar,
+  Container,
 } from '@mui/material';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
+import DashboardHeader from '../Dashboard/DashboardHeader';
+import DashboardSidebar from '../Dashboard/DashboardSidebar';
 
 function UserInfo() {
   const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // 회원 정보 상태
   const [userInfo, setUserInfo] = useState({
@@ -173,7 +178,25 @@ function UserInfo() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex' }}>
+      <DashboardHeader onMobileToggle={() => setMobileOpen(true)} />
+      <DashboardSidebar
+        currentMenu="계정"
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          backgroundColor: '#F9FAFB',
+          minHeight: '100vh',
+        }}
+      >
+        <Toolbar />
+        <Container maxWidth="xl">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* 회원 정보 조회 영역 */}
       <Paper
         sx={{
@@ -346,6 +369,9 @@ function UserInfo() {
           </Button>
         </DialogActions>
       </Dialog>
+          </Box>
+        </Container>
+      </Box>
     </Box>
   );
 }

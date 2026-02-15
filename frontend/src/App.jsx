@@ -8,6 +8,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import { AdminUserPage, AdminStatisticsPage } from './pages/admin';
 import PinballPage from './pages/PinballPage';
+import FriendPage from './pages/FriendPage';
+import UserInfo from './pages/UserInfo';
 
 const theme = createTheme();
 
@@ -28,6 +30,8 @@ function App() {
             <Route path="/admin" element={<AdminUserPage/>} />
             <Route path="/admin/users" element={<AdminUserPage/>} />
             <Route path="/admin/statistics" element={<AdminStatisticsPage/>} />
+            <Route path="/user/friend" element={<FriendPage />} />
+            <Route path="/user/account" element={<UserInfo />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
