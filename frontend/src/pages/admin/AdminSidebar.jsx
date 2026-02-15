@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography } from '@mui/material';
-import { Dashboard as DashboardIcon, People, BarChart } from '@mui/icons-material';
+import { People, BarChart } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const drawerWidth = 260;
@@ -11,8 +11,7 @@ function AdminSidebar() {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const menuItems = [
-    { text: '대시보드', icon: <DashboardIcon />, path: '/admin' },
-    { text: '회원관리', icon: <People />, path: '/admin/users' },
+    { text: '회원관리', icon: <People />, path: '/admin' },
     { text: '통계', icon: <BarChart />, path: '/admin/statistics' },
   ];
 

@@ -6,7 +6,7 @@ import { CssBaseline } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
-import { AdminPage, AdminUserPage, AdminStatisticsPage } from './pages/admin';
+import { AdminUserPage, AdminStatisticsPage } from './pages/admin';
 import PinballPage from './pages/PinballPage';
 
 const theme = createTheme();
@@ -25,7 +25,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/Register" element={<Register/>} />
             <Route path="/pinball" element={<PinballPage />} />
-            <Route path="/admin" element={<AdminPage/>} />
+            <Route path="/admin" element={<AdminUserPage/>} />
             <Route path="/admin/users" element={<AdminUserPage/>} />
             <Route path="/admin/statistics" element={<AdminStatisticsPage/>} />
           </Routes>
