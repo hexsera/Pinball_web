@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Box, IconButton, Badge, Avatar, Typography,
+  Box, IconButton, Avatar, Typography,
   Button, Menu, MenuItem, Divider
 } from '@mui/material';
-import { Notifications, Mail, Close } from '@mui/icons-material';
+import { Close } from '@mui/icons-material';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -55,19 +55,11 @@ function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       {isLoggedIn ? (
         <>
-          <IconButton onClick={() => navigate('/admin')}>
-            <Badge>
-              <Notifications />
-            </Badge>
-          </IconButton>
-          <IconButton>
-            <Badge>
-              <Mail />
-            </Badge>
-          </IconButton>
           <Button id="basic-button" onClick={AvatarButtonClick}>
-            <Avatar sx={{ width: 40, height: 40, ml: 1 }}>U</Avatar>
-            <Typography>{user.name}</Typography>
+            <Avatar sx={{ width: 40, height: 40 }}>
+              {user.name ? user.name[0].toUpperCase() : 'U'}
+            </Avatar>
+            <Typography sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>{user.name}</Typography>
           </Button>
           <Menu
             anchorEl={anchorEl}
