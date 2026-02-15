@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, IconButton, Badge, Avatar, Typography,
-  Button, Menu, MenuItem
+  Button, Menu, MenuItem, Divider
 } from '@mui/material';
-import { Notifications, Mail } from '@mui/icons-material';
+import { Notifications, Mail, Close } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 function HeaderUserInfo() {
@@ -62,7 +62,15 @@ function HeaderUserInfo() {
             id="user-menu"
             open={avatarMenu}
           >
-            <MenuItem>프로필</MenuItem>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1 }}>
+              <Typography variant="body2" color="text.secondary">{user.email}</Typography>
+              <IconButton aria-label="닫기" size="small" onClick={handleAvatarMenuClose}>
+                <Close fontSize="small" />
+              </IconButton>
+            </Box>
+            <Divider />
+            <MenuItem onClick={() => { navigate('/dashboard', { state: { section: '계정' } }); handleAvatarMenuClose(); }}>계정설정</MenuItem>
+            <MenuItem onClick={() => { navigate('/dashboard', { state: { section: '친구' } }); handleAvatarMenuClose(); }}>친구</MenuItem>
             <MenuItem onClick={handlePageNavigation}>페이지 이동</MenuItem>
             <MenuItem onClick={() => AvatarLogoutButton()}>로그아웃</MenuItem>
           </Menu>

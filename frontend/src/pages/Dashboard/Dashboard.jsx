@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
   Box,
@@ -42,6 +42,7 @@ const drawerWidth = 260;
 
 function Maindashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoggedIn, user, logout } = useAuth();
 
   const [openMenus, setOpenMenus] = useState({});
@@ -58,6 +59,16 @@ function Maindashboard() {
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  useEffect(() => {
+    if (location.state?.section === '계정') {
+      setShowUserInfo(true);
+      setShowFriend(false);
+    } else if (location.state?.section === '친구') {
+      setShowFriend(true);
+      setShowUserInfo(false);
+    }
+  }, [location.state]);
 
   // 기기 유형 감지
   useEffect(() => {
