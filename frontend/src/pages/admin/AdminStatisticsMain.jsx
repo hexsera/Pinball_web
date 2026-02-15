@@ -11,27 +11,6 @@ function AdminStatisticsMain() {
   const [dailyData, setDailyData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 임시 일별 데이터 생성 함수 (3개월 분량)
-  const generateMockDailyData = (startDate, endDate) => {
-    const dailyData = [];
-    let currentDate = dayjs(startDate);
-    const end = dayjs(endDate);
-
-    while (currentDate.isBefore(end) || currentDate.isSame(end, 'day')) {
-      // 랜덤한 게임 플레이 횟수 생성 (10~100 사이)
-      const playCount = Math.floor(Math.random() * 91) + 10;
-
-      dailyData.push({
-        date: currentDate.format('YYYY-MM-DD'),
-        play_count: playCount
-      });
-
-      currentDate = currentDate.add(1, 'day');
-    }
-
-    return dailyData;
-  };
-
   // API 호출 및 데이터 로딩 함수
   const fetchStatistics = async () => {
     setLoading(true);
@@ -47,7 +26,7 @@ function AdminStatisticsMain() {
       });
 
       // API가 구현되면 실제 엔드포인트로 변경
-      const response = await axios.get('/api/v1/game_visits/', {
+      const response = await axios.get('/api/v1/game_visits', {
         params: {
           start_date: startDate.format('YYYY-MM-DD'),
           end_date: endDate.format('YYYY-MM-DD')
@@ -67,17 +46,6 @@ function AdminStatisticsMain() {
       setDailyData(dailyDataFromAPI.stats);
     } catch (error) {
       console.error('통계 데이터 로딩 실패:', error);
-
-      // API 미구현 시 임시 일별 데이터 생성 (2주 분량)
-      const mockStartDate = dayjs().subtract(2, 'week');
-      const mockEndDate = dayjs();
-      const mockDailyData = generateMockDailyData(mockStartDate, mockEndDate);
-
-      console.log('임시 일별 데이터 생성:', mockDailyData.length + '일 분량');
-      console.log('첫 5개 데이터:', mockDailyData.slice(0, 5));
-
-      // 집계 없이 바로 사용
-      setDailyData(mockDailyData);
     } finally {
       setLoading(false);
     }
