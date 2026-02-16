@@ -4,7 +4,7 @@ os.environ["TESTING"] = "1"
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from app.db.base import Base
@@ -28,10 +28,22 @@ def setup_test_database():
 
 @pytest.fixture(scope="function")
 def db_session():
-    """각 테스트마다 트랜잭션 생성 및 롤백"""
+    """각 테스트마다 트랜잭션 생성 및 롤백 (프로덕션과 동일한 세션 방식)"""
     connection = test_engine.connect()
     transaction = connection.begin()
-    session = TestSessionLocal(bind=connection)
+
+    # Engine에 bind된 세션 생성 (프로덕션과 동일하게 db.get_bind()가 Engine을 반환)
+    session = TestSessionLocal()
+
+    # session.commit() 호출 시 실제 커밋 대신 SAVEPOINT로 처리
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(session, trans):
+        if trans.nested and not trans._parent.nested:
+            session.begin_nested()
+
+    # 세션의 실제 쿼리 실행을 외부 connection으로 연결
+    session.connection(bind_arguments={"bind": connection})
+    session.begin_nested()
 
     yield session
 

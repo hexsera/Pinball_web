@@ -14,18 +14,18 @@ Pinball_web은 멀티플레이어 핀볼 게임을 위한 풀스택 웹 플랫�
 
 ```bash
 # 서비스 시작 (프로젝트 루트에서)
-docker-compose up -d fastapi
+docker compose up -d fastapi
 
 # 로그 확인
-docker-compose logs -f fastapi
+docker compose logs -f fastapi
 
 # 컨테이너 내부에서 테스트 실행
-docker-compose exec fastapi pytest
-docker-compose exec fastapi pytest tests/test_users.py -v
+docker compose exec fastapi pytest
+docker compose exec fastapi pytest tests/test_users.py -v
 
 # 컨테이너 내부에서 마이그레이션 실행
-docker-compose exec fastapi alembic upgrade head
-docker-compose exec fastapi alembic revision --autogenerate -m "설명"
+docker compose exec fastapi alembic upgrade head
+docker compose exec fastapi alembic revision --autogenerate -m "설명"
 ```
 
 ### 프론트엔드 (`frontend/` 디렉토리에서 실행)
