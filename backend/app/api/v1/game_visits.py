@@ -20,7 +20,7 @@ from app.schemas.game_visit import (
 # 기존 models.py 사용
 import sys
 sys.path.insert(0, '/code')
-from models import GameVisit
+from models import GameVisit, User
 
 
 # Helper function (main.py에서 가져옴)
@@ -51,6 +51,15 @@ def create_game_visit(
     db: Session = Depends(get_db)
 ):
     """게임 접속 기록 생성 (오늘 날짜 + IP 기준 중복 방지)"""
+    # user_id가 전달된 경우 users 테이블에서 존재 여부 확인
+    if visit_data.user_id is not None:
+        user = db.query(User).filter(User.id == visit_data.user_id).first()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with id {visit_data.user_id} not found"
+            )
+
     # 클라이언트 IP 추출
     client_ip = get_client_ip(request)
 
@@ -103,6 +112,15 @@ def update_game_visit(
     db: Session = Depends(get_db)
 ):
     """IP 주소 기반 게임 접속 기록 업데이트 (is_visits = True)"""
+    # user_id가 전달된 경우 users 테이블에서 존재 여부 확인
+    if visit_data.user_id is not None:
+        user = db.query(User).filter(User.id == visit_data.user_id).first()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with id {visit_data.user_id} not found"
+            )
+
     # IP 주소로 레코드 조회
     game_visit = db.query(GameVisit).filter(
         GameVisit.ip_address == visit_data.ip_address
