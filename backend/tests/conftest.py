@@ -4,7 +4,7 @@ os.environ["TESTING"] = "1"
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app.db.base import Base
@@ -17,6 +17,15 @@ TEST_DATABASE_URL = "postgresql+psycopg2://hexsera:hexpoint@postgres-server:5432
 test_engine = create_engine(TEST_DATABASE_URL)
 TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
+# FK 의존성 역순으로 TRUNCATE (자식 테이블 먼저)
+TABLES_TO_TRUNCATE = [
+    "friendships",
+    "monthly_scores",
+    "game_visits",
+    "scores",
+    "users",
+]
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
@@ -26,31 +35,24 @@ def setup_test_database():
     Base.metadata.drop_all(bind=test_engine)
 
 
+@pytest.fixture(scope="function", autouse=True)
+def truncate_tables():
+    """각 테스트 종료 후 모든 테이블 초기화 (auto-increment 시퀀스 포함)"""
+    yield
+    with test_engine.connect() as conn:
+        for table in TABLES_TO_TRUNCATE:
+            conn.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE"))
+        conn.commit()
+
+
 @pytest.fixture(scope="function")
 def db_session():
-    """각 테스트마다 트랜잭션 생성 및 롤백 (프로덕션과 동일한 세션 방식)"""
-    connection = test_engine.connect()
-    transaction = connection.begin()
-
-    # Engine에 bind된 세션 생성 (프로덕션과 동일하게 db.get_bind()가 Engine을 반환)
+    """프로덕션과 동일한 독립 세션 - commit()이 실제로 DB에 반영됨"""
     session = TestSessionLocal()
-
-    # session.commit() 호출 시 실제 커밋 대신 SAVEPOINT로 처리
-    @event.listens_for(session, "after_transaction_end")
-    def restart_savepoint(session, trans):
-        if trans.nested and not trans._parent.nested:
-            session.begin_nested()
-            session.expire_all()
-
-    # 세션의 실제 쿼리 실행을 외부 connection으로 연결
-    session.connection(bind_arguments={"bind": connection})
-    session.begin_nested()
-
-    yield session
-
-    session.close()
-    transaction.rollback()
-    connection.close()
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 @pytest.fixture(scope="function")
@@ -91,6 +93,8 @@ def sample_users(db_session):
 
     db_session.add(user1)
     db_session.add(user2)
-    db_session.flush()
+    db_session.commit()
+    db_session.refresh(user1)
+    db_session.refresh(user2)
 
     return [user1, user2]

@@ -34,7 +34,7 @@ class TestFriendRequestValidation:
             status="pending"
         )
         db_session.add(friendship)
-        db_session.flush()
+        db_session.commit()
 
         # 두 번째 요청 시도 (중복)
         response = client.post("/api/friend-requests", json={
@@ -58,7 +58,7 @@ class TestFriendRequestValidation:
             status="pending"
         )
         db_session.add(friendship)
-        db_session.flush()
+        db_session.commit()
 
         # User 2 → User 1 요청 시도 (역방향)
         response = client.post("/api/friend-requests", json={
@@ -82,7 +82,7 @@ class TestFriendRequestValidation:
             status="accepted"
         )
         db_session.add(friendship)
-        db_session.flush()
+        db_session.commit()
 
         # User 2 → User 1 요청 시도 (역방향)
         response = client.post("/api/friend-requests", json={
@@ -106,7 +106,7 @@ class TestFriendRequestValidation:
             status="rejected"
         )
         db_session.add(friendship)
-        db_session.flush()
+        db_session.commit()
 
         # User 2 → User 1 요청 시도 (역방향)
         response = client.post("/api/friend-requests", json={
