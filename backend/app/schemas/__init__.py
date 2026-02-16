@@ -14,12 +14,6 @@ from app.schemas.user import (
     DeleteResponse,
 )
 
-from app.schemas.score import (
-    ScoreCreateRequest,
-    ScoreResponse,
-    ScoreListResponse,
-)
-
 from app.schemas.monthly_score import (
     MonthlyScoreCreateRequest,
     MonthlyScoreUpdateRequest,
@@ -57,10 +51,6 @@ __all__ = [
     "LoginRequest",
     "LoginResponse",
     "DeleteResponse",
-    # Score schemas
-    "ScoreCreateRequest",
-    "ScoreResponse",
-    "ScoreListResponse",
     # MonthlyScore schemas
     "MonthlyScoreCreateRequest",
     "MonthlyScoreUpdateRequest",

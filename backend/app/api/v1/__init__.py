@@ -8,7 +8,6 @@ from app.api.v1 import (
     auth,
     users,
     friends,
-    scores,
     monthly_scores,
     game_visits,
 )
@@ -17,7 +16,6 @@ __all__ = [
     "auth",
     "users",
     "friends",
-    "scores",
     "monthly_scores",
     "game_visits",
 ]

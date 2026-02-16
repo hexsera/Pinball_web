@@ -18,15 +18,6 @@ class User(Base):
     role = Column(String(20), nullable=False, default='user')
 
 
-class Score(Base):
-    __tablename__ = "scores"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    score = Column(Integer, nullable=False, index=True)
-    created_at = Column(DateTime, nullable=False, server_default=func.now(), index=True)
-
-
 class Friendship(Base):
     __tablename__ = "friendships"
 

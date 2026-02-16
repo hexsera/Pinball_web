@@ -22,7 +22,6 @@ TABLES_TO_TRUNCATE = [
     "friendships",
     "monthly_scores",
     "game_visits",
-    "scores",
     "users",
 ]
 
