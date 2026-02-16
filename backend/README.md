@@ -30,7 +30,7 @@ FastAPI 백엔드 서버. PostgreSQL/MySQL 연동, SQLAlchemy ORM, Alembic 마�
 | 파일 | 역할 |
 |------|------|
 | `main.py` | FastAPI 앱 진입점. 라우터 등록, DB 초기화(create_all), 시딩(seed_admin) 실행 |
-| `models.py` | SQLAlchemy ORM 모델 정의 (User, Score, Friendship, MonthlyScore, GameVisit, HighScore) |
+| `models.py` | SQLAlchemy ORM 모델 정의 (User, Friendship, MonthlyScore, GameVisit) |
 | `seed.py` | Data Seeding — Admin 계정 자동 생성 (`seed_admin` 함수) |
 | `requirements.txt` | Python 패키지 의존성 (Faker==24.0.0 포함) |
 | `Dockerfile` | FastAPI 컨테이너 빌드 설정 |
@@ -52,8 +52,6 @@ app/
 │       ├── __init__.py  # 모든 v1 라우터 export
 │       ├── auth.py      # POST /api/v1/login, POST /api/v1/register
 │       ├── users.py     # CRUD /api/v1/users (API Key 인증 필요)
-│       ├── scores.py    # POST /api/v1/scores (점수 기록 생성)
-│       ├── high_scores.py   # /api/v1/high-scores (사용자별 최고 점수)
 │       ├── monthly_scores.py # /api/v1/monthly-scores (월간 점수)
 │       ├── game_visits.py   # /api/v1/game_visits (방문 기록)
 │       └── friends.py   # /api/friend-requests (친구 요청)
@@ -62,12 +60,10 @@ app/
 │   └── security.py      # verify_api_key() — API Key 인증 의존성 (X-API-Key 헤더)
 ├── db/
 │   ├── base.py          # Base + 모든 모델 import (Alembic autogenerate용)
-│   └── session.py       # engine, SessionLocal, Base, wait_for_db()
+│   └── session.py       # engine, SessionLocal, Base (DeclarativeBase 방식), wait_for_db()
 └── schemas/
     ├── __init__.py      # 모든 스키마 한 번에 export
     ├── user.py          # UserCreateRequest, UserRegisterRequest, UserUpdateRequest, UserResponse, LoginRequest, LoginResponse, DeleteResponse
-    ├── score.py         # ScoreCreateRequest, ScoreResponse, ScoreListResponse
-    ├── high_score.py    # HighScoreCreate, HighScoreResponse
     ├── monthly_score.py # MonthlyScoreCreateRequest/UpdateRequest/Response/ListResponse/DeleteResponse
     ├── game_visit.py    # GameVisitCreateRequest/UpdateRequest/Response, DailyVisitStats 등
     └── friendship.py   # FriendRequestRequest/Response/Data/ListResponse/ActionRequest/ActionResponse
@@ -82,8 +78,10 @@ alembic/
 ├── README              # Alembic 기본 설명
 ├── env.py              # Alembic 환경 설정 (Base.metadata 연결, 환경변수 로드)
 ├── script.py.mako      # 마이그레이션 파일 템플릿
-├── versions/           # 마이그레이션 파일 (단일 초기 revision으로 통합)
-│   └── 60a77f2baf38_initial_schema.py
+├── versions/           # 마이그레이션 파일
+│   ├── 60a77f2baf38_initial_schema.py
+│   ├── e529d64d1a07_drop_high_scores_table.py
+│   └── 20e256d6d379_drop_scores_table.py
 └── versions_mysql_backup/  # MySQL 시절 마이그레이션 백업
 ```
 
@@ -110,10 +108,9 @@ scripts/
 tests/
 ├── README.md           # 테스트 작성 가이드
 ├── __init__.py
-├── conftest.py         # pytest fixture (TestDB 세션, 테스트용 client 등)
+├── conftest.py         # pytest fixture (TRUNCATE 방식 테스트 격리, TestDB 세션, 테스트용 client 등)
 ├── test_example.py     # 예시 테스트
 ├── test_friend_requests.py  # 친구 요청 API 테스트
-├── test_high_scores.py      # 최고 점수 API 테스트
 ├── test_monthly_scores_fk.py # 월간 점수 FK 테스트
 └── test_testdb.py           # 테스트 DB 연결 확인
 ```
@@ -125,11 +122,9 @@ tests/
 | 모델 | 테이블 | 주요 필드 |
 |------|--------|-----------|
 | User | users | id, user_id(UUID), email(UNIQUE), nickname, password, birth_date, role |
-| Score | scores | id(PK), user_id, score, created_at |
 | Friendship | friendships | id, requester_id(FK→users), receiver_id(FK→users), status, created_at |
 | MonthlyScore | monthly_scores | id, user_id(FK→users), nickname, score, created_at |
 | GameVisit | game_visits | id, user_id(FK→users, nullable), ip_address, is_visits, created_at, updated_at |
-| HighScore | high_scores | id, user_id(FK→users, UNIQUE), score, created_at, updated_at |
 
 ---
 
@@ -143,8 +138,6 @@ tests/
 | POST | /api/v1/login | 없음 | 로그인 |
 | POST | /api/v1/register | 없음 | 일반 회원가입 |
 | POST/GET/PUT/DELETE | /api/v1/users | 없음 | 사용자 CRUD |
-| POST | /api/v1/scores | 없음 | 점수 기록 생성 |
-| POST/GET/PUT/DELETE | /api/v1/high-scores | 없음 | 최고 점수 관리 |
 | POST/GET/PUT/DELETE | /api/v1/monthly-scores | 없음 | 월간 점수 관리 |
 | POST/GET/PUT/DELETE | /api/v1/game_visits | 없음 | 게임 방문 기록 |
 | POST/GET/PUT/DELETE | /api/friend-requests | 없음 | 친구 요청 관리 |
