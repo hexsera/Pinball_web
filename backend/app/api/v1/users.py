@@ -16,7 +16,7 @@ from app.schemas.user import (
 # 기존 models.py 사용
 import sys
 sys.path.insert(0, '/code')
-from models import User, MonthlyScore, Friendship, HighScore, GameVisit
+from models import User, MonthlyScore, Friendship, GameVisit
 
 router = APIRouter()
 
@@ -142,9 +142,6 @@ def delete_user(
     ).delete(synchronize_session=False)
 
     db.query(MonthlyScore).filter(MonthlyScore.user_id == user_id)\
-        .delete(synchronize_session=False)
-
-    db.query(HighScore).filter(HighScore.user_id == user_id)\
         .delete(synchronize_session=False)
 
     db.delete(user)

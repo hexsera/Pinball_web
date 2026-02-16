@@ -48,11 +48,6 @@ from app.schemas.game_visit import (
     GameVisitDeleteResponse,
 )
 
-from app.schemas.high_score import (
-    HighScoreCreate,
-    HighScoreResponse,
-)
-
 __all__ = [
     # User schemas
     "UserCreateRequest",
@@ -88,7 +83,4 @@ __all__ = [
     "DailyVisitStatsResponse",
     "GameVisitDeleteRequest",
     "GameVisitDeleteResponse",
-    # HighScore schemas
-    "HighScoreCreate",
-    "HighScoreResponse",
 ]

@@ -40,6 +40,7 @@ def db_session():
     def restart_savepoint(session, trans):
         if trans.nested and not trans._parent.nested:
             session.begin_nested()
+            session.expire_all()
 
     # 세션의 실제 쿼리 실행을 외부 connection으로 연결
     session.connection(bind_arguments={"bind": connection})
@@ -90,8 +91,6 @@ def sample_users(db_session):
 
     db_session.add(user1)
     db_session.add(user2)
-    db_session.commit()
-    db_session.refresh(user1)
-    db_session.refresh(user2)
+    db_session.flush()
 
     return [user1, user2]

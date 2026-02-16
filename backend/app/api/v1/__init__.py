@@ -10,7 +10,6 @@ from app.api.v1 import (
     friends,
     scores,
     monthly_scores,
-    high_scores,
     game_visits,
 )
 
@@ -20,6 +19,5 @@ __all__ = [
     "friends",
     "scores",
     "monthly_scores",
-    "high_scores",
     "game_visits",
 ]
