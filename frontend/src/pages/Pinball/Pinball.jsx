@@ -44,7 +44,7 @@ function Pinball({ onReady }) {
   const plungerReleaseRef = useRef(null);
   const pressFlipperKeyRef = useRef(null);
   const releaseFlipperKeyRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [score, setScore] = useState(0);
   const [scoreAnimKey, setScoreAnimKey] = useState(0);
   const [lives, setLives] = useState(3);
@@ -68,17 +68,14 @@ function Pinball({ onReady }) {
     setScoreAnimKey(prev => prev + 1);
   };
 
-  // 음악 재생/정지 토글 핸들러
+  // 마스터 볼륨 음소거 토글 핸들러
   const handleToggleMusic = () => {
-    if (bgmRef.current) {
-      if (isPlaying) {
-        bgmRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        bgmRef.current.play();
-        setIsPlaying(true);
-      }
-    }
+    const allRefs = [bgmRef, hitSoundRef, fliperSoundRef, lifeDownSoundRef, gameoverSoundRef, bumperSoundRef];
+    const nextMuted = !isMuted;
+    allRefs.forEach(ref => {
+      if (ref.current) ref.current.muted = nextMuted;
+    });
+    setIsMuted(nextMuted);
   };
 
   // 게임 시작 함수 (시작 UI에서 Space/클릭 시 호출)
@@ -88,7 +85,6 @@ function Pinball({ onReady }) {
     setGameStarted(true);
     engineRef.current.timing.timeScale = 1;
     bgmRef.current?.play().catch(() => {});
-    setIsPlaying(true);
   };
 
   // 점수 전송 및 최고점수 갱신 함수
@@ -1014,7 +1010,7 @@ display: 'flex',
                 '&:hover': { color: '#ffffffb7' },
               }}
             >
-              {isPlaying ? (
+              {!isMuted ? (
                 <VolumeUpIcon sx={{ fontSize: '36px' }} />
               ) : (
                 <VolumeOffIcon sx={{ fontSize: '36px' }} />
