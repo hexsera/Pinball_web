@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from datetime import datetime, date
+from datetime import datetime
 from calendar import monthrange
 
 from app.api.deps import get_db
@@ -22,22 +22,36 @@ from models import User, MonthlyScore
 router = APIRouter()
 
 
+def get_current_month_range():
+    """이번 달 시작(1일 00:00:00)과 끝(말일 23:59:59)을 반환"""
+    now = datetime.now()
+    year, month = now.year, now.month
+    _, last_day = monthrange(year, month)
+    start = datetime(year, month, 1, 0, 0, 0)
+    end = datetime(year, month, last_day, 23, 59, 59)
+    return start, end
+
+
 @router.post("", response_model=MonthlyScoreResponse)
 def create_or_update_monthly_score(
     score_data: MonthlyScoreCreateRequest,
     db: Session = Depends(get_db)
 ):
     """월간 점수 생성 또는 수정 (최고 점수만 저장)"""
-    # User 테이블에서 nickname 조회
     user = db.query(User).filter(User.id == score_data.user_id).first()
     if user is None:
         raise HTTPException(
             status_code=404,
             detail=f"User with id {score_data.user_id} not found"
         )
+    
+
+    start, end = get_current_month_range()
 
     existing_score = db.query(MonthlyScore).filter(
-        MonthlyScore.user_id == score_data.user_id
+        MonthlyScore.user_id == score_data.user_id,
+        MonthlyScore.created_at >= start,
+        MonthlyScore.created_at <= end
     ).first()
 
     if existing_score:
@@ -64,19 +78,11 @@ def get_monthly_scores(
     db: Session = Depends(get_db)
 ):
     """전체 월간 점수 조회 (score 내림차순)"""
-    now = datetime.now()
-    year = now.year
-    month = now.month
-
-    start_date = date(year, month, 1)
-    _, last_day = monthrange(year, month)
-    end_date = date(year, month, last_day)
-
-
+    start, end = get_current_month_range()
 
     scores = db.query(MonthlyScore).filter(
-        MonthlyScore.created_at >= start_date,
-        MonthlyScore.created_at <= end_date
+        MonthlyScore.created_at >= start,
+        MonthlyScore.created_at <= end
     ).order_by(
         MonthlyScore.score.desc()
     ).all()
@@ -93,8 +99,12 @@ def get_monthly_score(
     db: Session = Depends(get_db)
 ):
     """특정 사용자 월간 점수 조회"""
+    start, end = get_current_month_range()
+
     score = db.query(MonthlyScore).filter(
-        MonthlyScore.user_id == user_id
+        MonthlyScore.user_id == user_id,
+        MonthlyScore.created_at >= start,
+        MonthlyScore.created_at <= end
     ).first()
 
     if score is None:
