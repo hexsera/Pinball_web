@@ -6,6 +6,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import HomeIcon from '@mui/icons-material/Home';
 import Pinball from '../Pinball';
 import HeaderUserInfo from '../../components/HeaderUserInfo';
+import ChatPanel from '../../components/ChatPanel/ChatPanel';
 
 function PinballPage() {
   const navigate = useNavigate();
@@ -67,7 +68,8 @@ function PinballPage() {
         </Toolbar>
       </AppBar>
 
-      {/* 게임 영역 */}
+      {/* 게임 + 채팅 영역 */}
+      <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
       <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', overflow: 'hidden', pt: isMobile ? 0 : 2 }}>
         <Box sx={{
           transform: `scale(${gameScale})`,
@@ -94,6 +96,8 @@ function PinballPage() {
             </Box>
           )}
         </Box>
+      </Box>
+      <ChatPanel />
       </Box>
     </Box>
   );

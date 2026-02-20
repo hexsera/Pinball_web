@@ -46,7 +46,7 @@ def chat(request: ChatRequest):
                 system_instruction=SYSTEM_PROMPT,
             ),
         )
-        chat_id = str(request.chat_id)
+        chat_id = str(uuid.uuid4())
         _sessions[chat_id] = chat_session
 
     response = chat_session.send_message(request.message)
