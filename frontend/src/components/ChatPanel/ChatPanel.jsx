@@ -5,19 +5,46 @@ import axios from 'axios';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 
-export default function ChatPanel() {
+export default function ChatPanel({ isAIMode }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatId, setChatId] = useState(null);
   const bottomRef = useRef(null);
+  const initTimerRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // AI 선제 메시지: 마운트 후 5초 뒤 50% 확률로 AI가 먼저 대화 시작
+  useEffect(() => {
+    if (!isAIMode) return;
+    initTimerRef.current = setTimeout(async () => {
+      if (Math.random() < 0.5) {
+        try {
+          const { data } = await axios.post('/api/v1/chat', {
+            chat_id: null,
+            message: '__AI_INIT__',
+          });
+          setChatId(data.chat_id);
+          setMessages([{ role: 'ai', content: data.reply }]);
+        } catch {
+          // 선제 메시지 실패 시 조용히 무시
+        }
+      }
+    }, 5000);
+    return () => clearTimeout(initTimerRef.current);
+  }, [isAIMode]);
+
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
+
+    // 유저가 먼저 말을 걸면 AI 선제 메시지 타이머 취소
+    if (initTimerRef.current) {
+      clearTimeout(initTimerRef.current);
+      initTimerRef.current = null;
+    }
 
     const userMsg = { role: 'user', content: inputValue };
     setMessages(prev => [...prev, userMsg]);

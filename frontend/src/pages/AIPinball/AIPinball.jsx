@@ -876,6 +876,9 @@ function AIPinball({ onReady }) {
     releaseFlipperKeyRef.current = releaseFlipperKey;
 
     const handleKeyDown = (event) => {
+  // 채팅 입력창에 focus가 있으면 게임 조작 무시
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
   // 게임 시작 전: Space만 인식하고 나머지 키 무시
   if (!gameStartedRef.current) {
     if (event.key === ' ' || event.code === 'Space') {

@@ -1,7 +1,10 @@
+import { useRef } from 'react';
 import { Box, TextField, IconButton } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 export default function ChatInput({ value, onChange, onSend, disabled }) {
+  const inputRef = useRef(null);
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !disabled) onSend();
   };
@@ -23,6 +26,8 @@ export default function ChatInput({ value, onChange, onSend, disabled }) {
         value={value}
         onChange={onChange}
         onKeyDown={handleKeyDown}
+        onClick={() => inputRef.current?.focus()}
+        inputRef={inputRef}
         placeholder="메시지를 입력하세요..."
         autoComplete="off"
         sx={{

@@ -117,7 +117,7 @@ function PinballPage() {
           )}
         </Box>
       </Box>
-      <ChatPanel />
+      {isAIMode && <ChatPanel isAIMode={isAIMode} />}
       </Box>
     </Box>
   );
