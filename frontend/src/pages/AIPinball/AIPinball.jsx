@@ -5,7 +5,7 @@ import { keyframes } from '@mui/system';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import { STAGE_CONFIGS, BUMPER_RADIUS } from '../Pinball/stageConfigs';
+import { STAGE_CONFIGS, BUMPER_RADIUS } from './aiStageConfigs';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from '../Pinball/pinballSound';
 import { getRestartState } from '../Pinball/pinballRestart';
 import WallOverlay from '../Pinball/WallOverlay';
@@ -189,7 +189,7 @@ function AIPinball({ onReady }) {
     const engine = Engine.create({
         gravity: {
             x: 0,
-            y: 1
+            y: -1  // 임시: AI 플립퍼 디버깅용
         }
     });
     engine.timing.timeScale = 0; // 게임 시작 전 물리 정지
@@ -294,7 +294,7 @@ function AIPinball({ onReady }) {
     plungerRef.current = plunger;
 
     // 핀볼 공 만들기 (발판벽 위에서 시작)
-    const ball = Bodies.circle(662, SHELF_Y - 20, 15, {
+    const ball = Bodies.circle(60, SHELF_Y - 220, 15, {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
@@ -339,6 +339,22 @@ function AIPinball({ onReady }) {
       length: 0
     });
 
+    // AI 깔대기 경사면 (player 깔대기의 y축 반전, AI 플립퍼 양옆)
+    const AI_FUNNEL_ANGLE = 35 * Math.PI / 180;
+    const AI_FUNNEL_THICKNESS = 20;
+
+    const aiLeftFunnelWall = Bodies.rectangle(105, 185, 260, AI_FUNNEL_THICKNESS, {
+      isStatic: true,
+      render: { fillStyle: '#16213e' }
+    });
+    Body.setAngle(aiLeftFunnelWall, -AI_FUNNEL_ANGLE);  // player +35° → AI -35°
+
+    const aiRightFunnelWall = Bodies.rectangle(540, 175, 220, AI_FUNNEL_THICKNESS, {
+      isStatic: true,
+      render: { fillStyle: '#16213e' }
+    });
+    Body.setAngle(aiRightFunnelWall, AI_FUNNEL_ANGLE);  // player -35° → AI +35°
+
     // AI 플리퍼 Bodies (상단, 기존 플리퍼의 y=995 → y=105, 좌우 반전)
     const aiLeftFlipper = Bodies.rectangle(400, 105, 100, 20, {
       chamfer: { radius: 10 },
@@ -381,11 +397,13 @@ function AIPinball({ onReady }) {
     const RIGHT_FLIPPER_MAX_ANGLE = 35 * Math.PI / 180;   // 30도 (라디안)
     const FLIPPER_SPEED = 0.3;
 
-    // AI 플리퍼 각도 상수 (상단 배치 = 하단 플리퍼의 상하 반전)
-    const AI_LEFT_MIN_ANGLE  = -35 * Math.PI / 180;  // 올린 상태 (반시계)
-    const AI_LEFT_MAX_ANGLE  =  15 * Math.PI / 180;  // 내린 상태 (시계)
-    const AI_RIGHT_MIN_ANGLE = -15 * Math.PI / 180;  // 내린 상태 (반시계)
-    const AI_RIGHT_MAX_ANGLE =  35 * Math.PI / 180;  // 올린 상태 (시계)
+    // AI 플리퍼 각도 상수 (player 플립퍼의 x축 반전)
+    // player Left: -35°(올림) ~ +15°(내림)  →  AI Left: -15°(내림) ~ +35°(올림)
+    // player Right: -15°(올림) ~ +35°(내림) →  AI Right: -35°(올림) ~ +15°(내림)
+    const AI_LEFT_MIN_ANGLE  = -15 * Math.PI / 180;  // 내린 상태
+    const AI_LEFT_MAX_ANGLE  =  35 * Math.PI / 180;  // 올린 상태
+    const AI_RIGHT_MIN_ANGLE = -35 * Math.PI / 180;  // 올린 상태
+    const AI_RIGHT_MAX_ANGLE =  15 * Math.PI / 180;  // 내린 상태
 
     // AI 플리퍼 키 상태 ref
     const isAILeftPressed  = { current: false };
@@ -447,6 +465,8 @@ function AIPinball({ onReady }) {
       rightFlipper,
       leftFlipperConstraint,
       rightFlipperConstraint,
+      aiLeftFunnelWall,
+      aiRightFunnelWall,
       aiLeftFlipper,
       aiRightFlipper,
       aiLeftConstraint,
@@ -604,19 +624,19 @@ function AIPinball({ onReady }) {
         isAIRightPressed.current = false;
       }
 
-      // AI 플리퍼 물리 제어 (bool 소비 — 플레이어 플리퍼와 동일한 구조)
+      // AI 플리퍼 물리 제어 (player 플립퍼의 x축 반전)
       if (isAILeftPressed.current) {
-        Body.setAngularVelocity(aiLeftFlipper, FLIPPER_SPEED);   // 올리기 (시계)
+        Body.setAngularVelocity(aiLeftFlipper, -FLIPPER_SPEED);  // 올리기 (반시계)
       } else {
-        Body.setAngularVelocity(aiLeftFlipper, -FLIPPER_SPEED);  // 내리기 (반시계)
+        Body.setAngularVelocity(aiLeftFlipper, FLIPPER_SPEED);   // 내리기 (시계)
       }
       if (aiLeftFlipper.angle > AI_LEFT_MAX_ANGLE)  Body.setAngle(aiLeftFlipper, AI_LEFT_MAX_ANGLE);
       if (aiLeftFlipper.angle < AI_LEFT_MIN_ANGLE)  Body.setAngle(aiLeftFlipper, AI_LEFT_MIN_ANGLE);
 
       if (isAIRightPressed.current) {
-        Body.setAngularVelocity(aiRightFlipper, -FLIPPER_SPEED); // 올리기 (반시계)
+        Body.setAngularVelocity(aiRightFlipper, FLIPPER_SPEED);  // 올리기 (시계)
       } else {
-        Body.setAngularVelocity(aiRightFlipper, FLIPPER_SPEED);  // 내리기 (시계)
+        Body.setAngularVelocity(aiRightFlipper, -FLIPPER_SPEED); // 내리기 (반시계)
       }
       if (aiRightFlipper.angle > AI_RIGHT_MAX_ANGLE) Body.setAngle(aiRightFlipper, AI_RIGHT_MAX_ANGLE);
       if (aiRightFlipper.angle < AI_RIGHT_MIN_ANGLE) Body.setAngle(aiRightFlipper, AI_RIGHT_MIN_ANGLE);
