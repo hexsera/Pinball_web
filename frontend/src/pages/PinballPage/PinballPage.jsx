@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, AppBar, Toolbar, IconButton, CircularProgress } from '@mui/material';
+import { Box, AppBar, Toolbar, IconButton, CircularProgress, Button } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import HomeIcon from '@mui/icons-material/Home';
 import Pinball from '../Pinball';
+import AIPinball from '../AIPinball';
 import HeaderUserInfo from '../../components/HeaderUserInfo';
 import ChatPanel from '../../components/ChatPanel/ChatPanel';
 
@@ -14,6 +15,7 @@ function PinballPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const appBarRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [isAIMode, setIsAIMode] = useState(false);
 
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -61,9 +63,24 @@ function PinballPage() {
       {/* 상단 헤더 */}
       <AppBar ref={appBarRef} position="static" sx={{ backgroundColor: '#1E293B', boxShadow: 'none', borderBottom: '1px solid #334155' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <IconButton onClick={() => navigate('/')} sx={{ color: '#F1F5F9' }}>
-            <HomeIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton onClick={() => navigate('/')} sx={{ color: '#F1F5F9' }}>
+              <HomeIcon />
+            </IconButton>
+            <Button
+              onClick={() => { setIsAIMode(prev => !prev); setIsReady(false); }}
+              variant={isAIMode ? 'contained' : 'outlined'}
+              size="small"
+              sx={{
+                color: isAIMode ? '#ffffff' : '#e74c3c',
+                borderColor: '#e74c3c',
+                backgroundColor: isAIMode ? '#e74c3c' : 'transparent',
+                '&:hover': { backgroundColor: '#c0392b', color: '#ffffff', borderColor: '#c0392b' },
+              }}
+            >
+              {isAIMode ? 'AI 대전 ON' : 'AI 대전'}
+            </Button>
+          </Box>
           <HeaderUserInfo />
         </Toolbar>
       </AppBar>
@@ -82,7 +99,10 @@ function PinballPage() {
           position: 'relative',
         }}>
           <Box sx={{ visibility: isReady ? 'visible' : 'hidden' }}>
-            <Pinball onReady={() => setIsReady(true)} />
+            {isAIMode
+              ? <AIPinball key="ai"     onReady={() => setIsReady(true)} />
+              : <Pinball   key="normal" onReady={() => setIsReady(true)} />
+            }
           </Box>
           {!isReady && (
             <Box sx={{
