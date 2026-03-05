@@ -6,6 +6,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { STAGE_CONFIGS, BUMPER_RADIUS } from './aiStageConfigs';
+import SkillIcon from './SkillIcon';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from '../Pinball/pinballSound';
 import { getRestartState } from '../Pinball/pinballRestart';
 import WallOverlay from '../Pinball/WallOverlay';
@@ -42,6 +43,7 @@ function AIPinball({ onReady }) {
   const pressFlipperKeyRef = useRef(null);
   const releaseFlipperKeyRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [skillState, setSkillState] = useState('loading');
   const [score, setScore] = useState(0);
   const [scoreAnimKey, setScoreAnimKey] = useState(0);
   const [lives, setLives] = useState(3);
@@ -904,6 +906,16 @@ function AIPinball({ onReady }) {
       console.log('스페이스바 눌림 - Plunger 충전 시작');
     }
   }
+  // 필살기 상태 전환 (개발 확인용)
+  if (event.key === 'b' || event.key === 'B') {
+    setSkillState('big');
+  }
+  if (event.key === 's' || event.key === 'S') {
+    setSkillState('small');
+  }
+  if (event.key === 'l' || event.key === 'L') {
+    setSkillState('loading');
+  }
   // 'n' 키로 스테이지 전환 (테스트용)
   if (event.key === 'n' || event.key === 'N') {
     const currentStage = stageRef.current;
@@ -1136,6 +1148,15 @@ display: 'flex',
             </Box>
 
             <div ref={sceneRef} style={{ position: 'relative', zIndex: 2 }} />
+
+            <Box sx={{
+              position: 'absolute',
+              bottom: '120px',
+              left: '20px',
+              zIndex: 5,
+            }}>
+              <SkillIcon skillState={skillState} />
+            </Box>
 
             {/* 모바일 조작 버튼 (터치 디바이스에서만 표시) */}
             {isTouchDevice && (
