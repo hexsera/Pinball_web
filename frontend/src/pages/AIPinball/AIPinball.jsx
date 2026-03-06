@@ -62,6 +62,10 @@ function AIPinball({ onReady }) {
   const specialActiveRef = useRef(false);
   const specialTimerRef = useRef(null);
   const activateSpecialRef = useRef(null);
+  const isBallInTriggerRef = useRef(false);
+  const playstyleDataRef = useRef([]);
+  const collectIntervalRef = useRef(null);
+  const analysisTimerRef = useRef(null);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -88,6 +92,35 @@ function AIPinball({ onReady }) {
     setGameStarted(true);
     engineRef.current.timing.timeScale = 1;
     bgmRef.current?.play().catch(() => {});
+
+    // 플레이스타일 데이터 수집 시작
+    playstyleDataRef.current = [];
+    const gameStartTime = Date.now();
+    collectIntervalRef.current = setInterval(() => {
+      if (!isBallInTriggerRef.current) return;
+      const ball = ballRef.current;
+      if (!ball) return;
+      const elapsed = ((Date.now() - gameStartTime) / 1000).toFixed(2);
+      const dataPoint = {
+        timestamp: `${elapsed}s`,
+        ballX: parseFloat(ball.position.x.toFixed(2)),
+        ballY: parseFloat(ball.position.y.toFixed(2)),
+        ballVX: parseFloat(ball.velocity.x.toFixed(2)),
+        ballVY: parseFloat(ball.velocity.y.toFixed(2)),
+        leftFlipper: isLeftKeyPressedRef.current,
+        rightFlipper: isRightKeyPressedRef.current,
+      };
+      playstyleDataRef.current.push(dataPoint);
+      console.log('데이터 수집:', dataPoint);
+    }, 100);
+
+    // 40초 후 수집 종료 및 랜덤 필살기 결정
+    analysisTimerRef.current = setTimeout(() => {
+      clearInterval(collectIntervalRef.current);
+      console.log('수집된 플레이스타일 데이터:', playstyleDataRef.current);
+      const randomSkill = Math.random() < 0.5 ? 'big' : 'small';
+      setSkillState(randomSkill);
+    }, 40000);
   };
 
   // 재시작 핸들러
@@ -305,6 +338,7 @@ function AIPinball({ onReady }) {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
+      label: 'ball',
       render: { fillStyle: '#e94560' }
     });
 
@@ -360,6 +394,17 @@ function AIPinball({ onReady }) {
       }, 5000);
     };
     activateSpecialRef.current = activateSpecial;
+
+    // 플립퍼 트리거 sensor body (왼쪽 끝 x=225 ~ 오른쪽 끝 x=440, 중심 x=332)
+    const triggerBody = Bodies.rectangle(332, 945, 415, 240, {
+      isStatic: true,
+      isSensor: true,
+      label: 'flipperTrigger',
+      render: {
+        fillStyle: '#00ff00',
+        opacity: 0.3
+      }
+    });
 
     // 왼쪽 플리퍼 (회전축 x=270, 중심 = 회전축 + 길이절반50 = x=320)
     const leftFlipper = Bodies.rectangle(265, 995, 100, 20, {
@@ -531,7 +576,8 @@ function AIPinball({ onReady }) {
       aiRightConstraint,
       plunger,
       plungerShelf,
-      plungerLaneGuide
+      plungerLaneGuide,
+      triggerBody
     ]);
 
     // 스테이지 1 맵 로딩
@@ -540,6 +586,23 @@ function AIPinball({ onReady }) {
     //
 
     Matter.Body.setVelocity(ball, {x:0, y:0});
+
+    // 플립퍼 트리거 진입/이탈 감지
+    Events.on(engine, 'collisionStart', (event) => {
+      event.pairs.forEach(({ bodyA, bodyB }) => {
+        const isTrigger = bodyA.label === 'flipperTrigger' || bodyB.label === 'flipperTrigger';
+        const isBall = bodyA.label === 'ball' || bodyB.label === 'ball';
+        if (isTrigger && isBall) isBallInTriggerRef.current = true;
+      });
+    });
+
+    Events.on(engine, 'collisionEnd', (event) => {
+      event.pairs.forEach(({ bodyA, bodyB }) => {
+        const isTrigger = bodyA.label === 'flipperTrigger' || bodyB.label === 'flipperTrigger';
+        const isBall = bodyA.label === 'ball' || bodyB.label === 'ball';
+        if (isTrigger && isBall) isBallInTriggerRef.current = false;
+      });
+    });
 
     // 범퍼 충돌 이벤트
     Events.on(engine, 'collisionStart', (event) => {
@@ -962,17 +1025,14 @@ function AIPinball({ onReady }) {
       console.log('스페이스바 눌림 - Plunger 충전 시작');
     }
   }
-  // 필살기 상태 전환 (개발 확인용)
-  if (event.key === 'b' || event.key === 'B') {
-    setSkillState('big');
-    activateSpecialRef.current?.(bigBallRef.current);
-  }
-  if (event.key === 's' || event.key === 'S') {
-    setSkillState('small');
-    activateSpecialRef.current?.(smallBallRef.current);
-  }
-  if (event.key === 'l' || event.key === 'L') {
-    setSkillState('loading');
+  // 'a' 키로 필살기 발동
+  if (event.key === 'a' || event.key === 'A') {
+    if (skillState === 'big') {
+      activateSpecialRef.current?.(bigBallRef.current);
+    } else if (skillState === 'small') {
+      activateSpecialRef.current?.(smallBallRef.current);
+    }
+    // 'loading' 상태면 아무것도 하지 않음
   }
   // 'n' 키로 스테이지 전환 (테스트용)
   if (event.key === 'n' || event.key === 'N') {
@@ -1099,6 +1159,8 @@ if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
   if (specialTimerRef.current) {
     clearTimeout(specialTimerRef.current);
   }
+  clearInterval(collectIntervalRef.current);
+  clearTimeout(analysisTimerRef.current);
   Render.stop(render);
   Runner.stop(runner);
   Engine.clear(engine);
