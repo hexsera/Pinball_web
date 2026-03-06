@@ -45,6 +45,9 @@ function AIPinball({ onReady }) {
   const releaseFlipperKeyRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
   const [skillState, setSkillState] = useState('loading');
+  const skillStateRef = useRef('loading');
+  const [cooldownProgress, setCooldownProgress] = useState(0);
+  const cooldownIntervalRef = useRef(null);
   const [score, setScore] = useState(0);
   const [scoreAnimKey, setScoreAnimKey] = useState(0);
   const [lives, setLives] = useState(3);
@@ -117,9 +120,18 @@ function AIPinball({ onReady }) {
       console.log('데이터 수집:', dataPoint);
     }, 100);
 
-    // 30초 후 수집 종료 및 API 호출
+    // 충전 진행도 인터벌 (10초 기준)
+    const cooldownStartTime = Date.now();
+    cooldownIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - cooldownStartTime;
+      setCooldownProgress(Math.min(elapsed / 10000, 1));
+    }, 100);
+
+    // 10초 후 수집 종료 및 API 호출
     analysisTimerRef.current = setTimeout(() => {
       clearInterval(collectIntervalRef.current);
+      clearInterval(cooldownIntervalRef.current);
+      setCooldownProgress(1);
       console.log('수집된 플레이스타일 데이터:', playstyleDataRef.current);
       pendingSkillRef.current = null;
 
@@ -136,9 +148,11 @@ function AIPinball({ onReady }) {
 
       // 10초 대기 후 결과 반영 (응답 없으면 랜덤)
       responseTimerRef.current = setTimeout(() => {
-        setSkillState(pendingSkillRef.current ?? getRandomSkill());
+        const resolved = pendingSkillRef.current ?? getRandomSkill();
+        skillStateRef.current = resolved;
+        setSkillState(resolved);
       }, 10000);
-    }, 30000);
+    }, 10000);
   };
 
   // 재시작 핸들러
@@ -420,7 +434,7 @@ function AIPinball({ onReady }) {
       label: 'flipperTrigger',
       render: {
         fillStyle: '#00ff00',
-        opacity: 0.3
+        opacity: 0
       }
     });
 
@@ -1047,9 +1061,9 @@ function AIPinball({ onReady }) {
   }
   // 'a' 키로 필살기 발동
   if (event.key === 'a' || event.key === 'A') {
-    if (skillState === 'big') {
+    if (skillStateRef.current === 'big') {
       activateSpecialRef.current?.(bigBallRef.current);
-    } else if (skillState === 'small') {
+    } else if (skillStateRef.current === 'small') {
       activateSpecialRef.current?.(smallBallRef.current);
     }
     // 'loading' 상태면 아무것도 하지 않음
@@ -1180,6 +1194,7 @@ if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
     clearTimeout(specialTimerRef.current);
   }
   clearInterval(collectIntervalRef.current);
+  clearInterval(cooldownIntervalRef.current);
   clearTimeout(analysisTimerRef.current);
   clearTimeout(responseTimerRef.current);
   Render.stop(render);
@@ -1299,7 +1314,7 @@ display: 'flex',
               left: '20px',
               zIndex: 5,
             }}>
-              <SkillIcon skillState={skillState} />
+              <SkillIcon skillState={skillState} cooldownProgress={cooldownProgress} />
             </Box>
 
             {/* 모바일 조작 버튼 (터치 디바이스에서만 표시) */}

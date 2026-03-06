@@ -1,9 +1,10 @@
 import { Box, Typography } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 
-function SkillIcon({ skillState }) {
+function SkillIcon({ skillState, cooldownProgress = 0 }) {
   return (
     <Box sx={{
+      position: 'relative',
       width: '80px',
       height: '80px',
       borderRadius: '12px',
@@ -14,7 +15,21 @@ function SkillIcon({ skillState }) {
       alignItems: 'center',
       justifyContent: 'center',
       gap: '6px',
+      overflow: 'hidden',
     }}>
+      {/* 충전 바: 아래에서 위로 차오르는 흰색 영역 */}
+      {skillState === 'loading' && (
+        <Box sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: '100%',
+          height: `${cooldownProgress * 100}%`,
+          backgroundColor: '#ffffff33',
+          transition: 'height 0.1s linear',
+          pointerEvents: 'none',
+        }} />
+      )}
       {skillState === 'loading' && (
         <>
           <CircularProgress size={32} sx={{ color: '#ffffffaa' }} />
