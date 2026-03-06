@@ -7,6 +7,7 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { STAGE_CONFIGS, BUMPER_RADIUS } from './aiStageConfigs';
 import SkillIcon from './SkillIcon';
+import { sendPlaystyleData, parsePlaystyleResponse, getRandomSkill } from './playstyleService';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from '../Pinball/pinballSound';
 import { getRestartState } from '../Pinball/pinballRestart';
 import WallOverlay from '../Pinball/WallOverlay';
@@ -66,6 +67,8 @@ function AIPinball({ onReady }) {
   const playstyleDataRef = useRef([]);
   const collectIntervalRef = useRef(null);
   const analysisTimerRef = useRef(null);
+  const responseTimerRef = useRef(null);
+  const pendingSkillRef = useRef(null);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -114,13 +117,28 @@ function AIPinball({ onReady }) {
       console.log('데이터 수집:', dataPoint);
     }, 100);
 
-    // 40초 후 수집 종료 및 랜덤 필살기 결정
+    // 30초 후 수집 종료 및 API 호출
     analysisTimerRef.current = setTimeout(() => {
       clearInterval(collectIntervalRef.current);
       console.log('수집된 플레이스타일 데이터:', playstyleDataRef.current);
-      const randomSkill = Math.random() < 0.5 ? 'big' : 'small';
-      setSkillState(randomSkill);
-    }, 40000);
+      pendingSkillRef.current = null;
+
+      sendPlaystyleData(playstyleDataRef.current)
+        .then((data) => {
+          const skill = parsePlaystyleResponse(data);
+          if (skill) {
+            pendingSkillRef.current = skill;
+          }
+        })
+        .catch((err) => {
+          console.error('플레이스타일 API 오류:', err);
+        });
+
+      // 10초 대기 후 결과 반영 (응답 없으면 랜덤)
+      responseTimerRef.current = setTimeout(() => {
+        setSkillState(pendingSkillRef.current ?? getRandomSkill());
+      }, 10000);
+    }, 30000);
   };
 
   // 재시작 핸들러
@@ -1161,6 +1179,7 @@ if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
   }
   clearInterval(collectIntervalRef.current);
   clearTimeout(analysisTimerRef.current);
+  clearTimeout(responseTimerRef.current);
   Render.stop(render);
   Runner.stop(runner);
   Engine.clear(engine);
