@@ -164,7 +164,7 @@ function AIPinball({ onReady }) {
       const World = Matter.World;
       const Body = Matter.Body;
       World.add(engine.world, ball);
-      Body.setPosition(ball, { x: 662, y: 990 });
+      Body.setPosition(ball, { x: 280, y: 700 });
       Body.setVelocity(ball, { x: 0, y: 0 });
       Body.setAngularVelocity(ball, 0);
     }
@@ -351,8 +351,8 @@ function AIPinball({ onReady }) {
     });
     plungerRef.current = plunger;
 
-    // 핀볼 공 만들기 (발판벽 위에서 시작)
-    const ball = Bodies.circle(60, SHELF_Y - 220, 15, {
+    // 핀볼 공 만들기 (게임 영역 중앙에서 시작)
+    const ball = Bodies.circle(280, 700, 15, {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
@@ -630,8 +630,10 @@ function AIPinball({ onReady }) {
         const { bodyA, bodyB } = pair;
         //console.log(bodyA);
 
+        const activeBall = ballRef.current;
+
         // 공이 포함된 충돌인지 확인하여 소리 재생
-        if (bodyA === ball || bodyB === ball) {
+        if (bodyA === activeBall || bodyB === activeBall) {
           if (hitSoundRef.current) {
             hitSoundRef.current.currentTime = 0; // 재생 위치 초기화
             hitSoundRef.current.play().catch(err => {
@@ -641,34 +643,34 @@ function AIPinball({ onReady }) {
         }
 
         // 공과 범퍼가 충돌했는지 확인
-        if ((bodyA.label === 'bumper' && bodyB === ball) ||
-            (bodyB.label === 'bumper' && bodyA === ball)) {
+        if ((bodyA.label === 'bumper' && bodyB === activeBall) ||
+            (bodyB.label === 'bumper' && bodyA === activeBall)) {
           console.log('Bumper hit!');
           playBumperSound(bumperSoundRef.current);
 
           // 충돌 방향 계산 (범퍼 중심 → 공 중심)
           const bumperBody = bodyA.label === 'bumper' ? bodyA : bodyB;
-          const direction = Vector.sub(ball.position, bumperBody.position);
+          const direction = Vector.sub(activeBall.position, bumperBody.position);
           const normalised = Vector.normalise(direction);
 
           // 공에 추가 속도 부여 (현재 속도 + 범퍼 효과)
           const bumperForce = Vector.mult(normalised, 15);
-          const currentVelocity = ball.velocity;
+          const currentVelocity = activeBall.velocity;
           const newVelocity = Vector.add(currentVelocity, bumperForce);
 
-          Body.setVelocity(ball, newVelocity);
+          Body.setVelocity(activeBall, newVelocity);
         }
 
         // 공과 목표 오브젝트가 충돌했는지 확인
-        if ((bodyA.label === 'target' && bodyB === ball) ||
-            (bodyB.label === 'target' && bodyA === ball)) {
+        if ((bodyA.label === 'target' && bodyB === activeBall) ||
+            (bodyB.label === 'target' && bodyA === activeBall)) {
           console.log('target 충돌했음');
           addScore(300);
         }
 
         // 죽음구역 충돌 감지
-        if ((bodyA.label === 'deathZone' && bodyB === ball) ||
-            (bodyB.label === 'deathZone' && bodyA === ball)) {
+        if ((bodyA.label === 'deathZone' && bodyB === activeBall) ||
+            (bodyB.label === 'deathZone' && bodyA === activeBall)) {
           console.log('Ball entered death zone!');
           const newLives = livesRef.current - 1;
           livesRef.current = newLives;
@@ -677,14 +679,14 @@ function AIPinball({ onReady }) {
 
           // livesRef로 최신 lives 값 확인
           if (livesRef.current > 0) {
-            // 공을 발판벽 위로 이동
-            Body.setPosition(ball, { x: 662, y: 990 });
+            // 공을 중앙으로 이동
+            Body.setPosition(activeBall, { x: 280, y: 700 });
 
             // 속도 초기화
-            Body.setVelocity(ball, { x: 0, y: 0 });
+            Body.setVelocity(activeBall, { x: 0, y: 0 });
 
             // 각속도 초기화 (회전 방지)
-            Body.setAngularVelocity(ball, 0);
+            Body.setAngularVelocity(activeBall, 0);
 
             // lives 감소 (상태와 ref 모두 업데이트)
             
@@ -692,7 +694,7 @@ function AIPinball({ onReady }) {
             console.log(`Ball revived! Lives remaining: ${newLives}`);
           } else {
             // 생명이 없으면 공 제거 (게임 오버)
-            World.remove(engine.world, ball);
+            World.remove(engine.world, activeBall);
             console.log('Game Over!');
             playGameOverSound(gameoverSoundRef.current);
             setOverlayState('gameOver');
@@ -753,8 +755,8 @@ function AIPinball({ onReady }) {
       }
 
       // AI 판단: 공 위치/속도를 보고 bool 갱신
-      const ballPos = ball.position;
-      const ballVel = ball.velocity;
+      const ballPos = ballRef.current.position;
+      const ballVel = ballRef.current.velocity;
       if (ballPos.y < AI_ACTIVATION_Y && ballVel.y < 0) {
         isAILeftPressed.current  = Math.abs(ballPos.x - AI_LEFT_CENTER_X)  < AI_REACTION_DISTANCE;
         isAIRightPressed.current = Math.abs(ballPos.x - AI_RIGHT_CENTER_X) < AI_REACTION_DISTANCE;
