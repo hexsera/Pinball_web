@@ -57,6 +57,11 @@ function AIPinball({ onReady }) {
   const [gameStarted, setGameStarted] = useState(false);
   const gameStartedRef = useRef(false);
   const runnerRef = useRef(null);
+  const bigBallRef = useRef(null);
+  const smallBallRef = useRef(null);
+  const specialActiveRef = useRef(false);
+  const specialTimerRef = useRef(null);
+  const activateSpecialRef = useRef(null);
 
   const BASE_WIDTH = 816;
   const BASE_HEIGHT = 1296;
@@ -191,7 +196,7 @@ function AIPinball({ onReady }) {
     const engine = Engine.create({
         gravity: {
             x: 0,
-            y: -1  // 임시: AI 플립퍼 디버깅용
+            y: 1 // 임시: AI 플립퍼 디버깅용
         }
     });
     engine.timing.timeScale = 0; // 게임 시작 전 물리 정지
@@ -304,6 +309,57 @@ function AIPinball({ onReady }) {
     });
 
     ballRef.current = ball;
+
+    // 필살기 공 사전 생성 (월드에는 추가 안 함)
+    const bigBall = Bodies.circle(662, SHELF_Y - 20, 30, {
+      restitution: 0.8,
+      friction: 0,
+      frictionAir: 0,
+      density: ball.density + 0.5 / (Math.PI * 30 * 30),
+      render: { fillStyle: '#3498db' }
+    });
+    const smallBall = Bodies.circle(662, SHELF_Y - 20, 10.5, {
+      restitution: 0.8,
+      friction: 0,
+      frictionAir: 0,
+      density: Math.max(ball.density - 0.5 / (Math.PI * 10.5 * 10.5), 0.0001),
+      render: { fillStyle: '#e74c3c' }
+    });
+    bigBallRef.current = bigBall;
+    smallBallRef.current = smallBall;
+
+    // 필살기 발동/복귀 함수
+    const activateSpecial = (specialBall) => {
+      if (specialActiveRef.current) return;
+      specialActiveRef.current = true;
+
+      const currentBall = ballRef.current;
+      const pos = { ...currentBall.position };
+      const vel = { ...currentBall.velocity };
+      const angVel = currentBall.angularVelocity;
+
+      World.remove(engine.world, currentBall);
+      Body.setPosition(specialBall, pos);
+      Body.setVelocity(specialBall, vel);
+      Body.setAngularVelocity(specialBall, angVel);
+      World.add(engine.world, specialBall);
+      ballRef.current = specialBall;
+
+      specialTimerRef.current = setTimeout(() => {
+        const pos2 = { ...specialBall.position };
+        const vel2 = { ...specialBall.velocity };
+        const angVel2 = specialBall.angularVelocity;
+
+        World.remove(engine.world, specialBall);
+        Body.setPosition(currentBall, pos2);
+        Body.setVelocity(currentBall, vel2);
+        Body.setAngularVelocity(currentBall, angVel2);
+        World.add(engine.world, currentBall);
+        ballRef.current = currentBall;
+        specialActiveRef.current = false;
+      }, 5000);
+    };
+    activateSpecialRef.current = activateSpecial;
 
     // 왼쪽 플리퍼 (회전축 x=270, 중심 = 회전축 + 길이절반50 = x=320)
     const leftFlipper = Bodies.rectangle(265, 995, 100, 20, {
@@ -909,9 +965,11 @@ function AIPinball({ onReady }) {
   // 필살기 상태 전환 (개발 확인용)
   if (event.key === 'b' || event.key === 'B') {
     setSkillState('big');
+    activateSpecialRef.current?.(bigBallRef.current);
   }
   if (event.key === 's' || event.key === 'S') {
     setSkillState('small');
+    activateSpecialRef.current?.(smallBallRef.current);
   }
   if (event.key === 'l' || event.key === 'L') {
     setSkillState('loading');
@@ -1037,6 +1095,9 @@ if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
   if (sceneRef.current && !(navigator.maxTouchPoints > 0)) {
     sceneRef.current.removeEventListener('touchstart', handleTouchStart);
     sceneRef.current.removeEventListener('touchend', handleTouchEnd);
+  }
+  if (specialTimerRef.current) {
+    clearTimeout(specialTimerRef.current);
   }
   Render.stop(render);
   Runner.stop(runner);
