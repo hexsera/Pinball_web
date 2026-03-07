@@ -74,18 +74,19 @@ def sample_users(db_session):
     """테스트용 사용자 2명 생성"""
     from models import User
     from datetime import date
+    from app.core.security import hash_password
 
     user1 = User(
         email="user1@test.com",
         nickname="User1",
-        password="password1",
+        password=hash_password("password1"),
         birth_date=date(2000, 1, 1),
         role="user"
     )
     user2 = User(
         email="user2@test.com",
         nickname="User2",
-        password="password2",
+        password=hash_password("password2"),
         birth_date=date(2000, 1, 2),
         role="user"
     )

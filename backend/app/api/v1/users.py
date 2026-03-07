@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import Query
 
 from app.api.deps import get_db
+from app.core.security import hash_password
 from app.schemas.user import (
     UserCreateRequest,
     UserUpdateRequest,
@@ -39,7 +40,7 @@ def create_user(
     db_user = User(
         email=user.email,
         nickname=user.nickname,
-        password=user.password,
+        password=hash_password(user.password),
         birth_date=user.birth_date,
         role=user.role
     )

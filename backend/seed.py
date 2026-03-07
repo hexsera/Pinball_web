@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from models import User
 from dotenv import load_dotenv
+from app.core.security import hash_password
 
 load_dotenv()
 
@@ -21,7 +22,7 @@ def seed_admin(db: Session) -> bool:
     admin_user = User(
         email=admin_email,
         nickname=os.getenv("ADMIN_NICKNAME"),
-        password=os.getenv("ADMIN_PASSWORD"),
+        password=hash_password(os.getenv("ADMIN_PASSWORD")),
         birth_date=datetime.strptime(os.getenv("ADMIN_BIRTH_DATE"), "%Y-%m-%d").date(),
         role="admin"
     )

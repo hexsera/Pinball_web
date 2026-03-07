@@ -7,6 +7,7 @@ sys.path.insert(0, '/code')
 
 from faker import Faker
 from app.db.session import SessionLocal
+from app.core.security import hash_password
 from models import User, MonthlyScore
 
 fake = Faker('ko_KR')
@@ -28,7 +29,7 @@ def create_mock_users(db, count=50):
         user = User(
             email=fake.unique.email(),
             nickname=_unique_korean_nickname(used_nicknames),
-            password="password123!",
+            password=hash_password("password123!"),
             birth_date=fake.date_of_birth(minimum_age=15, maximum_age=60),
             role='user'
         )
