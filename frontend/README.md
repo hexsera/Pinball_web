@@ -41,13 +41,14 @@ npm test        # Vitest 테스트 실행
 | URL | 컴포넌트 | 설명 |
 |-----|----------|------|
 | `/` | `HomePage` | 랜딩 페이지 (Aurora WebGL 배경, 랭킹 테이블) |
-| `/pinball` | `PinballPage` | 핀볼 게임 전용 페이지 (홈 버튼 + 스케일 조정) |
+| `/pinball` | `PinballPage` | 핀볼 게임 전용 페이지 (일반/AI 대전 모드 토글, 홈 버튼, 스케일 조정) |
 | `/dashboard` | `Dashboard` | 게임 대시보드 (DashboardHeader·DashboardSidebar 조합, 좌측 메뉴 안내) |
 | `/user/friend` | `FriendPage` | 친구 목록·검색·요청 (DashboardHeader·DashboardSidebar 직접 조합) |
 | `/user/account` | `UserInfo` | 회원 정보 조회/수정/탈퇴 (DashboardHeader·DashboardSidebar 직접 조합) |
 | `/login` | `Login` | 로그인 → 성공 시 `/dashboard` 이동 |
 | `/Register` | `Register` | 3단계 회원가입 |
-| `/admin` | `AdminUserPage` | Admin 회원 관리 (진입점) |
+| `/admin` | `AdminUserPage` | Admin 회원 관리 (진입점, `/admin/users`와 동일) |
+| `/admin/users` | `AdminUserPage` | Admin 회원 관리 |
 | `/admin/statistics` | `AdminStatisticsPage` | Admin 통계 |
 
 ## 디렉토리 구조
@@ -58,44 +59,63 @@ src/
 ├── main.jsx                   # Vite 엔트리포인트
 │
 ├── contexts/
-│   └── AuthContext.jsx        # 전역 인증 상태 (isLoggedIn, user, login, logout). useAuth() 훅
+│   ├── AuthContext.jsx        # 전역 인증 상태 (isLoggedIn, user, login, logout). useAuth() 훅
+│   └── index.js               # AuthContext 단축 export
 │
 ├── components/
 │   ├── HeaderUserInfo.jsx     # 헤더 우측 유저 정보 (로그인/로그아웃, 아바타 메뉴)
-│   └── Aurora/
-│       └── Aurora.jsx         # WebGL 오로라 배경 애니메이션 (ogl 셰이더). props: colorStops, amplitude, speed, blend
+│   ├── Aurora/
+│   │   └── Aurora.jsx         # WebGL 오로라 배경 애니메이션 (ogl 셰이더). props: colorStops, amplitude, speed, blend
+│   └── ChatPanel/
+│       ├── ChatPanel.jsx      # AI 대전 모드 우측 채팅 패널. POST /api/v1/chat. props: isAIMode
+│       ├── ChatMessage.jsx    # 채팅 메시지 말풍선 컴포넌트
+│       └── ChatInput.jsx      # 채팅 입력창 컴포넌트
 │
 ├── pages/
 │   ├── HomePage/
-│   │   └── HomePage.jsx       # 랜딩 페이지. Aurora 배경, 랭킹 테이블. GET /api/v1/monthly-scores
+│   │   ├── HomePage.jsx       # 랜딩 페이지. Aurora 배경, 랭킹 테이블. GET /api/v1/monthly-scores
+│   │   └── index.js           # 단축 export
 │   │
 │   ├── Dashboard/
 │   │   ├── Dashboard.jsx      # 게임 대시보드. DashboardHeader·DashboardSidebar 조합, 로그인 안내만 표시
 │   │   ├── DashboardHeader.jsx  # 대시보드 공용 AppBar (모바일 토글, HeaderUserInfo)
-│   │   └── DashboardSidebar.jsx # 대시보드 공용 Drawer (게임하기→/pinball, 친구→/user/friend, 계정→/user/account)
-│   │
-│   ├── Login/
-│   │   └── Login.jsx          # 로그인. POST /api/v1/login
-│   │
-│   ├── Register/
-│   │   └── Register.jsx       # 3단계 회원가입. POST /api/v1/register
-│   │
-│   ├── UserInfo/
-│   │   └── UserInfo.jsx       # 회원 정보 조회/수정/탈퇴. DashboardHeader·DashboardSidebar 직접 조합
-│   │
-│   ├── FriendPage/
-│   │   └── FriendPage.jsx     # 친구 목록/검색/요청. DashboardHeader·DashboardSidebar 직접 조합
-│   │
-│   ├── PinballPage/
-│   │   ├── PinballPage.jsx    # 핀볼 전용 페이지 레이아웃 (홈 버튼, 스케일 조정, HeaderUserInfo)
+│   │   ├── DashboardSidebar.jsx # 대시보드 공용 Drawer (게임하기→/pinball, 친구→/user/friend, 계정→/user/account)
 │   │   └── index.js           # 단축 export
 │   │
-   ├── Pinball/
+│   ├── Login/
+│   │   ├── Login.jsx          # 로그인. POST /api/v1/login
+│   │   └── index.js           # 단축 export
+│   │
+│   ├── Register/
+│   │   ├── Register.jsx       # 3단계 회원가입. POST /api/v1/register
+│   │   └── index.js           # 단축 export
+│   │
+│   ├── UserInfo/
+│   │   ├── UserInfo.jsx       # 회원 정보 조회/수정/탈퇴. DashboardHeader·DashboardSidebar 직접 조합
+│   │   └── index.js           # 단축 export
+│   │
+│   ├── FriendPage/
+│   │   ├── FriendPage.jsx     # 친구 목록/검색/요청. DashboardHeader·DashboardSidebar 직접 조합
+│   │   └── index.js           # 단축 export
+│   │
+│   ├── PinballPage/
+│   │   ├── PinballPage.jsx    # 핀볼 전용 페이지 레이아웃 (일반/AI 대전 모드 토글, 홈 버튼, 스케일 조정, ChatPanel)
+│   │   └── index.js           # 단축 export
+│   │
+│   ├── Pinball/
 │   │   ├── Pinball.jsx        # Matter.js 핀볼 게임 본체 (물리 엔진, 플리퍼, 범퍼, 점수, 스테이지). 700×1200px 고정
 │   │   ├── WallOverlay.jsx    # 핀볼 벽 CSS 오버레이
 │   │   ├── stageConfigs.js    # 스테이지별 범퍼 배치 설정 및 공유 상수
 │   │   ├── pinballSound.js    # 사운드 재생 유틸 함수
-│   │   └── pinballRestart.js  # 게임 재시작 초기 상태 반환 (getRestartState)
+│   │   ├── pinballRestart.js  # 게임 재시작 초기 상태 반환 (getRestartState)
+│   │   └── index.js           # 단축 export
+│   │
+│   ├── AIPinball/
+│   │   ├── AIPinball.jsx      # AI 대전 핀볼 게임 본체 (스킬 시스템, 플레이스타일 분석). POST /api/v1/pinball_ai/playstyle
+│   │   ├── aiStageConfigs.js  # AI 대전용 스테이지별 범퍼 배치 설정
+│   │   ├── SkillIcon.jsx      # 스킬 쿨다운 아이콘 UI 컴포넌트
+│   │   ├── playstyleService.js  # 플레이스타일 API 호출 및 응답 파싱 유틸
+│   │   └── index.js           # 단축 export
 │   │
 │   └── admin/
 │       ├── AdminPage.jsx      # Admin 전체 레이아웃 (Sidebar + Header + Main) — 현재 라우트에서 미사용
@@ -105,7 +125,8 @@ src/
 │       ├── AdminUserPage.jsx  # Admin 회원 관리 레이아웃
 │       ├── AdminUserMain.jsx  # Admin 회원 DataGrid. 수정(연필)·삭제(휴지통) Dialog. GET/PUT/DELETE /api/v1/users
 │       ├── AdminStatisticsPage.jsx  # Admin 통계 레이아웃
-│       └── AdminStatisticsMain.jsx  # Admin 통계 콘텐츠
+│       ├── AdminStatisticsMain.jsx  # Admin 통계 콘텐츠
+│       └── index.js           # AdminUserPage·AdminStatisticsPage 단축 export
 │
 └── test/
     ├── setup.js                       # Vitest 전역 설정 (jsdom)
@@ -115,6 +136,7 @@ src/
     ├── Login.test.jsx
     ├── PinballSound.test.jsx
     ├── pinball-restart.test.jsx
+    ├── playstyleService.test.js       # playstyleService 유틸 함수 테스트
     ├── FriendPage.test.jsx / FriendList / FriendRequest / FriendSearch / FriendPageIntegration
     └── sample.test.jsx
 ```
@@ -126,3 +148,4 @@ src/
 - Aurora(`ogl` WebGL)는 Vitest 환경에서 mock 처리 필요
 - Dashboard·FriendPage·UserInfo는 `DashboardHeader`·`DashboardSidebar`를 각 페이지에서 직접 조합 (AdminPage 패턴)
 - Pinball 로딩 스피너 오버레이 시 `display: none` 대신 `visibility: hidden` 사용 — `display: none`이면 `sceneRef.current`가 null이 되어 Matter.js 렌더러 초기화 실패
+- PinballPage는 `isAIMode` 상태로 `Pinball`(일반)과 `AIPinball`(AI 대전)을 토글하며, AI 모드일 때만 `ChatPanel` 렌더링
