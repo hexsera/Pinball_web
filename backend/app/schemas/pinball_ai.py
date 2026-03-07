@@ -17,4 +17,5 @@ PlaystyleRequest = list[PlayDataPoint]
 
 class PlaystyleResponse(BaseModel):
     success: bool
-    playstyle: Literal["attack", "defence"]
+    playstyle: Literal["attack", "defence", "none"]
+    reason: str

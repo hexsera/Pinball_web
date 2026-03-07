@@ -8,6 +8,7 @@ export async function sendPlaystyleData(dataArray) {
 export function parsePlaystyleResponse(response) {
   if (response.playstyle === 'attack') return 'small';
   if (response.playstyle === 'defence') return 'big';
+  if (response.playstyle === 'none') return null;
   return null;
 }
 

@@ -106,15 +106,15 @@ function AIPinball({ onReady }) {
       if (!isBallInTriggerRef.current) return;
       const ball = ballRef.current;
       if (!ball) return;
-      const elapsed = ((Date.now() - gameStartTime) / 1000).toFixed(2);
+      const elapsed = parseFloat(((Date.now() - gameStartTime) / 1000).toFixed(2));
       const dataPoint = {
-        timestamp: `${elapsed}s`,
-        ballX: parseFloat(ball.position.x.toFixed(2)),
-        ballY: parseFloat(ball.position.y.toFixed(2)),
-        ballVX: parseFloat(ball.velocity.x.toFixed(2)),
-        ballVY: parseFloat(ball.velocity.y.toFixed(2)),
-        leftFlipper: isLeftKeyPressedRef.current,
-        rightFlipper: isRightKeyPressedRef.current,
+        timestamp: elapsed,
+        ball_x: parseFloat(ball.position.x.toFixed(2)),
+        ball_y: parseFloat(ball.position.y.toFixed(2)),
+        ball_vx: parseFloat(ball.velocity.x.toFixed(2)),
+        ball_vy: parseFloat(ball.velocity.y.toFixed(2)),
+        left_flipper: isLeftKeyPressedRef.current,
+        right_flipper: isRightKeyPressedRef.current,
       };
       playstyleDataRef.current.push(dataPoint);
       console.log('데이터 수집:', dataPoint);
@@ -148,6 +148,9 @@ function AIPinball({ onReady }) {
 
       // 10초 대기 후 결과 반영 (응답 없으면 랜덤)
       responseTimerRef.current = setTimeout(() => {
+        if (pendingSkillRef.current === null) {
+          console.warn('API 응답이 오지 않았습니다. 랜덤 스킬을 적용합니다.');
+        }
         const resolved = pendingSkillRef.current ?? getRandomSkill();
         skillStateRef.current = resolved;
         setSkillState(resolved);
