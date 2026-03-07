@@ -55,10 +55,11 @@ app/
 │       ├── monthly_scores.py # /api/v1/monthly-scores (월간 점수)
 │       ├── game_visits.py   # /api/v1/game_visits (방문 기록)
 │       ├── friends.py   # /api/friend-requests (친구 요청)
-│       └── chat.py      # GET /api/v1/chat/models, POST /api/v1/chat (Gemini AI 채팅)
+│       ├── chat.py      # GET /api/v1/chat/models, POST /api/v1/chat (Gemini AI 채팅)
+│       └── pinball_ai.py  # POST /api/v1/pinball_ai/playstyle (Gemini 플레이스타일 분석)
 ├── core/
 │   ├── config.py        # Settings 클래스 — 환경변수 로드 (DATABASE_URL, API_KEY 등)
-│   └── security.py      # verify_api_key() — API Key 인증 의존성 (X-API-Key 헤더)
+│   └── security.py      # verify_api_key(), hash_password(), verify_password() — API Key 인증 및 bcrypt 비밀번호 해싱
 ├── db/
 │   ├── base.py          # Base + 모든 모델 import (Alembic autogenerate용)
 │   └── session.py       # engine, SessionLocal, Base (DeclarativeBase 방식), wait_for_db()
@@ -68,7 +69,8 @@ app/
     ├── monthly_score.py # MonthlyScoreCreateRequest/UpdateRequest/Response/ListResponse/DeleteResponse
     ├── game_visit.py    # GameVisitCreateRequest/UpdateRequest/Response, DailyVisitStats 등
     ├── friendship.py   # FriendRequestRequest/Response/Data/ListResponse/ActionRequest/ActionResponse
-    └── chat.py          # ChatRequest, ChatResponse
+    ├── chat.py          # ChatRequest, ChatResponse
+    └── pinball_ai.py    # PlayDataPoint, PlaystyleRequest, PlaystyleResponse
 ```
 
 ---
@@ -94,6 +96,7 @@ alembic/
 ```
 scripts/
 ├── __init__.py
+├── rehash_passwords.py                 # DB의 평문 비밀번호를 bcrypt로 일괄 재해싱 (1회성 마이그레이션 스크립트)
 └── mock/
     ├── __init__.py
     ├── seed_mock_data.py               # users 50명 + monthly_scores 50개 mock 삽입 (Faker 사용)
@@ -114,6 +117,7 @@ tests/
 ├── test_example.py     # 예시 테스트
 ├── test_friend_requests.py  # 친구 요청 API 테스트
 ├── test_monthly_scores_fk.py # 월간 점수 FK 테스트
+├── test_pinball_ai.py        # 플레이스타일 분석 API 테스트 5개 (Gemini mock 사용)
 └── test_testdb.py           # 테스트 DB 연결 확인
 ```
 
@@ -145,5 +149,13 @@ tests/
 | POST/GET/PUT/DELETE | /api/friend-requests | 없음 | 친구 요청 관리 |
 | GET | /api/v1/chat/models | 없음 | Gemini 사용 가능 모델 목록 |
 | POST | /api/v1/chat | 없음 | Gemini AI 채팅 (세션 유지) |
+| POST | /api/v1/pinball_ai/playstyle | 없음 | Gemini 플레이스타일 분석 (attack/defence/none) |
 
 API Key 헤더: `X-API-Key: <API_KEY>` (.env의 `API_KEY` 값)
+
+---
+
+## 주의사항
+
+- `passlib[bcrypt]` 대신 `bcrypt`를 직접 사용 — passlib은 bcrypt 5.x와 호환되지 않아 배제
+- `requirements.txt`에 `bcrypt` 추가 후 컨테이너 재빌드 필요 (`docker compose build fastapi`)
