@@ -139,22 +139,22 @@ function AIPinball({ onReady }) {
         .then((data) => {
           const skill = parsePlaystyleResponse(data);
           if (skill) {
-            pendingSkillRef.current = skill;
+            clearTimeout(responseTimerRef.current);
+            skillStateRef.current = skill;
+            setSkillState(skill);
           }
         })
         .catch((err) => {
           console.error('플레이스타일 API 오류:', err);
         });
 
-      // 10초 대기 후 결과 반영 (응답 없으면 랜덤)
+      // 30초 대기 후 랜덤 스킬 폴백 (응답이 오면 타이머 취소됨)
       responseTimerRef.current = setTimeout(() => {
-        if (pendingSkillRef.current === null) {
-          console.warn('API 응답이 오지 않았습니다. 랜덤 스킬을 적용합니다.');
-        }
-        const resolved = pendingSkillRef.current ?? getRandomSkill();
-        skillStateRef.current = resolved;
-        setSkillState(resolved);
-      }, 10000);
+        console.warn('API 응답이 오지 않았습니다. 랜덤 스킬을 적용합니다.');
+        const skill = getRandomSkill();
+        skillStateRef.current = skill;
+        setSkillState(skill);
+      }, 30000);
     }, 10000);
   };
 
