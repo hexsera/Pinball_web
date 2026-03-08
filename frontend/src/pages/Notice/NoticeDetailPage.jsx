@@ -1,9 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, AppBar, Toolbar, Typography, Button, Container,
-         Paper, Divider } from '@mui/material';
+import { Box, Typography, Button, Container, Paper, Divider } from '@mui/material';
 import { AuthContext } from '../../contexts/AuthContext';
-import HeaderUserInfo from '../../components/HeaderUserInfo';
+import HomeHeader from '../../components/HomeHeader';
 import { getNotice, deleteNotice } from '../../services/noticeService';
 
 const COLORS = { bg: '#0F172A', card: '#1E293B', border: '#334155',
@@ -28,15 +27,7 @@ function NoticeDetailPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: COLORS.bg }}>
-      <AppBar position="static" sx={{ backgroundColor: COLORS.card,
-                                      borderBottom: `1px solid ${COLORS.border}` }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" sx={{ color: COLORS.text, cursor: 'pointer' }}
-                      onClick={() => navigate('/')}>HEXSERA PINBALL</Typography>
-          <HeaderUserInfo buttonColor={COLORS.primary} buttonTextColor={COLORS.text}
-                          outlinedBorderColor={COLORS.text} />
-        </Toolbar>
-      </AppBar>
+      <HomeHeader />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Button onClick={() => navigate('/notice')}
                 sx={{ color: COLORS.subText, mb: 2 }}>← 목록으로</Button>

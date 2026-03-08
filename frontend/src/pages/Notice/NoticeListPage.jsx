@@ -1,9 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, AppBar, Toolbar, Typography, Button, Container, List,
-         ListItemButton, ListItemText, Divider, Paper } from '@mui/material';
+import { Box, Button, Container, List,
+         ListItemButton, ListItemText, Divider, Paper, Typography } from '@mui/material';
 import { AuthContext } from '../../contexts/AuthContext';
-import HeaderUserInfo from '../../components/HeaderUserInfo';
+import HomeHeader from '../../components/HomeHeader';
 import { getNotices } from '../../services/noticeService';
 
 const COLORS = { bg: '#0F172A', card: '#1E293B', border: '#334155',
@@ -20,15 +20,7 @@ function NoticeListPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: COLORS.bg }}>
-      <AppBar position="static" sx={{ backgroundColor: COLORS.card,
-                                      borderBottom: `1px solid ${COLORS.border}` }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" sx={{ color: COLORS.text, cursor: 'pointer' }}
-                      onClick={() => navigate('/')}>HEXSERA PINBALL</Typography>
-          <HeaderUserInfo buttonColor={COLORS.primary} buttonTextColor={COLORS.text}
-                          outlinedBorderColor={COLORS.text} />
-        </Toolbar>
-      </AppBar>
+      <HomeHeader />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="h5" sx={{ color: COLORS.text }}>공지사항</Typography>

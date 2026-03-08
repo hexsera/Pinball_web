@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import HeaderUserInfo from './HeaderUserInfo';
@@ -10,8 +11,18 @@ const COLORS = {
   primary: '#4F46E5',
 };
 
+const SHORTCUTS = [
+  { label: '공지사항', path: '/notice' },
+];
+
 function HomeHeader() {
   const navigate = useNavigate();
+  const [activeItem, setActiveItem] = useState(null);
+
+  const handleShortcut = (item) => {
+    setActiveItem(prev => prev === item.label ? null : item.label);
+    navigate(item.path);
+  };
 
   return (
     <AppBar position="static" sx={{ backgroundColor: COLORS.card, borderBottom: `1px solid ${COLORS.border}` }}>
@@ -26,6 +37,28 @@ function HomeHeader() {
           <Button variant="contained" onClick={() => navigate('/pinball')} sx={{ backgroundColor: COLORS.primary, color: COLORS.text }}>
             게임하기
           </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+            {SHORTCUTS.map((item) => (
+              <Button
+                key={item.label}
+                onClick={() => handleShortcut(item)}
+                sx={{
+                  color: activeItem === item.label ? COLORS.primary : COLORS.text,
+                  backgroundColor: activeItem === item.label ? 'rgba(79,70,229,0.15)' : 'transparent',
+                  borderBottom: activeItem === item.label ? `2px solid ${COLORS.primary}` : '2px solid transparent',
+                  borderRadius: 0,
+                  px: 1.5,
+                  '&:hover': {
+                    backgroundColor: 'rgba(79,70,229,0.1)',
+                    color: COLORS.primary,
+                  },
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </Box>
         </Box>
         <HeaderUserInfo buttonColor={COLORS.primary} buttonTextColor={COLORS.text} outlinedBorderColor={COLORS.text} />
       </Toolbar>
