@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // 페이지 로드할 때 로그인 정보 확인
   useEffect(() => {
@@ -13,6 +14,7 @@ export function AuthProvider({ children }) {
       setUser(JSON.parse(savedUser));
       setIsLoggedIn(true);
     }
+    setLoading(false);
   }, []);
 
   // 로그인 함수
@@ -30,7 +32,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
