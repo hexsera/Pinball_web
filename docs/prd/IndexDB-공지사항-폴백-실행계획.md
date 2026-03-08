@@ -60,7 +60,7 @@ const MOCK_NOTICES = [
 export async function seedNoticesIfEmpty() {
   const db = await openDB();
   const tx = db.transaction(STORE_NAME, 'readonly');
-  const count = await new Promise((res) => {
+  const count = await new Promise((res) => {고
     const req = tx.objectStore(STORE_NAME).count();
     req.onsuccess = () => res(req.result);
   });
@@ -154,7 +154,7 @@ export const uploadNoticeImage = (file) => {
 
 ## 완료 체크리스트
 
-- [ ] API 서버 없이 `/notice` 페이지에 접근했을 때 공지 목록 2건이 보인다
+- [ ] API 서버 없이 `/notice` 페이지에 접근했을 때 공지 목록 32건이 보인다
 - [ ] 목록에서 공지를 클릭하면 상세 페이지에 제목과 내용이 정상 표시된다
 - [ ] 브라우저 개발자 도구 → Application → IndexedDB → `pinball_notice_db` → `notices` 에 데이터가 저장되어 있다
 - [ ] API가 정상일 때는 IndexedDB가 아닌 API 응답 데이터가 표시된다
