@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, AppBar, Toolbar, Typography, Button, Grid, Container,
+  Box, Grid, Container,
   Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper
+  TableHead, TableRow, Paper, Typography, Button
 } from '@mui/material';
 import axios from 'axios';
 import Aurora from '../../components/Aurora/Aurora';
-import HeaderUserInfo from '../../components/HeaderUserInfo';
+import HomeHeader from '../../components/HomeHeader';
 
 const COLORS = {
   bg: '#0F172A',
@@ -34,14 +34,12 @@ function HomePage() {
       });
   }, []);
 
-  
-
   return (
     <Box sx={{ position: 'relative', minHeight: '100vh', backgroundColor: COLORS.bg, display: 'flex', flexDirection: 'column' }}>
       {/* Aurora 배경 */}
       <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden'}}>
         <Aurora
-          colorStops={['#467ee5', '#7C3AED', '#908aff']} //#0F172A
+          colorStops={['#467ee5', '#7C3AED', '#908aff']}
           amplitude={1.2}
           speed={1.2}
           blend={0.35}
@@ -51,37 +49,7 @@ function HomePage() {
       {/* 기존 콘텐츠 */}
       <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* 네비게이션 바 */}
-      <AppBar position="static" sx={{ backgroundColor: COLORS.card, borderBottom: `1px solid ${COLORS.border}` }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          {/* 좌측: 타이틀 + 게임하기 버튼 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: COLORS.text,
-                fontWeight: 'bold',
-                fontSize: { xs: '0.9rem', sm: '1.25rem' },
-                display: { xs: 'none', sm: 'block' },
-              }}
-            >
-              HEXSERA PINBALL
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => navigate('/pinball')}
-              sx={{ backgroundColor: COLORS.primary, color: COLORS.text }}
-            >
-              게임하기
-            </Button>
-          </Box>
-          {/* 우측: HeaderUserInfo */}
-          <HeaderUserInfo
-            buttonColor={COLORS.primary}
-            buttonTextColor={COLORS.text}
-            outlinedBorderColor={COLORS.text}
-          />
-        </Toolbar>
-      </AppBar>
+      <HomeHeader />
 
       {/* Hero 섹션 */}
       <Container maxWidth="lg" sx={{ flexGrow: 1, overflow: 'hidden' }}>
