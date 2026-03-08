@@ -10,7 +10,6 @@ import { AdminUserPage, AdminStatisticsPage } from './pages/admin';
 import PinballPage from './pages/PinballPage';
 import FriendPage from './pages/FriendPage';
 import UserInfo from './pages/UserInfo';
-// TODO: 실행계획 섹션 6 — 공지사항 라우트 (테스트용 임시 등록, 추후 정식 구현 단계에서 재검토)
 import NoticeListPage from './pages/Notice/NoticeListPage';
 import NoticeWritePage from './pages/Notice/NoticeWritePage';
 import NoticeDetailPage from './pages/Notice/NoticeDetailPage';
@@ -36,7 +35,6 @@ function App() {
             <Route path="/admin/statistics" element={<AdminStatisticsPage/>} />
             <Route path="/user/friend" element={<FriendPage />} />
             <Route path="/user/account" element={<UserInfo />} />
-            {/* TODO: 실행계획 섹션 6 — 공지사항 라우트 (테스트용 임시 등록) */}
             <Route path="/notice" element={<NoticeListPage />} />
             <Route path="/notice/write" element={<NoticeWritePage />} />
             <Route path="/notice/:id" element={<NoticeDetailPage />} />
