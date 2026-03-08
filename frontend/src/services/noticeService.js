@@ -26,9 +26,3 @@ export const createNotice = (title, content) =>
 
 export const deleteNotice = (id) =>
   axios.delete(`/api/v1/notices/${id}`).then(res => res.data);
-
-export const uploadNoticeImage = (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  return axios.post('/api/v1/notices/upload-image', formData).then(res => res.data);
-};

@@ -5,7 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { Box, AppBar, Toolbar, Typography, Button, TextField, Container, Paper } from '@mui/material';
 import { AuthContext } from '../../contexts/AuthContext';
-import { createNotice, uploadNoticeImage } from '../../services/noticeService';
+import { createNotice } from '../../services/noticeService';
 
 const COLORS = { bg: '#0F172A', card: '#1E293B', border: '#334155',
                  text: '#F1F5F9', subText: '#94A3B8', primary: '#4F46E5' };
@@ -25,11 +25,25 @@ function NoticeWritePage() {
     content: '',
   });
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const data = await uploadNoticeImage(file);
-    editor.chain().focus().setImage({ src: data.url }).run();
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onload = () => {
+        const MAX_WIDTH = 800;
+        const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        const src = canvas.toDataURL('image/jpeg', 0.8);
+        editor.chain().focus().setImage({ src }).run();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {

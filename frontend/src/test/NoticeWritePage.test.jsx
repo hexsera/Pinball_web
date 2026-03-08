@@ -4,12 +4,13 @@ import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
 
 // Tiptap은 jsdom에서 동작하지 않으므로 mock 처리
+const mockSetImage = vi.fn();
 const mockEditorChain = () => ({
   focus: () => ({
     toggleBold: () => ({ run: vi.fn() }),
     toggleItalic: () => ({ run: vi.fn() }),
     toggleHeading: () => ({ run: vi.fn() }),
-    setImage: () => ({ run: vi.fn() }),
+    setImage: (args) => { mockSetImage(args); return { run: vi.fn() }; },
   }),
 });
 
@@ -23,7 +24,6 @@ vi.mock('@tiptap/extension-image', () => ({ default: {} }));
 
 vi.mock('../services/noticeService', () => ({
   createNotice: vi.fn().mockResolvedValue({ id: 1 }),
-  uploadNoticeImage: vi.fn().mockResolvedValue({ url: '/uploads/img.png' }),
 }));
 
 import { createNotice } from '../services/noticeService';
@@ -161,5 +161,42 @@ describe('NoticeWritePage 인터랙션', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/notice');
     });
+  });
+
+  it('이미지 파일 선택 시 canvas로 리사이징 후 setImage가 호출된다', async () => {
+    mockSetImage.mockClear();
+
+    const mockDataURL = 'data:image/jpeg;base64,resized';
+    const mockCanvas = {
+      width: 0, height: 0,
+      getContext: () => ({ drawImage: vi.fn() }),
+      toDataURL: () => mockDataURL,
+    };
+    const origCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag) =>
+      tag === 'canvas' ? mockCanvas : origCreateElement(tag)
+    );
+
+    // Image 생성자를 mock — src 세팅 시 onload 즉시 호출
+    const OrigImage = window.Image;
+    window.Image = class {
+      constructor() { this.width = 1200; this.height = 800; }
+      set src(_) { this.onload(); }
+    };
+
+    global.FileReader = class {
+      readAsDataURL() { this.result = 'data:image/png;base64,abc'; this.onload(); }
+    };
+
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input, { target: { files: [new File(['img'], 'test.png', { type: 'image/png' })] } });
+
+    // img.onload가 동기 setter로 실행되므로 microtask flush만 필요
+    await Promise.resolve();
+
+    expect(mockSetImage).toHaveBeenCalledWith({ src: mockDataURL });
+
+    window.Image = OrigImage;
+    vi.restoreAllMocks();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getNotices, getNotice, createNotice, deleteNotice, uploadNoticeImage } from '../services/noticeService';
+import { getNotices, getNotice, createNotice, deleteNotice } from '../services/noticeService';
 
 vi.mock('axios');
 import axios from 'axios';
@@ -79,33 +79,6 @@ describe('deleteNotice', () => {
     const mockData = { message: 'deleted' };
     axios.delete.mockResolvedValue({ data: mockData });
     const result = await deleteNotice(3);
-    expect(result).toEqual(mockData);
-  });
-});
-
-// ──────────────────────────────────────────
-// uploadNoticeImage
-// ──────────────────────────────────────────
-describe('uploadNoticeImage', () => {
-  it('POST /api/v1/notices/upload-image를 FormData로 호출한다', async () => {
-    axios.post.mockResolvedValue({ data: { url: '/uploads/img.png' } });
-    const file = new File(['content'], 'img.png', { type: 'image/png' });
-    await uploadNoticeImage(file);
-
-    expect(axios.post).toHaveBeenCalledWith(
-      '/api/v1/notices/upload-image',
-      expect.any(FormData)
-    );
-
-    const formData = axios.post.mock.calls[0][1];
-    expect(formData.get('file')).toBe(file);
-  });
-
-  it('서버 응답 data를 반환한다', async () => {
-    const mockData = { url: '/uploads/img.png' };
-    axios.post.mockResolvedValue({ data: mockData });
-    const file = new File(['content'], 'img.png', { type: 'image/png' });
-    const result = await uploadNoticeImage(file);
     expect(result).toEqual(mockData);
   });
 });
