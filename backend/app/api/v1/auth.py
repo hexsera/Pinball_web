@@ -24,6 +24,19 @@ from models import User
 router = APIRouter()
 
 
+def _create_login_response(user) -> LoginResponse:
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
+    return LoginResponse(
+        message="Login successful",
+        user_id=user.id,
+        email=user.email,
+        nickname=user.nickname,
+        role=user.role,
+        access_token=token,
+        token_type="bearer",
+    )
+
+
 @router.post("/login", response_model=LoginResponse)
 def login(
     login_request: LoginRequest,
@@ -31,7 +44,7 @@ def login(
 ):
     """로그인 엔드포인트 (API Key 불필요)"""
     user = db.query(User).filter(User.email == login_request.email).first()
-    if user is None:
+    if user is None or user.auth_provider != "local":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
@@ -43,16 +56,7 @@ def login(
             detail="Invalid email or password"
         )
 
-    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
-    return LoginResponse(
-        message="Login successful",
-        user_id=user.id,
-        email=user.email,
-        nickname=user.nickname,
-        role=user.role,
-        access_token=token,
-        token_type="bearer"
-    )
+    return _create_login_response(user)
 
 
 @router.post("/auth/google", response_model=LoginResponse)
@@ -106,19 +110,10 @@ async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
-    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
-    return LoginResponse(
-        message="Login successful",
-        user_id=user.id,
-        email=user.email,
-        nickname=user.nickname,
-        role=user.role,
-        access_token=token,
-        token_type="bearer"
-    )
+    return _create_login_response(user)
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
 def register_user(
     user: UserRegisterRequest,
     db: Session = Depends(get_db)
@@ -144,4 +139,4 @@ def register_user(
     db.commit()
     db.refresh(db_user)
 
-    return db_user
+    return _create_login_response(db_user)

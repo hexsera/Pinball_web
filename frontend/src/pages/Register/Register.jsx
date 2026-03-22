@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Box, TextField, Button, Container, Typography, Paper, Alert, CardMedia } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Aurora from '../../components/Aurora/Aurora';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const COLORS = {
   bg: '#0F172A',
@@ -37,6 +38,7 @@ function Register() {
   const [birthDay, setBirthDay] = useState('');
   const [registerStep, setRegisterStep] = useState(0);
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
 
   // 회원가입 버튼을 눌렀을 때 실행되는 함수
   const handleRegister = async () => {
@@ -66,10 +68,12 @@ function Register() {
         try {
           const response = await axios.post('/api/v1/register', data);
 
-          // 성공: 201 상태코드와 User 객체 반환
+          // 성공: 201 상태코드와 LoginResponse 반환
           if (response.status === 201) {
-            console.log('회원가입 성공:', response.data);
-            navigate('/login');
+            const data = response.data;
+            login({ id: data.user_id, name: data.nickname, role: data.role, email: data.email });
+            localStorage.setItem('access_token', data.access_token);
+            navigate('/');
           }
         } catch (error) {
           // 에러 처리

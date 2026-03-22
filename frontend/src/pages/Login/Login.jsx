@@ -192,10 +192,12 @@ function Login() {
                     variant="outlined"
                     sx={{
                       width: '300px',
+                      backgroundColor: '#ffffff',
                       borderColor: '#4285F4',
-                      color: COLORS.text,
+                      color: '#000000',
                       textTransform: 'none',
                       fontSize: '0.95rem',
+                      '&:hover': { backgroundColor: '#f5f5f5' },
                     }}
                     onClick={() => googleLogin()}
                   >
