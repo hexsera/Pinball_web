@@ -12,3 +12,4 @@ Faker==24.0.0
 google-genai
 pwdlib[bcrypt]
 Authlib==1.6.9
+python-jose[cryptography]==3.3.0

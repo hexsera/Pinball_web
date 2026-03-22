@@ -37,6 +37,7 @@ function Login() {
             role: res.data.role,
             email: res.data.email,
           });
+          localStorage.setItem('access_token', res.data.access_token);
           navigate(res.data.role === 'admin' ? '/admin' : '/');
         }
       } catch (error) {
@@ -61,6 +62,7 @@ function Login() {
       if (response.status === 200) {
         console.log('로그인 성공:', response.data);
         login({ id: response.data.user_id, name: response.data.nickname, role: response.data.role, email: response.data.email });
+        localStorage.setItem('access_token', response.data.access_token);
         setLoginError(false);
 
         // role 기반 페이지 이동

@@ -1,11 +1,13 @@
 # backend/app/api/v1/auth.py
+import uuid
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 
 from app.api.deps import get_db
 from app.core.config import settings
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, verify_password, create_access_token
 from app.schemas.user import (
     UserRegisterRequest,
     UserResponse,
@@ -41,12 +43,15 @@ def login(
             detail="Invalid email or password"
         )
 
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
     return LoginResponse(
         message="Login successful",
         user_id=user.id,
         email=user.email,
         nickname=user.nickname,
-        role=user.role
+        role=user.role,
+        access_token=token,
+        token_type="bearer"
     )
 
 
@@ -78,20 +83,38 @@ async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
 
     google_user = resp.json()
 
-    # 3단계: DB에서 이메일로 사용자 조회
-    user = db.query(User).filter(User.email == google_user["email"]).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No account found for this Google email. Please register first."
-        )
+    # 3단계: google_id(sub) 기준으로 사용자 조회 → 없으면 자동 가입
+    user = db.query(User).filter(User.google_id == google_user["sub"]).first()
 
+    if not user:
+        existing = db.query(User).filter(User.email == google_user["email"]).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered with a different provider"
+            )
+        user = User(
+            email=google_user["email"],
+            nickname=google_user.get("name", google_user["email"].split("@")[0]),
+            password=None,
+            birth_date=date.today(),
+            role="user",
+            google_id=google_user["sub"],
+            auth_provider="google"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
     return LoginResponse(
         message="Login successful",
         user_id=user.id,
         email=user.email,
         nickname=user.nickname,
-        role=user.role
+        role=user.role,
+        access_token=token,
+        token_type="bearer"
     )
 
 

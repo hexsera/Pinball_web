@@ -13,9 +13,11 @@ class User(Base):
                     default=uuid.uuid4, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     nickname = Column(String(100), nullable=False)
-    password = Column(String(255), nullable=False)
+    password = Column(String(255), nullable=True)   # 구글 가입 시 password 없음
     birth_date = Column(Date, nullable=False)
     role = Column(String(20), nullable=False, default='user')
+    auth_provider = Column(String(20), nullable=False, default='local')  # DB에 이미 존재
+    google_id = Column(String(255), nullable=True, unique=True)           # 신규 추가
 
 
 class Friendship(Base):

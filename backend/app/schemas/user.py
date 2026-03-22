@@ -55,6 +55,8 @@ class LoginResponse(BaseModel):
     email: str
     nickname: str
     role: str
+    access_token: str
+    token_type: str
 
 
 class DeleteResponse(BaseModel):

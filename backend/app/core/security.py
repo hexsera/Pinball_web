@@ -1,8 +1,10 @@
 # fastapi/app/core/security.py
+from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
 from fastapi import HTTPException, Depends
 from fastapi.security import APIKeyHeader
+from jose import jwt
 from app.core.config import settings
 
 API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
@@ -16,6 +18,13 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_access_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
 def verify_api_key(api_key: str = Depends(API_KEY_HEADER)) -> str:
