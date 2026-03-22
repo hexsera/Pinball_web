@@ -1,14 +1,17 @@
 # backend/app/api/v1/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from authlib.integrations.httpx_client import AsyncOAuth2Client
 
 from app.api.deps import get_db
+from app.core.config import settings
 from app.core.security import hash_password, verify_password
 from app.schemas.user import (
     UserRegisterRequest,
     UserResponse,
     LoginRequest,
     LoginResponse,
+    GoogleLoginRequest,
 )
 
 # 기존 models.py 사용 (아직 이동하지 않음)
@@ -36,6 +39,51 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
+        )
+
+    return LoginResponse(
+        message="Login successful",
+        user_id=user.id,
+        email=user.email,
+        nickname=user.nickname,
+        role=user.role
+    )
+
+
+@router.post("/auth/google", response_model=LoginResponse)
+async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
+    """구글 로그인: Authorization Code → Token 교환 → userinfo 조회 → DB 사용자 확인"""
+
+    # 1단계: Authorization Code → Access Token 교환
+    async with AsyncOAuth2Client(
+        client_id=settings.GOOGLE_CLIENT_ID,
+        client_secret=settings.GOOGLE_CLIENT_SECRET,
+    ) as client:
+        token = await client.fetch_token(
+            "https://oauth2.googleapis.com/token",
+            code=data.code,
+            redirect_uri=settings.GOOGLE_REDIRECT_URI,
+            grant_type="authorization_code",
+        )
+
+    # 2단계: Access Token으로 구글 userinfo 조회
+    async with AsyncOAuth2Client(token=token) as client:
+        resp = await client.get("https://www.googleapis.com/oauth2/v3/userinfo")
+
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to get Google user info"
+        )
+
+    google_user = resp.json()
+
+    # 3단계: DB에서 이메일로 사용자 조회
+    user = db.query(User).filter(User.email == google_user["email"]).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No account found for this Google email. Please register first."
         )
 
     return LoginResponse(

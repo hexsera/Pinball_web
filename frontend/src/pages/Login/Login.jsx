@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, TextField, Button, Container, Typography, Paper, Alert, CardMedia} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import Aurora from '../../components/Aurora/Aurora';
 
@@ -22,7 +23,31 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-
+  const googleLogin = useGoogleLogin({
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
+      try {
+        const res = await axios.post('/api/v1/auth/google', {
+          code: codeResponse.code,
+        });
+        if (res.status === 200) {
+          login({
+            id: res.data.user_id,
+            name: res.data.nickname,
+            role: res.data.role,
+            email: res.data.email,
+          });
+          navigate(res.data.role === 'admin' ? '/admin' : '/');
+        }
+      } catch (error) {
+        setLoginError(true);
+        console.log('구글 로그인 실패:', error.response?.data?.detail);
+      }
+    },
+    onError: () => {
+      setLoginError(true);
+    },
+  });
 
   // 확인 버튼을 눌렀을 때 실행되는 함수
   const handleLogin = async () => {
@@ -160,7 +185,27 @@ function Login() {
                     로그인
                   </Button>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <Button
+                    variant="outlined"
+                    sx={{
+                      width: '300px',
+                      borderColor: '#4285F4',
+                      color: COLORS.text,
+                      textTransform: 'none',
+                      fontSize: '0.95rem',
+                    }}
+                    onClick={() => googleLogin()}
+                  >
+                    <img
+                      src="https://developers.google.com/identity/images/g-logo.png"
+                      alt="Google"
+                      style={{ width: 20, height: 20, marginRight: 10 }}
+                    />
+                    구글로 로그인
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                   <Button
                     variant="outlined"
                     sx={{ width: '300px', borderColor: COLORS.text, color: COLORS.text }}

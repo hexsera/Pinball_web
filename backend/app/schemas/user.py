@@ -61,3 +61,8 @@ class DeleteResponse(BaseModel):
     """삭제 응답"""
     message: str
     deleted_user_id: int
+
+
+class GoogleLoginRequest(BaseModel):
+    """구글 로그인 요청: 프론트엔드에서 전송하는 Authorization Code"""
+    code: str
