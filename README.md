@@ -16,7 +16,7 @@ Docker 기반의 핀볼 게임 웹 플랫폼입니다.
 |------|------|
 | **Frontend** | React 18, Vite, Material-UI, Matter.js |
 | **Backend** | FastAPI, SQLAlchemy, Alembic |
-| **Database** | PostgreSQL 16 (주), MySQL 8.0 (레거시 백업) |
+| **Database** | PostgreSQL 16 (주), MySQL 8.0 (레거시 백업), Redis 8.6.2 |
 | **Proxy** | Traefik (리버스 프록시, SSL/TLS) |
 | **Web Server** | Nginx |
 | **Infra** | Docker, Docker Compose |
@@ -31,6 +31,7 @@ Docker 기반의 핀볼 게임 웹 플랫폼입니다.
                ├── hexsera.com          → Nginx → React 정적 파일 (SPA)
                │
                └── hexsera.com/api/*    → FastAPI → PostgreSQL
+                                                      └── Redis
 ```
 
 
@@ -38,23 +39,31 @@ Docker 기반의 핀볼 게임 웹 플랫폼입니다.
 
 ```
 Pinball_web/
-├── backend/          # FastAPI 애플리케이션
+├── backend/                  # FastAPI 애플리케이션
 │   ├── app/
-│   │   ├── api/      # 라우터 (users, auth, scores, friends, visits)
-│   │   ├── core/     # 설정, 의존성
-│   │   ├── db/       # DB 세션
-│   │   └── schemas/  # Pydantic 스키마
-│   ├── alembic/      # DB 마이그레이션
-│   ├── tests/        # pytest 테스트
-│   └── .env          # 환경 변수 (gitignore)
-├── frontend/         # React/Vite 애플리케이션
+│   │   ├── api/v1/           # 라우터 (auth, users, monthly_scores, game_visits, friends, chat, pinball_ai)
+│   │   ├── core/             # 설정(config), 보안(security)
+│   │   ├── db/               # DB 세션, Base
+│   │   ├── schemas/          # Pydantic 스키마
+│   │   └── redis_client.py   # Redis 연결 클라이언트
+│   ├── alembic/              # DB 마이그레이션
+│   ├── scripts/              # 목업 데이터 시딩 스크립트
+│   ├── tests/                # pytest 테스트
+│   ├── main.py               # FastAPI 앱 진입점
+│   ├── models.py             # SQLAlchemy ORM 모델
+│   ├── seed.py               # Admin 계정 시딩
+│   └── .env                  # 환경 변수 (gitignore)
+├── frontend/                 # React/Vite 애플리케이션
 │   └── src/
-│       ├── pages/    # 8개 페이지 컴포넌트
-│       ├── components/
-│       └── services/ # API 호출 함수
-├── docs/             # 기술 문서
-├── nginx.conf        # Nginx 설정
-├── traefik.yml       # Traefik 설정
+│       ├── pages/            # 페이지 컴포넌트 (Pinball, Dashboard, Login 등)
+│       ├── components/       # 공통 컴포넌트
+│       ├── contexts/         # AuthContext
+│       ├── hooks/
+│       ├── services/         # API 호출 함수
+│       └── utils/
+├── docs/                     # 기술 문서
+├── nginx.conf                # Nginx 설정
+├── traefik.yml               # Traefik 설정
 └── docker-compose.yml
 ```
 

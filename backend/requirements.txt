@@ -13,3 +13,4 @@ google-genai
 pwdlib[bcrypt]
 Authlib==1.6.9
 python-jose[cryptography]==3.3.0
+redis==7.1.1

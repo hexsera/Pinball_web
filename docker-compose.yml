@@ -37,6 +37,17 @@ services:
       - web
 
 
+  redis:
+    image: redis:8.6.2
+    container_name: redis-server
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - web
+
   fastapi:
       build: ./backend
       container_name: fastapi-server
@@ -48,6 +59,7 @@ services:
         - "8000:8000"
       depends_on:
         - postgres
+        - redis
       networks:
         - web
       labels:
@@ -107,3 +119,4 @@ volumes:
   html-data-volume:
   mysql-data:
   postgres-data:
+  redis-data:
