@@ -159,6 +159,38 @@ API Key 헤더: `X-API-Key: <API_KEY>` (.env의 `API_KEY` 값)
 
 ---
 
+## API 작성 규칙
+
+### 설계 원칙
+
+- **RESTful 설계**: URL은 명사+복수형, HTTP 메서드로 행위 표현, 적절한 상태 코드 반환
+- **버전 접두사**: 모든 엔드포인트는 `/api/v1/` 접두사 사용 (헬스체크 제외)
+- **경로 슬래시**: 경로 끝에 `/` 붙이지 않는다 (`""` 또는 `"/{id}"`)
+
+### 라우터
+
+- 리소스 단위로 파일 분리하고 라우터 생성 시 `prefix`, `tags` 반드시 지정
+- DB 세션은 항상 `Depends(get_db)` 사용, 라우터 내 `SessionLocal()` 직접 호출 금지
+- 인증이 필요한 엔드포인트는 의존성 함수를 `Depends`로 주입
+
+### 쿼리 파라미터
+
+- 필터링·검색: 쿼리 파라미터 사용 (`GET /users?role=admin&nickname=foo`)
+- 목록 조회 시 페이지네이션 필수: `limit`(기본 20, 최대 100), `offset`(기본 0) 제공
+- 쿼리 파라미터는 `Query(default=..., ge=..., le=...)` 로 제약 명시
+
+### 스키마
+
+- 요청(`Request`)과 응답(`Response`) 스키마를 별도 클래스로 정의
+- 응답 스키마에 비밀정보(`password`, API Key 등) 포함 금지
+- `app/schemas/` 하위에 리소스별로 분리, `__init__.py`에서 전체 export
+
+### 예외 처리
+
+- 에러 응답은 반드시 `HTTPException` 사용 (`raise HTTPException(status_code=404, detail="...")`)
+
+---
+
 ## 주의사항
 
 - `passlib[bcrypt]` 대신 `bcrypt`를 직접 사용 — passlib은 bcrypt 5.x와 호환되지 않아 배제
