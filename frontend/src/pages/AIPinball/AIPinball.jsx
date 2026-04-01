@@ -294,24 +294,12 @@ function AIPinball({ onReady }) {
       render: { fillStyle: '#16213e' }
     });
 
-    // 천장 왼쪽 (x=0~200 구간)
-    const upWallLeft = Bodies.rectangle(100, 20, 200, 40, {
-      isStatic: true,
-      render: { fillStyle: '#16213e' }
-    });
-
-    // 천장 오른쪽 (x=400~700 구간)
-    const upWallRight = Bodies.rectangle(550, 20, 300, 40, {
-      isStatic: true,
-      render: { fillStyle: '#16213e' }
-    });
-
-    // AI 죽음구역 (천장 구멍 x=200~500 위, 센서)
-    const aiDeathZone = Bodies.rectangle(350, -30, 300, 30, {
+    // AI 죽음구역 (천장 없음, 화면 상단 y=10 에 전체 너비 센서)
+    const aiDeathZone = Bodies.rectangle(350, 10, 700, 20, {
       isStatic: true,
       isSensor: true,
       label: 'aiDeathZone',
-      render: { fillStyle: '#003399', opacity: 0.3 }
+      render: { fillStyle: '#003399', opacity: 0.6 }
     });
 
     // 깔대기 경사면 설정값
@@ -321,28 +309,28 @@ function AIPinball({ onReady }) {
     const FUNNEL_ANGLE = 35 * Math.PI / 180;         // ≈ 0.515 rad (29.5°)
     const FUNNEL_THICKNESS = 20;
 
-    // 깔대기 왼쪽 경사면 (중심: x=155, y=1015)
-    const leftFunnelWall = Bodies.rectangle(105, 915, 260, FUNNEL_THICKNESS, {
+    // 깔대기 왼쪽 경사면 (왼쪽 끝 x=40, 안쪽 끝 x=254.5, center x=147.3, w=262)
+    const leftFunnelWall = Bodies.rectangle(147.3, 915, 262, FUNNEL_THICKNESS, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
     Body.setAngle(leftFunnelWall, FUNNEL_ANGLE);
 
-    // 깔대기 오른쪽 경사면 (중심: x=545, y=1015)
-    const rightFunnelWall = Bodies.rectangle(540, 925, 220, FUNNEL_THICKNESS, {
+    // 깔대기 오른쪽 경사면 (오른쪽 끝 x=660, 안쪽 끝 x=445.5, center x=552.8, w=262)
+    const rightFunnelWall = Bodies.rectangle(552.8, 925, 262, FUNNEL_THICKNESS, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
     Body.setAngle(rightFunnelWall, -FUNNEL_ANGLE);
 
-    // 죽음구역 만들기 (깔대기 구멍 아래, 센서 역할)
-    const deathZone = Bodies.rectangle(350, 1195, 700, 30, {
+    // 죽음구역 만들기 (화면 하단 y=1090, 전체 너비 센서)
+    const deathZone = Bodies.rectangle(350, 1090, 700, 20, {
       isStatic: true,
       isSensor: true,
       label: 'deathZone',
       render: {
         fillStyle: '#8b0000',
-        opacity: 0.3
+        opacity: 0.6
       }
     });
 
@@ -442,8 +430,8 @@ function AIPinball({ onReady }) {
       }
     });
 
-    // 왼쪽 플리퍼 (회전축 x=270, 중심 = 회전축 + 길이절반50 = x=320)
-    const leftFlipper = Bodies.rectangle(265, 995, 100, 20, {
+    // 왼쪽 플리퍼 (고정축 x=242.5, 중심 = 고정축 + 길이절반40 = x=282.5)
+    const leftFlipper = Bodies.rectangle(282.5, 995, 100, 20, {
       chamfer: { radius: 10 },
       render: { fillStyle: '#f39c12' },
       density: 0.001,
@@ -451,8 +439,8 @@ function AIPinball({ onReady }) {
       sleepThreshold: Infinity
     });
 
-    // 오른쪽 플리퍼 (회전축 x=430, 중심 = 회전축 - 길이절반50 = x=380)
-    const rightFlipper = Bodies.rectangle(400, 995, 100, 20, {
+    // 오른쪽 플리퍼 (고정축 x=457.5, 중심 = 고정축 - 길이절반40 = x=417.5)
+    const rightFlipper = Bodies.rectangle(417.5, 995, 100, 20, {
       chamfer: { radius: 10 },
       render: { fillStyle: '#f39c12' },
       density: 0.001,
@@ -463,7 +451,7 @@ function AIPinball({ onReady }) {
     const leftFlipperConstraint = Constraint.create({
       bodyA: leftFlipper,
       pointA: { x: -40, y: 0 },
-      pointB: { x: 225, y: 995 }, // 경사면 끝점 왼쪽
+      pointB: { x: 242.5, y: 995 },
       stiffness: 1,
       damping: 0,
       length: 0
@@ -472,7 +460,7 @@ function AIPinball({ onReady }) {
     const rightFlipperConstraint = Constraint.create({
       bodyA: rightFlipper,
       pointA: { x: 40, y: 0 },
-      pointB: { x: 440, y: 995 }, // 경사면 끝점 오른쪽
+      pointB: { x: 457.5, y: 995 },
       stiffness: 1,
       damping: 0,
       length: 0
@@ -482,20 +470,20 @@ function AIPinball({ onReady }) {
     const AI_FUNNEL_ANGLE = 35 * Math.PI / 180;
     const AI_FUNNEL_THICKNESS = 20;
 
-    const aiLeftFunnelWall = Bodies.rectangle(120, 185, 220, AI_FUNNEL_THICKNESS, {
+    const aiLeftFunnelWall = Bodies.rectangle(147.3, 185, 262, AI_FUNNEL_THICKNESS, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
-    Body.setAngle(aiLeftFunnelWall, -AI_FUNNEL_ANGLE);  // 구멍 왼쪽 끝(x=200)으로 공을 유도
+    Body.setAngle(aiLeftFunnelWall, -AI_FUNNEL_ANGLE);  // 왼쪽 끝 x=40, 안쪽 끝 x=254.5
 
-    const aiRightFunnelWall = Bodies.rectangle(480, 175, 220, AI_FUNNEL_THICKNESS, {
+    const aiRightFunnelWall = Bodies.rectangle(552.8, 175, 262, AI_FUNNEL_THICKNESS, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
-    Body.setAngle(aiRightFunnelWall, AI_FUNNEL_ANGLE);  // 구멍 오른쪽 끝(x=500)으로 공을 유도
+    Body.setAngle(aiRightFunnelWall, AI_FUNNEL_ANGLE);  // 오른쪽 끝 x=660, 안쪽 끝 x=445.5
 
     // AI 플리퍼 Bodies (상단, 기존 플리퍼의 y=995 → y=105, 좌우 반전)
-    const aiLeftFlipper = Bodies.rectangle(400, 105, 100, 20, {
+    const aiLeftFlipper = Bodies.rectangle(417.5, 105, 100, 20, {
       chamfer: { radius: 10 },
       render: { fillStyle: '#e74c3c' },
       density: 0.001,
@@ -503,7 +491,7 @@ function AIPinball({ onReady }) {
       sleepThreshold: Infinity
     });
 
-    const aiRightFlipper = Bodies.rectangle(265, 105, 100, 20, {
+    const aiRightFlipper = Bodies.rectangle(282.5, 105, 100, 20, {
       chamfer: { radius: 10 },
       render: { fillStyle: '#e74c3c' },
       density: 0.001,
@@ -514,7 +502,7 @@ function AIPinball({ onReady }) {
     const aiLeftConstraint = Constraint.create({
       bodyA: aiLeftFlipper,
       pointA: { x: 40, y: 0 },
-      pointB: { x: 440, y: 105 },
+      pointB: { x: 457.5, y: 105 },
       stiffness: 1,
       damping: 0,
       length: 0
@@ -523,7 +511,7 @@ function AIPinball({ onReady }) {
     const aiRightConstraint = Constraint.create({
       bodyA: aiRightFlipper,
       pointA: { x: -40, y: 0 },
-      pointB: { x: 225, y: 105 },
+      pointB: { x: 242.5, y: 105 },
       stiffness: 1,
       damping: 0,
       length: 0
@@ -594,8 +582,6 @@ function AIPinball({ onReady }) {
     World.add(engine.world, [
       leftWall,
       rightWall,
-      upWallLeft,
-      upWallRight,
       aiDeathZone,
       leftFunnelWall,
       rightFunnelWall,
