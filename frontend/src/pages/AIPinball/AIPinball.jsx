@@ -38,9 +38,7 @@ function AIPinball({ onReady }) {
   const stageBodiesRef = useRef([]);
   const engineRef = useRef(null);
   const loadStageMapRef = useRef(null);
-  const plungerRef = useRef(null);
-  const plungerStartRef = useRef(null);
-  const plungerReleaseRef = useRef(null);
+  const launchDirectionRef = useRef(1); // 1: 오른쪽 아래, -1: 왼쪽 아래
   const pressFlipperKeyRef = useRef(null);
   const releaseFlipperKeyRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -56,8 +54,6 @@ function AIPinball({ onReady }) {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const isLeftKeyPressedRef = useRef(false);
   const isRightKeyPressedRef = useRef(false);
-  const isSpacePressedRef = useRef(false);
-  const spaceHoldStartTimeRef = useRef(0);
   const [gameStarted, setGameStarted] = useState(false);
   const gameStartedRef = useRef(false);
   const runnerRef = useRef(null);
@@ -181,14 +177,9 @@ function AIPinball({ onReady }) {
       const World = Matter.World;
       const Body = Matter.Body;
       World.add(engine.world, ball);
-      Body.setPosition(ball, { x: 280, y: 700 });
-      Body.setVelocity(ball, { x: 0, y: 0 });
+      Body.setPosition(ball, { x: 350, y: 550 });
+      Body.setVelocity(ball, { x: launchDirectionRef.current * 8, y: 8 });
       Body.setAngularVelocity(ball, 0);
-    }
-
-    // plunger 원래 위치로 복귀
-    if (plungerRef.current && engineRef.current) {
-      Matter.Body.setPosition(plungerRef.current, { x: 662, y: 1020 });
     }
 
     // 스테이지 1 맵 다시 로딩
@@ -334,31 +325,8 @@ function AIPinball({ onReady }) {
       }
     });
 
-    // Plunger 상수
-    const PLUNGER_X = 662;
-    const PLUNGER_REST_Y = 1020;
-    const PLUNGER_PULL_SPEED = 0.8;
-    const PLUNGER_MAX_PULL_Y = 1080;
-    const PLUNGER_MAX_LAUNCH_SPEED = 55;
-    const SHELF_Y = 1010; // 발판벽 y좌표 (플런저 위)
-
-    // 발판벽 (플런저 레인 내 공이 올라설 수평 발판)
-    const plungerShelf = Bodies.rectangle(PLUNGER_X, SHELF_Y, 80, 10, {
-      isStatic: true,
-      label: 'plungerShelf',
-      render: { fillStyle: '#16213e' }
-    });
-
-    // Plunger Body (시각적 표현, isStatic)
-    const plunger = Bodies.rectangle(PLUNGER_X, PLUNGER_REST_Y, 30, 15, {
-      isStatic: true,
-      label: 'plunger',
-      render: { fillStyle: '#c0c0c0' }
-    });
-    plungerRef.current = plunger;
-
-    // 핀볼 공 만들기 (게임 영역 중앙에서 시작)
-    const ball = Bodies.circle(280, 700, 15, {
+    // 핀볼 공 만들기 (필드 중앙에서 시작)
+    const ball = Bodies.circle(350, 530, 15, {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
@@ -369,14 +337,14 @@ function AIPinball({ onReady }) {
     ballRef.current = ball;
 
     // 필살기 공 사전 생성 (월드에는 추가 안 함)
-    const bigBall = Bodies.circle(662, SHELF_Y - 20, 30, {
+    const bigBall = Bodies.circle(350, 530, 30, {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
       density: ball.density + 0.5 / (Math.PI * 30 * 30),
       render: { fillStyle: '#3498db' }
     });
-    const smallBall = Bodies.circle(662, SHELF_Y - 20, 10.5, {
+    const smallBall = Bodies.circle(350, 530, 10.5, {
       restitution: 0.8,
       friction: 0,
       frictionAir: 0,
@@ -539,8 +507,6 @@ function AIPinball({ onReady }) {
     // 키 누름 상태 변수 (ref를 직접 사용)
     const isLeftKeyPressed = isLeftKeyPressedRef;
     const isRightKeyPressed = isRightKeyPressedRef;
-    const isSpacePressed = isSpacePressedRef;
-    const spaceHoldStartTime = spaceHoldStartTimeRef;
 
     // 맵 로딩 함수
     const loadStageMap = (stageNumber) => {
@@ -597,17 +563,22 @@ function AIPinball({ onReady }) {
       aiRightFlipper,
       aiLeftConstraint,
       aiRightConstraint,
-      plunger,
-      plungerShelf,
       triggerBody
     ]);
 
     // 스테이지 1 맵 로딩
     loadStageMap(1);
 
-    //
+    // 공 중앙 발사 함수
+    const launchBall = (b, direction) => {
+      Body.setPosition(b, { x: 350, y: 550 });
+      Body.setVelocity(b, { x: direction * 8, y: 8 });
+      Body.setAngularVelocity(b, 0);
+    };
 
-    Matter.Body.setVelocity(ball, {x:0, y:0});
+    // 게임 시작 시 방향 결정 및 발사
+    launchDirectionRef.current = Math.random() < 0.5 ? -1 : 1;
+    launchBall(ball, launchDirectionRef.current);
 
     // 플립퍼 트리거 진입/이탈 감지
     Events.on(engine, 'collisionStart', (event) => {
@@ -683,13 +654,9 @@ function AIPinball({ onReady }) {
 
           // livesRef로 최신 lives 값 확인
           if (livesRef.current > 0) {
-            // 공을 중앙으로 이동
-            Body.setPosition(activeBall, { x: 280, y: 700 });
-
-            // 속도 초기화
-            Body.setVelocity(activeBall, { x: 0, y: 0 });
-
-            // 각속도 초기화 (회전 방지)
+            // 공을 중앙에서 재발사
+            Body.setPosition(activeBall, { x: 350, y: 550 });
+            Body.setVelocity(activeBall, { x: launchDirectionRef.current * 8, y: 8 });
             Body.setAngularVelocity(activeBall, 0);
 
             // lives 감소 (상태와 ref 모두 업데이트)
@@ -785,17 +752,6 @@ function AIPinball({ onReady }) {
       }
       if (aiRightFlipper.angle > AI_RIGHT_MAX_ANGLE) Body.setAngle(aiRightFlipper, AI_RIGHT_MAX_ANGLE);
       if (aiRightFlipper.angle < AI_RIGHT_MIN_ANGLE) Body.setAngle(aiRightFlipper, AI_RIGHT_MIN_ANGLE);
-
-      // Plunger 시각적 당기기 (스페이스바 누르고 있을 때)
-      if (isSpacePressed.current) {
-        const currentY = plunger.position.y;
-        if (currentY < PLUNGER_MAX_PULL_Y) {
-          Body.setPosition(plunger, {
-            x: PLUNGER_X,
-            y: Math.min(currentY + PLUNGER_PULL_SPEED, PLUNGER_MAX_PULL_Y)
-          });
-        }
-      }
     });
 
     // 범퍼 네온 글로우 커스텀 렌더링
@@ -816,28 +772,6 @@ function AIPinball({ onReady }) {
       ctx.fillRect(LAUNCH_ZONE.x, LAUNCH_ZONE.y, LAUNCH_ZONE.w, LAUNCH_ZONE.h);
       ctx.strokeRect(LAUNCH_ZONE.x, LAUNCH_ZONE.y, LAUNCH_ZONE.w, LAUNCH_ZONE.h);
       ctx.restore(); */
-
-      // 플런저 스프링 코일 드로잉
-      const px = plunger.position.x;
-      const py = plunger.position.y + 8;
-      const bottomY = 1100;
-      const coilCount = 12;
-      const coilWidth = 12;
-      const segH = (bottomY - py) / coilCount;
-      ctx.save();
-      ctx.strokeStyle = '#b0b0b0';
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = '#888888';
-      ctx.shadowBlur = 4;
-      ctx.beginPath();
-      ctx.moveTo(px, py);
-      for (let i = 0; i < coilCount; i++) {
-        const dirX = (i % 2 === 0) ? coilWidth : -coilWidth;
-        ctx.lineTo(px + dirX, py + segH * (i + 0.5));
-        ctx.lineTo(px, py + segH * (i + 1));
-      }
-      ctx.stroke();
-      ctx.restore();
 
       const bumperBodies = stageBodiesRef.current.filter(b => b.label === 'bumper');
 
@@ -970,34 +904,6 @@ function AIPinball({ onReady }) {
       });
     });
 
-    // 플런저 충전 시작 (버튼 onPointerDown에서 호출)
-    plungerStartRef.current = () => {
-      if (!isSpacePressed.current) {
-        isSpacePressed.current = true;
-        spaceHoldStartTime.current = Date.now();
-      }
-    };
-
-    // 플런저 발사 (버튼 onPointerUp/onPointerLeave에서 호출)
-    plungerReleaseRef.current = () => {
-      if (isSpacePressed.current) {
-        isSpacePressed.current = false;
-
-        const holdDuration = Math.min(Date.now() - spaceHoldStartTime.current, 1500);
-        const chargeRatio = Math.max(holdDuration / 1500, 0.1);
-        const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
-
-        const ballInLane = ball.position.x > 630 && ball.position.x < 695 &&
-                           ball.position.y > SHELF_Y - 25 && ball.position.y < SHELF_Y;
-
-        if (ballInLane) {
-          Body.setVelocity(ball, { x: 0, y: -launchSpeed });
-        }
-
-        Body.setPosition(plunger, { x: PLUNGER_X, y: PLUNGER_REST_Y });
-      }
-    };
-
     // 엔진과 렌더러 시작
     const runner = Runner.create();
     runnerRef.current = runner;
@@ -1040,15 +946,6 @@ function AIPinball({ onReady }) {
     console.log('오른쪽 방향키 눌림');
     pressFlipperKey(isRightKeyPressed);
   }
-  // 스페이스바로 Plunger 충전
-  if (event.key === ' ' || event.code === 'Space') {
-    event.preventDefault();
-    if (!isSpacePressed.current) {
-      isSpacePressed.current = true;
-      spaceHoldStartTime.current = Date.now();
-      console.log('스페이스바 눌림 - Plunger 충전 시작');
-    }
-  }
   // 'a' 키로 필살기 발동
   if (event.key === 'a' || event.key === 'A') {
     if (skillStateRef.current === 'big') {
@@ -1073,9 +970,9 @@ function AIPinball({ onReady }) {
       livesRef.current = 3;  // lives 상태는 +1이므로 ref는 2
       setLives(3);
 
-      // 공을 Plunger lane으로 이동
-      Body.setPosition(ball, { x: 662, y: 1020 });
-      Body.setVelocity(ball, { x: 0, y: 0 });
+      // 공을 중앙에서 재발사
+      Body.setPosition(ball, { x: 350, y: 550 });
+      Body.setVelocity(ball, { x: launchDirectionRef.current * 8, y: 8 });
       Body.setAngularVelocity(ball, 0);
 
       // 맵 전환
@@ -1107,28 +1004,6 @@ const handleKeyUp = (event) => {
   }
   if (event.key === 'ArrowRight') {
     releaseFlipperKey(isRightKeyPressed);
-  }
-  // 스페이스바 발사
-  if (event.key === ' ' || event.code === 'Space') {
-    if (isSpacePressed.current) {
-      isSpacePressed.current = false;
-
-      const holdDuration = Math.min(Date.now() - spaceHoldStartTime.current, 1500);
-      const chargeRatio = Math.max(holdDuration / 1500, 0.1);
-      const launchSpeed = PLUNGER_MAX_LAUNCH_SPEED * chargeRatio;
-
-      // 공이 발판벽 위에 있을 때만 발사
-      const ballInLane = ball.position.x > 630 && ball.position.x < 695 &&
-                         ball.position.y > SHELF_Y - 50 && ball.position.y < SHELF_Y;
-
-      if (ballInLane) {
-        Body.setVelocity(ball, { x: 0, y: -launchSpeed });
-        console.log(`Plunger 발사! 충전: ${(chargeRatio * 100).toFixed(0)}%`);
-      }
-
-      // Plunger 원래 위치로 복귀
-      Body.setPosition(plunger, { x: PLUNGER_X, y: PLUNGER_REST_Y });
-    }
   }
 };
 
@@ -1335,19 +1210,6 @@ display: 'flex',
                     touchAction: 'none',
                   }}
                 />
-                {/* 플런저 버튼 */}
-                <Box
-                  onPointerDown={() => { plungerStartRef.current && plungerStartRef.current(); }}
-                  onPointerUp={() => { plungerReleaseRef.current && plungerReleaseRef.current(); }}
-                  onPointerLeave={() => { plungerReleaseRef.current && plungerReleaseRef.current(); }}
-                  sx={{
-                    width: '100px', height: '100px', borderRadius: '50%',
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    pointerEvents: 'auto',
-                    userSelect: 'none',
-                    touchAction: 'none',
-                  }}
-                />
                 {/* 오른쪽 플리퍼 버튼 */}
                 <Box
                   onPointerDown={() => pressFlipperKeyRef.current?.(isRightKeyPressedRef)}
@@ -1394,8 +1256,7 @@ display: 'flex',
                 </Typography>
                 {!isTouchDevice && (
                   <>
-                    <Typography sx={{ color: '#ffffff', fontSize: '32px', mb: 1 }}>← → : 플립퍼 작동</Typography>
-                    <Typography sx={{ color: '#ffffff', fontSize: '32px', mb: 2 }}>SPACE : 플런저 발사</Typography>
+                    <Typography sx={{ color: '#ffffff', fontSize: '32px', mb: 2 }}>← → : 플립퍼 작동</Typography>
                     <Typography sx={{ color: '#aaaaaa', fontSize: '24px', mb: 4 }}>AI 플리퍼가 상단에서 공을 막습니다</Typography>
                   </>
                 )}
