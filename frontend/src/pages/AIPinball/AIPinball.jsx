@@ -49,6 +49,8 @@ function AIPinball({ onReady }) {
   const [score, setScore] = useState(0);
   const [scoreAnimKey, setScoreAnimKey] = useState(0);
   const [lives, setLives] = useState(3);
+  const [aiLives, setAiLives] = useState(3);
+  const aiLivesRef = useRef(3);
   const [stage, setStage] = useState(1);
   const [overlayState, setOverlayState] = useState(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
@@ -167,6 +169,8 @@ function AIPinball({ onReady }) {
     // ref 초기화
     scoreRef.current = score;
     livesRef.current = lives;
+    aiLivesRef.current = 3;
+    setAiLives(3);
     stageRef.current = stage;
 
     // Matter.js 물리 상태 초기화
@@ -659,9 +663,6 @@ function AIPinball({ onReady }) {
             Body.setVelocity(activeBall, { x: launchDirectionRef.current * 8, y: 8 });
             Body.setAngularVelocity(activeBall, 0);
 
-            // lives 감소 (상태와 ref 모두 업데이트)
-            
-
             console.log(`Ball revived! Lives remaining: ${newLives}`);
           } else {
             // 생명이 없으면 공 제거 (게임 오버)
@@ -669,6 +670,24 @@ function AIPinball({ onReady }) {
             console.log('Game Over!');
             playGameOverSound(gameoverSoundRef.current);
             setOverlayState('gameOver');
+          }
+        }
+
+        // AI 죽음구역 충돌 감지
+        if ((bodyA.label === 'aiDeathZone' && bodyB === activeBall) ||
+            (bodyB.label === 'aiDeathZone' && bodyA === activeBall)) {
+          const newAiLives = aiLivesRef.current - 1;
+          aiLivesRef.current = newAiLives;
+          setAiLives(newAiLives);
+          playLifeDownSound(lifeDownSoundRef.current);
+
+          if (aiLivesRef.current > 0) {
+            Body.setPosition(activeBall, { x: 350, y: 550 });
+            Body.setVelocity(activeBall, { x: launchDirectionRef.current * 8, y: 8 });
+            Body.setAngularVelocity(activeBall, 0);
+          } else {
+            World.remove(engine.world, activeBall);
+            setOverlayState('playerWin');
           }
         }
       });
@@ -955,6 +974,10 @@ function AIPinball({ onReady }) {
     }
     // 'loading' 상태면 아무것도 하지 않음
   }
+  // 'g' 키로 중력 반전 (테스트용)
+  if (event.key === 'g' || event.key === 'G') {
+    engine.gravity.y *= -1;
+  }
   // 'n' 키로 스테이지 전환 (테스트용)
   if (event.key === 'n' || event.key === 'N') {
     const currentStage = stageRef.current;
@@ -1115,6 +1138,15 @@ display: 'flex',
                     fontSize: '36px',
                     color: '#ff1744'
                   }}
+                />
+              ))}
+            </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+              {Array.from({ length: aiLives }).map((_, index) => (
+                <FavoriteIcon
+                  key={index}
+                  sx={{ fontSize: '36px', color: '#3498db' }}
                 />
               ))}
             </Box>
@@ -1287,6 +1319,23 @@ display: 'flex',
                   <>
                     <Typography variant="h2" sx={{ color: '#ff0000', fontWeight: 'bold', mb: 4 }}>
                       GAME OVER
+                    </Typography>
+                    <Typography variant="h4" sx={{ color: '#ffffff', mb: 4 }}>
+                      획득 점수: {score}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={handleRestart}
+                      sx={{ fontSize: '1.2rem', padding: '10px 30px' }}
+                    >
+                      다시 시작
+                    </Button>
+                  </>
+                )}
+                {overlayState === 'playerWin' && (
+                  <>
+                    <Typography variant="h2" sx={{ color: '#00ff88', fontWeight: 'bold', mb: 4 }}>
+                      YOU WIN
                     </Typography>
                     <Typography variant="h4" sx={{ color: '#ffffff', mb: 4 }}>
                       획득 점수: {score}

@@ -22,11 +22,13 @@
 | 항목 | Pinball | AIPinball |
 |------|---------|-----------|
 | 플리퍼 | 플레이어만 (하단) | 플레이어(하단) + AI(상단) |
+| 목숨 | 플레이어만 | 플레이어 + AI 각 3개 |
+| 승리/패배 | 목숨 0 → 게임오버 | 플레이어 목숨 0 → 게임오버, AI 목숨 0 → 플레이어 승리 |
 | 세션 저장/복원 | O (Redis) | X (없음) |
 | 점수 제출 | O (`/api/v1/monthly-scores`) | X |
 | 플레이스타일 분석 | X | O (10초 수집 → API) |
 | 필살기 시스템 | X | O (`big` / `small` 공 교체) |
-| 공 시작 위치 | Plunger lane (x=662) | 필드 중앙 (x=280, y=700) |
+| 공 시작 위치 | Plunger lane | 필드 중앙 (x=350, y=550) 자동 발사 |
 | flipperTrigger | X | O (데이터 수집 범위 감지 센서) |
 
 ---
@@ -42,9 +44,10 @@
   ├─ 물리 오브젝트 생성
   │    플레이어: leftFlipper / rightFlipper (하단 y=995)
   │    AI:       aiLeftFlipper / aiRightFlipper (상단 y=105)
-  │    공: ball (중앙), bigBall/smallBall (사전 생성, World 미추가)
+  │    공: ball (중앙 x=350, y=550), bigBall/smallBall (사전 생성, World 미추가)
   │    센서: flipperTrigger (플리퍼 영역 진입 감지)
-  └─ 스테이지 1 맵 로딩
+  │          deathZone (바닥 y=1090), aiDeathZone (천장 y=10)
+  └─ 스테이지 1 맵 로딩, 공 랜덤 방향 자동 발사
 
 [게임 시작 대기 화면]
   Space 키 또는 클릭
@@ -65,7 +68,7 @@
   └─ 30초 내 응답 없으면: getRandomSkill() 폴백 ('big' or 'small')
 
 [게임 진행 중]
-  ← 플레이어: ArrowLeft / ArrowRight (플리퍼), Space (플런저)
+  ← 플레이어: ArrowLeft / ArrowRight (플리퍼)
   ← AI: beforeUpdate 이벤트마다 자동 판단
         공이 y < 300 이고 위로 이동 중(vy < 0)일 때
         AI 플리퍼 중심 X에서 160px 이내면 해당 플리퍼 올림
@@ -74,15 +77,42 @@
   ├─ flipperTrigger 진입/이탈 → isBallInTriggerRef 갱신
   ├─ 범퍼 충돌 → 추가 속도 + 사운드
   ├─ 목표물 충돌 → +300점
-  └─ deathZone 충돌
-       ├─ lives > 0: 목숨 -1, 공을 중앙(x=280, y=700)으로 복귀
-       └─ lives == 0: 공 제거, 게임오버 overlay
+  ├─ deathZone 충돌 (바닥)
+  │    ├─ lives > 0: 플레이어 목숨 -1, 공을 중앙(x=350, y=550)으로 복귀
+  │    └─ lives == 0: 공 제거, 게임오버 overlay
+  └─ aiDeathZone 충돌 (천장)
+       ├─ aiLives > 0: AI 목숨 -1, 공을 중앙(x=350, y=550)으로 복귀
+       └─ aiLives == 0: 공 제거, 플레이어 승리 overlay
 
-[스킬 발동 - 스킬 아이콘 클릭 or 키 입력]
+[스킬 발동 - A키]
   activateSpecial(bigBall or smallBall)
   ├─ 현재 ball을 World에서 제거
   ├─ 특수 공을 같은 위치/속도로 투입 (ballRef 교체)
   └─ 5초 후 자동 복귀 (원래 ball로 재교체)
+```
+
+---
+
+## 맵 구조
+
+```
+x=0  40    200       500  660  700
+ |    |     |         |    |    |
+ ██████                    ██████  ← 좌우 천장 벽 (가운데 구멍 x=200~500)
+                                    ← aiDeathZone 센서 (y=10, 전체 너비)
+ █  [aiRightFlipper] [aiLeftFlipper]  █  ← y=105 (AI, 빨간색)
+ █       \               /           █
+ █   aiRightFunnel  aiLeftFunnel      █
+ █                                   █
+ █         [범퍼] [목표물]            █
+ █                                   █
+ █   leftFunnel      rightFunnel      █
+ █       /               \           █
+ █  [leftFlipper] [rightFlipper]      █  ← y=995 (플레이어, 주황색)
+ ████  [  deathZone 센서 y=1090  ]  ████
+
+플리퍼 고정축: 플레이어 x=242.5/457.5, AI x=242.5/457.5
+깔대기: 바깥끝 x=40/660, 안끝 x=254.5/445.5
 ```
 
 ---
@@ -93,23 +123,6 @@
 플레이어가 공을 위로 올리면 AI가 받아쳐서 돌려보내는 구조.
 
 ```
-┌──────────────────────────────────────────┐  ← upWall (y=0)
-│   [aiRightFlipper]  [aiLeftFlipper]      │  ← y=105 (AI)
-│      \                    /              │
-│    aiRightFunnel   aiLeftFunnel          │
-│                                          │
-│           [범퍼] [목표물]                │
-│                 ↑                        │
-│         공 이 여기를 통과하면            │
-│         AI 플리퍼가 반응                 │
-│                                          │
-│    [leftFlipper]  [rightFlipper]         │  ← y=995 (플레이어)
-│      /                    \              │
-│  leftFunnel           rightFunnel        │
-│                  ↓                       │
-│             [deathZone]                  │
-└──────────────────────────────────────────┘
-
 AI 판단 조건:
   ball.y < 300  AND  ball.vy < 0  (위로 올라가는 중)
   → 가까운 쪽 AI 플리퍼 올림 (반응거리 160px 이내)
@@ -124,7 +137,7 @@ AI 판단 조건:
 | `big` | r=30 (2배) | 조금 무거움 | 범퍼를 강하게 밀어냄 |
 | `small` | r=10.5 (0.7배) | 가벼움 | 빠르고 좁은 틈 통과 가능 |
 
-발동 조건: `skillState`가 `'big'` 또는 `'small'`일 때 스킬 아이콘 클릭  
+발동 조건: `skillState`가 `'big'` 또는 `'small'`일 때 A키  
 지속 시간: 5초, 이후 원래 공으로 자동 복귀
 
 ---
@@ -148,13 +161,26 @@ AI 판단 조건:
 
 ---
 
-## 상태 관리 (AIPinball 전용 추가분)
+## 상태 관리
 
 | 상태 | 타입 | 설명 |
 |------|------|------|
+| `lives` / `livesRef` | `number` | 플레이어 목숨 (초기값 3) |
+| `aiLives` / `aiLivesRef` | `number` | AI 목숨 (초기값 3) |
+| `overlayState` | `null` \| `'gameOver'` \| `'playerWin'` | 현재 overlay 종류 |
 | `skillState` / `skillStateRef` | `'loading'` \| `'big'` \| `'small'` | 스킬 상태 (UI + 콜백 이중 관리) |
 | `cooldownProgress` | `number` 0~1 | 스킬 아이콘 충전 진행도 |
 | `bigBallRef` / `smallBallRef` | Matter Body | 특수 공 사전 생성 (World 미추가) |
 | `specialActiveRef` | `bool` | 필살기 발동 중 여부 (중복 방지) |
 | `isBallInTriggerRef` | `bool` | 공이 flipperTrigger 센서 내부 여부 |
 | `playstyleDataRef` | `array` | 수집된 플레이스타일 데이터 |
+| `launchDirectionRef` | `1` \| `-1` | 공 발사 방향 (랜덤 결정, 복귀 시 재사용) |
+
+---
+
+## 테스트용 키
+
+| 키 | 동작 |
+|----|------|
+| `G` | 중력 반전 토글 (`engine.gravity.y *= -1`) |
+| `N` | 다음 스테이지 강제 전환 |
