@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { STAGE_CONFIGS, BUMPER_RADIUS } from './stageConfigs';
 import { playFlipperSound, playLifeDownSound, playGameOverSound, playBumperSound } from './pinballSound';
 import { getRestartState } from './pinballRestart';
+import { saveGameSession, loadGameSession, deleteGameSession } from '../../utils/gameSession';
 import WallOverlay from './WallOverlay';
 
 const scorePopAnimation = keyframes`
@@ -102,6 +103,8 @@ function Pinball({ onReady }) {
       console.log("sendsocre", scoreRef.current);
       console.log('Score submitted successfully:', response.data);
       setBestScore(response.data.score);
+      await deleteGameSession(user.id)
+        .catch(err => console.error('세션 삭제 실패:', err));
     } catch (error) {
       console.error('Failed to submit score:', error);
     }
@@ -144,11 +147,43 @@ function Pinball({ onReady }) {
     if (loadStageMapRef.current) {
       loadStageMapRef.current(1);
     }
+
+    if (user?.id) {
+      deleteGameSession(user.id)
+        .catch(err => console.error('세션 삭제 실패:', err));
+    }
   };
 
   // 터치 디바이스 감지
   useEffect(() => {
     setIsTouchDevice(navigator.maxTouchPoints > 0);
+  }, []);
+
+  // 마운트 시 세션 복원
+  useEffect(() => {
+    if (!user?.id) return;
+    loadGameSession(user.id).then(session => {
+      if (!session) return;
+      setScore(session.score);
+      setLives(session.lives);
+      setStage(session.stage);
+      scoreRef.current = session.score;
+      livesRef.current = session.lives;
+      stageRef.current = session.stage;
+    }).catch(err => console.error('세션 복원 실패:', err));
+  }, []);
+
+  // 30초마다 세션 저장
+  useEffect(() => {
+    if (!user?.id) return;
+    const interval = setInterval(() => {
+      saveGameSession(user.id, {
+        score: scoreRef.current,
+        lives: livesRef.current,
+        stage: stageRef.current,
+      }).catch(err => console.error('세션 저장 실패:', err));
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // 게임 방문 기록 API 호출
@@ -491,6 +526,14 @@ function Pinball({ onReady }) {
           livesRef.current = newLives;
           setLives(newLives);
           playLifeDownSound(lifeDownSoundRef.current);
+
+          if (user?.id) {
+            saveGameSession(user.id, {
+              score: scoreRef.current,
+              lives: newLives,
+              stage: stageRef.current,
+            }).catch(err => console.error('세션 저장 실패:', err));
+          }
 
           // livesRef로 최신 lives 값 확인
           if (livesRef.current > 0) {
