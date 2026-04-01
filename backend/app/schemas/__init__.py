@@ -42,6 +42,12 @@ from app.schemas.game_visit import (
     GameVisitDeleteResponse,
 )
 
+from app.schemas.game_session import (
+    GameSessionSaveRequest,
+    GameSessionResponse,
+    GameSessionDeleteResponse,
+)
+
 __all__ = [
     # User schemas
     "UserCreateRequest",
@@ -73,4 +79,8 @@ __all__ = [
     "DailyVisitStatsResponse",
     "GameVisitDeleteRequest",
     "GameVisitDeleteResponse",
+    # GameSession schemas
+    "GameSessionSaveRequest",
+    "GameSessionResponse",
+    "GameSessionDeleteResponse",
 ]
