@@ -61,6 +61,10 @@ source ~/.nvm/nvm.sh && npm run test:ui      # Vitest 대화형 UI
 ```bash
 docker-compose up -d          # 전체 서비스 시작
 docker-compose logs -f fastapi
+
+# 프론트엔드 빌드 후 nginx 컨테이너에 배포
+source ~/.nvm/nvm.sh && cd frontend && npm run build
+docker cp frontend/dist/. nginx-server:/etc/nginx/html/
 ```
 
 ## 아키텍처
