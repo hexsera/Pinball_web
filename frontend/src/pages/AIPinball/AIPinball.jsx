@@ -294,16 +294,24 @@ function AIPinball({ onReady }) {
       render: { fillStyle: '#16213e' }
     });
 
-    // rightWall2: y=200~1100 구간만 벽 유지 (상단 160px 개방하여 Plunger lane 출구 생성)
-    const rightWall2 = Bodies.rectangle(630, 700, 30, 850, {
+    // 천장 왼쪽 (x=0~200 구간)
+    const upWallLeft = Bodies.rectangle(100, 20, 200, 40, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
 
-    // 천장 (두께 40px)
-    const upWall = Bodies.rectangle(350, 20, 700, 40, {
+    // 천장 오른쪽 (x=400~700 구간)
+    const upWallRight = Bodies.rectangle(550, 20, 300, 40, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
+    });
+
+    // AI 죽음구역 (천장 구멍 x=200~500 위, 센서)
+    const aiDeathZone = Bodies.rectangle(350, -30, 300, 30, {
+      isStatic: true,
+      isSensor: true,
+      label: 'aiDeathZone',
+      render: { fillStyle: '#003399', opacity: 0.3 }
     });
 
     // 깔대기 경사면 설정값
@@ -336,13 +344,6 @@ function AIPinball({ onReady }) {
         fillStyle: '#8b0000',
         opacity: 0.3
       }
-    });
-
-    // Plunger lane 상단 가이드 벽 (공이 왼쪽 게임 필드로 나가도록 유도)
-    const plungerLaneGuide = Bodies.rectangle(660, 150, 60, 10, {
-      isStatic: true,
-      angle: 40 * Math.PI/180,
-      render: { fillStyle: '#16213e' }
     });
 
     // Plunger 상수
@@ -481,17 +482,17 @@ function AIPinball({ onReady }) {
     const AI_FUNNEL_ANGLE = 35 * Math.PI / 180;
     const AI_FUNNEL_THICKNESS = 20;
 
-    const aiLeftFunnelWall = Bodies.rectangle(105, 185, 260, AI_FUNNEL_THICKNESS, {
+    const aiLeftFunnelWall = Bodies.rectangle(120, 185, 220, AI_FUNNEL_THICKNESS, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
-    Body.setAngle(aiLeftFunnelWall, -AI_FUNNEL_ANGLE);  // player +35° → AI -35°
+    Body.setAngle(aiLeftFunnelWall, -AI_FUNNEL_ANGLE);  // 구멍 왼쪽 끝(x=200)으로 공을 유도
 
-    const aiRightFunnelWall = Bodies.rectangle(540, 175, 220, AI_FUNNEL_THICKNESS, {
+    const aiRightFunnelWall = Bodies.rectangle(480, 175, 220, AI_FUNNEL_THICKNESS, {
       isStatic: true,
       render: { fillStyle: '#16213e' }
     });
-    Body.setAngle(aiRightFunnelWall, AI_FUNNEL_ANGLE);  // player -35° → AI +35°
+    Body.setAngle(aiRightFunnelWall, AI_FUNNEL_ANGLE);  // 구멍 오른쪽 끝(x=500)으로 공을 유도
 
     // AI 플리퍼 Bodies (상단, 기존 플리퍼의 y=995 → y=105, 좌우 반전)
     const aiLeftFlipper = Bodies.rectangle(400, 105, 100, 20, {
@@ -593,8 +594,9 @@ function AIPinball({ onReady }) {
     World.add(engine.world, [
       leftWall,
       rightWall,
-      rightWall2,
-      upWall,
+      upWallLeft,
+      upWallRight,
+      aiDeathZone,
       leftFunnelWall,
       rightFunnelWall,
       deathZone,
@@ -611,7 +613,6 @@ function AIPinball({ onReady }) {
       aiRightConstraint,
       plunger,
       plungerShelf,
-      plungerLaneGuide,
       triggerBody
     ]);
 

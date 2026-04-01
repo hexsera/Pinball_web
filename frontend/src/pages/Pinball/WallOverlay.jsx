@@ -15,26 +15,26 @@ function WallOverlay() {
         pointerEvents: 'none'
       }} />
 
-      {/* 오른쪽 내벽(rightWall2): center(630,700), 30×850 → left:615, top:275 */}
-      <div style={{
-        position: 'absolute',
-        top: '275px',
-        left: '615px',
-        width: '30px',
-        height: '850px',
-        background: 'linear-gradient(to left, #0a0a1a, #1a1a3e)',
-        borderLeft: '3px solid #00d4ff',
-        boxShadow: 'inset 4px 0 12px rgba(0,212,255,0.3), -4px 0 15px rgba(0,212,255,0.4), inset 8px 0 0 0 #D1A47A',
-        zIndex: 1,
-        pointerEvents: 'none'
-      }} />
-
-      {/* 천장(upWall): center(350,20), 700×40 → left:0, top:0 */}
+      {/* 천장 왼쪽(upWallLeft): center(100,20), 200×40 → left:0, top:0 */}
       <div style={{
         position: 'absolute',
         top: 0,
         left: 0,
-        width: '700px',
+        width: '200px',
+        height: '40px',
+        background: 'linear-gradient(to bottom, #0a0a1a, #1a1a3e)',
+        borderBottom: '3px solid #00d4ff',
+        boxShadow: 'inset 0 -4px 12px rgba(0,212,255,0.3), 0 4px 15px rgba(0,212,255,0.4), inset 0 -8px 0 0 #D1A47A',
+        zIndex: 1,
+        pointerEvents: 'none'
+      }} />
+
+      {/* 천장 오른쪽(upWallRight): center(550,20), 300×40 → left:400, top:0 */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: '400px',
+        width: '300px',
         height: '40px',
         background: 'linear-gradient(to bottom, #0a0a1a, #1a1a3e)',
         borderBottom: '3px solid #00d4ff',
@@ -78,22 +78,6 @@ function WallOverlay() {
         pointerEvents: 'none'
       }} />
 
-      {/* plungerLaneGuide: center(660,150), 60×10, rotate(40deg)
-          top: 150 - 5 = 145, left: 660 - 30 = 630 */}
-      <div style={{
-        position: 'absolute',
-        top: '145px',
-        left: '630px',
-        width: '60px',
-        height: '10px',
-        background: '#1a1a3e',
-        border: '1px solid #00d4ff',
-        boxShadow: '0 0 6px rgba(0,212,255,0.4)',
-        transform: 'rotate(40deg)',
-        transformOrigin: 'center center',
-        zIndex: 1,
-        pointerEvents: 'none'
-      }} />
     </>
   );
 }
