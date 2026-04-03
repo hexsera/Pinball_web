@@ -101,11 +101,11 @@ app.include_router(notices.router, prefix="/api/v1/notices", tags=["Notices"])
 라우터 경로는 `""` (빈 문자열) 으로 시작한다 — `redirect_slashes=False` 설정 때문에 `"/"`로 시작하면 307 리다이렉트 발생.
 
 ```
-GET    /api/v1/notices?skip=0&limit=10  → 페이지 목록 (인증 불필요) → { items, total }
-GET    /api/v1/notices/{id}             → 상세 조회 (인증 불필요)
-POST   /api/v1/notices                  → 작성 (admin only)
-PUT    /api/v1/notices/{id}             → 수정 (admin only)
-DELETE /api/v1/notices/{id}             → 삭제 (admin only)
+GET    /api/v1/notices?skip=0&limit=10  → 페이지 목록 → { items, total }
+GET    /api/v1/notices/{id}             → 상세 조회
+POST   /api/v1/notices                  → 작성 (인증 없음)
+PUT    /api/v1/notices/{id}             → 수정 (인증 없음)
+DELETE /api/v1/notices/{id}             → 삭제 (인증 없음)
 ```
 
 라우터 코드 패턴:
@@ -122,13 +122,9 @@ router = APIRouter()
 
 ### 4. Admin 권한 검증 방식
 
-현재 프로젝트에는 JWT 기반 `get_current_user` 의존성이 없다. 기존 admin 전용 엔드포인트들은 `X-API-Key` 헤더(`verify_api_key`)로 검증한다.
+**권한 검증 없음** — POST/PUT/DELETE 엔드포인트도 인증 헤더 없이 호출 가능하도록 구현한다.
 
-공지사항 API에서 admin 검증은 두 가지 선택지:
-- **A안**: `X-API-Key` 헤더 방식 — 프론트에서 API 키를 헤더에 포함해 요청 (기존 패턴)
-- **B안**: JWT 토큰 파싱 — `Authorization: Bearer <token>`에서 role 추출
-
-현재 프론트(`noticeService.js`)는 인증 헤더 없이 `axios.post`를 바로 호출하므로, 선택한 방식에 맞게 프론트도 수정 필요.
+프론트(`noticeService.js`)는 기존처럼 인증 헤더 없이 `axios.post`를 바로 호출한다.
 
 ### 5. Pydantic 스키마 (`backend/app/schemas/notices.py` 생성)
 
