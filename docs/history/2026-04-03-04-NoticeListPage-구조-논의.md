@@ -17,7 +17,7 @@
 
 | 파일 | 역할 |
 |------|------|
-| `NoticeListPage.jsx` | 목록 표시, admin 글쓰기 버튼 |
+| `NoticeListPage.jsx` | 목록 표시 (10개씩 페이지네이션), admin 글쓰기 버튼, 페이지 번호 버튼 |
 | `NoticeDetailPage.jsx` | 상세 보기 + admin 삭제 버튼 |
 | `NoticeWritePage.jsx` | Tiptap 에디터, 이미지 Base64 업로드, 작성/저장 |
 | `noticeService.js` | API 호출 + 실패 시 IndexedDB fallback |
@@ -35,11 +35,12 @@
 ## 현재 프론트엔드 동작 방식
 
 ```
-API 호출 성공 → 서버 데이터 사용
-API 호출 실패 → IndexedDB fallback (mock 데이터 32개 seed)
+API 호출 성공 → 서버 데이터 사용 ({ items, total } 구조)
+API 호출 실패 → IndexedDB fallback (mock 데이터 32개 seed, 동일한 { items, total } 구조로 반환)
 ```
 
-`noticeService.js`가 try/catch로 API 실패를 감지하고 IndexedDB에서 mock 데이터를 반환한다.  
+`noticeService.js`가 `getNotices(skip, limit)`으로 호출받아 `?skip=0&limit=10` 파라미터를 API에 전달한다.  
+fallback 시에도 `all.slice(skip, skip + limit)`으로 잘라 `{ items, total }` 구조로 반환해 일관성을 유지한다.  
 백엔드 없이도 UI가 동작하도록 임시 구성되어 있는 상태.
 
 ---
@@ -55,7 +56,7 @@ API 호출 실패 → IndexedDB fallback (mock 데이터 32개 seed)
 | POST /api/v1/notices | O | X |
 | PUT /api/v1/notices/:id | O | X (API + UI 모두 미구현) |
 | DELETE /api/v1/notices/:id | O | X |
-| NoticeListPage | O | O |
+| NoticeListPage (페이지네이션 포함) | O | O |
 | NoticeDetailPage | O | O |
 | NoticeWritePage (Tiptap) | O | O |
 | 이미지 Base64 저장 | O | O |
@@ -100,11 +101,11 @@ app.include_router(notices.router, prefix="/api/v1/notices", tags=["Notices"])
 라우터 경로는 `""` (빈 문자열) 으로 시작한다 — `redirect_slashes=False` 설정 때문에 `"/"`로 시작하면 307 리다이렉트 발생.
 
 ```
-GET    /api/v1/notices        → 전체 목록 (인증 불필요)
-GET    /api/v1/notices/{id}   → 상세 조회 (인증 불필요)
-POST   /api/v1/notices        → 작성 (admin only)
-PUT    /api/v1/notices/{id}   → 수정 (admin only)
-DELETE /api/v1/notices/{id}   → 삭제 (admin only)
+GET    /api/v1/notices?skip=0&limit=10  → 페이지 목록 (인증 불필요) → { items, total }
+GET    /api/v1/notices/{id}             → 상세 조회 (인증 불필요)
+POST   /api/v1/notices                  → 작성 (admin only)
+PUT    /api/v1/notices/{id}             → 수정 (admin only)
+DELETE /api/v1/notices/{id}             → 삭제 (admin only)
 ```
 
 라우터 코드 패턴:
@@ -173,10 +174,11 @@ docker compose exec fastapi alembic upgrade head
 
 ---
 
-## 논의 내용
+## 논의 내용 및 결정사항
 
-(논의 진행 중)
+상세 논의는 [Notice UI 디테일 개선 논의](2026-04-03-05-Notice-UI-디테일-개선-논의.md) 참조.
 
-## 결정사항
-
-(미정)
+**페이지네이션 관련 결정사항 요약** (✅ 구현 완료):
+- API 방식: 오프셋 페이지네이션 (`?skip=0&limit=10`), 응답 구조 `{ items, total }`
+- UI: 페이지 번호 버튼, 5개씩 슬라이딩, `totalPages > 1`일 때만 표시
+- page 상태: URL 쿼리스트링 (`?page=2`), `useSearchParams` 사용

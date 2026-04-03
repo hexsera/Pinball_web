@@ -4,10 +4,13 @@ import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
 
 vi.mock('../services/noticeService', () => ({
-  getNotices: vi.fn().mockResolvedValue([
-    { id: 1, title: '첫 번째 공지', created_at: '2026-01-15T00:00:00' },
-    { id: 2, title: '두 번째 공지', created_at: '2026-02-20T00:00:00' },
-  ]),
+  getNotices: vi.fn().mockResolvedValue({
+    items: [
+      { id: 1, title: '첫 번째 공지', created_at: '2026-01-15T00:00:00' },
+      { id: 2, title: '두 번째 공지', created_at: '2026-02-20T00:00:00' },
+    ],
+    total: 2,
+  }),
 }));
 
 import { getNotices } from '../services/noticeService';
@@ -21,12 +24,12 @@ vi.mock('react-router-dom', async (importOriginal) => {
 const ADMIN_USER = { user_id: 1, nickname: '관리자', role: 'admin', email: 'admin@test.com' };
 const NORMAL_USER = { user_id: 2, nickname: '일반유저', role: 'user', email: 'user@test.com' };
 
-function renderWithAuth(userValue) {
+function renderWithAuth(userValue, initialEntry = '/') {
   if (userValue) {
     localStorage.setItem('user', JSON.stringify(userValue));
   }
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <AuthProvider>
         <NoticeListPage />
       </AuthProvider>
@@ -39,10 +42,13 @@ import NoticeListPage from '../pages/Notice/NoticeListPage';
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
-  getNotices.mockResolvedValue([
-    { id: 1, title: '첫 번째 공지', created_at: '2026-01-15T00:00:00' },
-    { id: 2, title: '두 번째 공지', created_at: '2026-02-20T00:00:00' },
-  ]);
+  getNotices.mockResolvedValue({
+    items: [
+      { id: 1, title: '첫 번째 공지', created_at: '2026-01-15T00:00:00' },
+      { id: 2, title: '두 번째 공지', created_at: '2026-02-20T00:00:00' },
+    ],
+    total: 2,
+  });
 });
 
 // ──────────────────────────────────────────
@@ -111,5 +117,56 @@ describe('NoticeListPage 네비게이션', () => {
     });
     fireEvent.click(screen.getByText('첫 번째 공지'));
     expect(mockNavigate).toHaveBeenCalledWith('/notice/1');
+  });
+});
+
+// ──────────────────────────────────────────
+// 페이지네이션
+// ──────────────────────────────────────────
+describe('NoticeListPage 페이지네이션', () => {
+  it('total 기반으로 페이지 버튼이 렌더링된다', async () => {
+    getNotices.mockResolvedValue({
+      items: Array.from({ length: 10 }, (_, i) => ({
+        id: i + 1, title: `공지 ${i + 1}`, created_at: '2026-01-01T00:00:00',
+      })),
+      total: 25,
+    });
+    renderWithAuth(null);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '2' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '3' })).toBeInTheDocument();
+    });
+  });
+
+  it('페이지 버튼 클릭 시 해당 페이지 데이터를 불러온다', async () => {
+    getNotices.mockResolvedValue({
+      items: Array.from({ length: 10 }, (_, i) => ({
+        id: i + 1, title: `공지 ${i + 1}`, created_at: '2026-01-01T00:00:00',
+      })),
+      total: 25,
+    });
+    renderWithAuth(null);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2' }));
+    await waitFor(() => {
+      expect(getNotices).toHaveBeenCalledWith(10, 10);
+    });
+  });
+
+  it('현재 페이지 버튼이 contained variant로 활성화 표시된다', async () => {
+    getNotices.mockResolvedValue({
+      items: Array.from({ length: 10 }, (_, i) => ({
+        id: i + 1, title: `공지 ${i + 1}`, created_at: '2026-01-01T00:00:00',
+      })),
+      total: 25,
+    });
+    renderWithAuth(null, '/?page=2');
+    await waitFor(() => {
+      const btn2 = screen.getByRole('button', { name: '2' });
+      expect(btn2).toHaveClass('MuiButton-contained');
+    });
   });
 });

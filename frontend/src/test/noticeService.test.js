@@ -12,16 +12,16 @@ beforeEach(() => {
 // getNotices
 // ──────────────────────────────────────────
 describe('getNotices', () => {
-  it('GET /api/v1/notices를 호출한다', async () => {
-    axios.get.mockResolvedValue({ data: [] });
-    await getNotices();
-    expect(axios.get).toHaveBeenCalledWith('/api/v1/notices');
+  it('GET /api/v1/notices를 skip, limit 파라미터와 함께 호출한다', async () => {
+    axios.get.mockResolvedValue({ data: { items: [], total: 0 } });
+    await getNotices(0, 10);
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/notices', { params: { skip: 0, limit: 10 } });
   });
 
-  it('서버 응답 data 배열을 반환한다', async () => {
-    const mockData = [{ id: 1, title: '공지1' }];
+  it('서버 응답의 { items, total } 구조를 반환한다', async () => {
+    const mockData = { items: [{ id: 1, title: '공지1' }], total: 1 };
     axios.get.mockResolvedValue({ data: mockData });
-    const result = await getNotices();
+    const result = await getNotices(0, 10);
     expect(result).toEqual(mockData);
   });
 });

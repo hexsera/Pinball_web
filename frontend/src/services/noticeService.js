@@ -1,13 +1,17 @@
 import axios from 'axios';
 import { seedNoticesIfEmpty, getAllNoticesFromDB, getNoticeFromDB } from '../utils/noticeIndexDB';
 
-export const getNotices = async () => {
+export const getNotices = async (skip = 0, limit = 10) => {
   try {
-    const res = await axios.get('/api/v1/notices');
-    return res.data;
+    const res = await axios.get('/api/v1/notices', { params: { skip, limit } });
+    return res.data; // { items, total }
   } catch {
     await seedNoticesIfEmpty();
-    return getAllNoticesFromDB();
+    const all = await getAllNoticesFromDB();
+    return {
+      items: all.slice(skip, skip + limit),
+      total: all.length,
+    };
   }
 };
 
