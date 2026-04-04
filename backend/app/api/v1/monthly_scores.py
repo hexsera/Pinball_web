@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 
 from datetime import datetime
 from calendar import monthrange
+import json
+
+from app.redis_client import redis_client
 
 from app.api.deps import get_db
 from app.schemas.monthly_score import (
@@ -20,6 +23,9 @@ sys.path.insert(0, '/code')
 from models import User, MonthlyScore
 
 router = APIRouter()
+
+CACHE_KEY = "monthly_scores:current_month"
+CACHE_TTL = 30  # 초
 
 
 def get_current_month_range():
@@ -78,6 +84,14 @@ def get_monthly_scores(
     db: Session = Depends(get_db)
 ):
     """전체 월간 점수 조회 (score 내림차순)"""
+    try:
+        cached = redis_client.get(CACHE_KEY)
+        if cached:
+            data = json.loads(cached)
+            return MonthlyScoreListResponse(**data)
+    except Exception:
+        pass  # Redis 장애 시 DB 직접 조회로 폴백
+
     start, end = get_current_month_range()
 
     scores = db.query(MonthlyScore).filter(
@@ -87,10 +101,12 @@ def get_monthly_scores(
         MonthlyScore.score.desc()
     ).all()
 
-    return MonthlyScoreListResponse(
-        scores=scores,
-        total=len(scores)
-    )
+    result = MonthlyScoreListResponse(scores=scores, total=len(scores))
+    try:
+        redis_client.setex(CACHE_KEY, CACHE_TTL, result.model_dump_json())
+    except Exception:
+        pass  # 캐시 저장 실패해도 응답은 정상 반환
+    return result
 
 
 @router.get("/{user_id}", response_model=MonthlyScoreResponse)
