@@ -183,8 +183,12 @@ Phase 1과 동일하게 Redis 연산은 `try/except`로 감싼다.
 
 ## 완료 체크리스트
 
-- [ ] `POST` 후 `ZREVRANGEBYSCORE`로 점수가 즉시 반영되는지 확인
-- [ ] `GET` 응답이 DB 쿼리 없이 Redis만으로 반환되는지 확인 (FastAPI 로그)
-- [ ] Redis 재시작 후 첫 `GET` 시 워밍업이 실행되고 정상 응답 반환되는지 확인
-- [ ] `DELETE` 후 랭킹에서 해당 사용자가 제거되는지 확인
-- [ ] Redis 중지 상태에서 `GET`이 DB 폴백으로 200 반환되는지 확인
+- [x] `POST` 후 `ZREVRANGEBYSCORE`로 점수가 즉시 반영되는지 확인
+- [x] `GET` 응답이 DB 쿼리 없이 Redis만으로 반환되는지 확인 (`created_at: 2026-04-01`로 고정되어 Redis 경로 확인)
+- [x] Redis 재시작 후 첫 `GET` 시 워밍업이 실행되고 정상 응답 반환되는지 확인
+- [x] `DELETE` 후 랭킹에서 해당 사용자가 제거되는지 확인
+- [x] Redis 중지 상태에서 `GET`이 DB 폴백으로 200 반환되는지 확인
+
+## 구현 중 발견한 이슈
+
+- **`m.decode()` AttributeError**: `redis_client`가 `decode_responses=True`로 설정되어 있어 member가 `bytes`가 아닌 `str`로 반환됨. `m.decode().split()` → `m.split()`으로 수정.

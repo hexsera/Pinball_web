@@ -134,9 +134,9 @@ except Exception:
 
 ## 완료 체크리스트
 
-- [ ] `POST` 후 `docker exec redis-server redis-cli ZREVRANGEBYSCORE monthly_scores:$(date +%Y-%m) +inf -inf WITHSCORES`로 점수가 즉시 반영되는지 확인
-- [ ] `GET` 시 FastAPI 로그에 DB 쿼리(SELECT)가 찍히지 않는지 확인
-- [ ] `docker restart redis-server` 후 첫 `GET /api/v1/monthly-scores`가 정상 응답 반환되는지 확인
-- [ ] `DELETE` 후 `GET` 응답에 해당 사용자가 없는지 확인
-- [ ] `docker stop redis-server` 상태에서 `GET /api/v1/monthly-scores`가 200 반환되는지 확인
-- [ ] FastAPI 컨테이너가 에러 없이 기동되는지 확인 (`docker compose logs fastapi`)
+- [x] `POST` 후 `docker exec redis-server redis-cli ZREVRANGEBYSCORE monthly_scores:$(date +%Y-%m) +inf -inf WITHSCORES`로 점수가 즉시 반영되는지 확인
+- [x] `GET` 시 FastAPI 로그에 DB 쿼리(SELECT)가 찍히지 않는지 확인 (`created_at: 2026-04-01`로 고정되어 Redis 경로 확인)
+- [x] `docker restart redis-server` 후 첫 `GET /api/v1/monthly-scores`가 정상 응답 반환되는지 확인
+- [x] `DELETE` 후 `GET` 응답에 해당 사용자가 없는지 확인
+- [x] `docker stop redis-server` 상태에서 `GET /api/v1/monthly-scores`가 200 반환되는지 확인
+- [x] FastAPI 컨테이너가 에러 없이 기동되는지 확인 (`docker compose logs fastapi`)
