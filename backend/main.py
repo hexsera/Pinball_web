@@ -3,7 +3,7 @@ from fastapi import FastAPI
 # 새 구조의 모듈 import
 from app.db.session import engine, SessionLocal, wait_for_db
 from app.db.base import Base
-from app.api.v1 import users, auth, monthly_scores, game_visits, friends, chat, pinball_ai, game_sessions
+from app.api.v1 import users, auth, monthly_scores, game_visits, friends, chat, pinball_ai, game_sessions, notices
 
 #---
 from sqlalchemy import text
@@ -52,6 +52,7 @@ app.include_router(friends.router, prefix="/api/friend-requests", tags=["Friends
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
 app.include_router(pinball_ai.router, prefix="/api/v1/pinball_ai", tags=["Pinball AI"])
 app.include_router(game_sessions.router, prefix="/api/v1/game-sessions", tags=["Game Sessions"])
+app.include_router(notices.router, prefix="/api/v1/notices", tags=["Notices"])
 
 
 # 헬스 체크 엔드포인트

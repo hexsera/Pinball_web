@@ -97,8 +97,8 @@ def get_monthly_scores(db: Session = Depends(get_db)):
 
 ## 완료 체크리스트
 
-- [ ] `GET /api/v1/monthly-scores` 첫 요청 시 DB를 조회하고 Redis에 캐시가 저장되는지 확인 (`docker compose exec redis-server redis-cli get monthly_scores:current_month`)
-- [ ] 30초 이내 재요청 시 DB 쿼리 없이 Redis에서 응답이 반환되는지 확인 (FastAPI 로그에 DB 쿼리 없음)
-- [ ] 30초 후 캐시가 자동 만료되어 다음 요청 시 DB를 재조회하는지 확인
-- [ ] Redis 컨테이너 중지 상태에서도 `GET /api/v1/monthly-scores`가 200 응답을 반환하는지 확인
-- [ ] 에러 없이 FastAPI 컨테이너가 정상 기동되는지 확인 (`docker compose logs fastapi`)
+- [x] `GET /api/v1/monthly-scores` 첫 요청 시 DB를 조회하고 Redis에 캐시가 저장되는지 확인 (`docker compose exec redis-server redis-cli get monthly_scores:current_month`)
+- [x] 30초 이내 재요청 시 DB 쿼리 없이 Redis에서 응답이 반환되는지 확인 (FastAPI 로그에 DB 쿼리 없음)
+- [x] 30초 후 캐시가 자동 만료되어 다음 요청 시 DB를 재조회하는지 확인
+- [x] Redis 컨테이너 중지 상태에서도 `GET /api/v1/monthly-scores`가 200 응답을 반환하는지 확인
+- [x] 에러 없이 FastAPI 컨테이너가 정상 기동되는지 확인 (`docker compose logs fastapi`)
