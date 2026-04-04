@@ -41,6 +41,7 @@ services:
     image: redis:8.6.2
     container_name: redis-server
     restart: always
+    command: redis-server --save 3600 1 --save 300 100 --save 60 10000 --loglevel warning
     ports:
       - "6379:6379"
     volumes:
