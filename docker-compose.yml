@@ -13,8 +13,8 @@ services:
       - ./traefik.yml:/traefik.yml:ro
       - ./acme.json:/acme.json
     environment:
-      - CF_API_EMAIL=hexsera78049@gmail.com
-      - CF_DNS_API_TOKEN=WPJroeKGR9_QA6eRkPsuraTJG2sXEvCfO_QRPVxF
+      - CF_API_EMAIL=${CF_API_EMAIL}
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     networks:
       - web
 
@@ -74,10 +74,10 @@ services:
     container_name: mysql-server
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: hexrootpoint
-      MYSQL_DATABASE: hexdb
-      MYSQL_USER: hexsera
-      MYSQL_PASSWORD: hexpoint
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -95,9 +95,9 @@ services:
     container_name: postgres-server
     restart: always
     environment:
-      POSTGRES_DB: hexdb
-      POSTGRES_USER: hexsera
-      POSTGRES_PASSWORD: hexpoint
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:

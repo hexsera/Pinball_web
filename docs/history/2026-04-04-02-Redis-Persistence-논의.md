@@ -49,27 +49,44 @@ Redis는 두 가지 디스크 저장 방식을 제공한다.
 
 ## 결정 사항
 
-- RDB 방식으로 시작하는 것이 적합하다. 게임 세션은 임시 데이터이므로 일부 유실은 허용 가능하고, 설정이 단순하다.
-- docker-compose.yml의 redis 서비스에 `--save` 옵션과 volume 마운트를 추가하여 적용한다.
-- AOF는 추후 필요 시 추가 검토한다.
+- **Persistence 방식: RDB** 채택
+  - 게임 세션은 TTL 2시간의 임시 데이터이므로 스냅샷 간격 유실은 허용 가능
+  - 설정이 단순하고 복구 속도가 빠름
+  - AOF, RDB+AOF는 사용하지 않음
+
+---
+
+## 추가 결정 사항
+
+- **스냅샷 주기**: Redis 기본 권장값 사용
+  - `save 3600 1` — 1시간 동안 1번 이상 변경 시
+  - `save 300 100` — 5분 동안 100번 이상 변경 시
+  - `save 60 10000` — 1분 동안 10000번 이상 변경 시
+- **볼륨**: named volume 방식 (`redis-data:/data`)
+  - 이미 `docker-compose.yml`에 `redis-data` named volume 선언되어 있음
+- **랭킹 Sorted Set**: RDB에 함께 저장됨 (특정 키 제외 불가)
+  - PostgreSQL이 원본이므로 복원 여부와 무관하게 데이터 정합성 유지
+  - 오히려 재시작 직후 캐시 히트 가능 → PostgreSQL 부하 감소 이점
 
 ---
 
 ## 구현 방향 (다음 단계)
 
-`docker-compose.yml` redis 서비스에 아래 내용 적용:
+`docker-compose.yml` redis 서비스에 `command` 추가:
 
 ```yaml
 redis:
-  image: redis:7-alpine
-  command: redis-server --save 60 1 --loglevel warning
+  image: redis:8.6.2
+  container_name: redis-server
+  restart: always
+  command: redis-server --save 3600 1 --save 300 100 --save 60 10000 --loglevel warning
+  ports:
+    - "6379:6379"
   volumes:
-    - redis_data:/data
-  # ...
-
-volumes:
-  redis_data:
+    - redis-data:/data
+  networks:
+    - web
 ```
 
-- `--save 60 1`: 60초 동안 1번 이상 변경 시 스냅샷 저장
-- `/data` 볼륨 마운트: 컨테이너 재시작 후에도 `dump.rdb` 유지
+- `command` 한 줄 추가가 전부 (볼륨은 이미 설정되어 있음)
+- `/data`에 `dump.rdb` 저장 → 컨테이너 재시작 후 자동 복원
