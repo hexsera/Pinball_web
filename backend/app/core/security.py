@@ -1,4 +1,5 @@
 # fastapi/app/core/security.py
+import secrets
 from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
@@ -18,6 +19,10 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_refresh_token() -> str:
+    return secrets.token_urlsafe(64)
 
 
 def create_access_token(data: dict) -> str:

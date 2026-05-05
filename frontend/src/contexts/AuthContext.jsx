@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import api from '../lib/api';
 
 export const AuthContext = createContext();
 
@@ -24,11 +25,15 @@ export function AuthProvider({ children }) {
     useAuthStore.getState().setAccessToken(accessToken);
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsLoggedIn(false);
-    localStorage.removeItem('user');
-    useAuthStore.getState().clearAccessToken();
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout', {}, { withCredentials: true });
+    } finally {
+      setUser(null);
+      setIsLoggedIn(false);
+      localStorage.removeItem('user');
+      useAuthStore.getState().clearAccessToken();
+    }
   };
 
   return (
