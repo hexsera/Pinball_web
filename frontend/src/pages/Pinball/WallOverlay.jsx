@@ -15,13 +15,13 @@ function WallOverlay() {
         pointerEvents: 'none'
       }} />
 
-      {/* 왼쪽 깔대기: center(147.3,915), 262×20, rotate(35deg)
-          top: 915 - 10 = 905, left: 147.3 - 131 = 16.3 */}
+      {/* 왼쪽 깔대기: center(105,915), 260×20, rotate(35deg)
+          top: 915 - 10 = 905, left: 105 - 130 = -25 */}
       <div style={{
         position: 'absolute',
         top: '905px',
-        left: '16.3px',
-        width: '262px',
+        left: '-25px',
+        width: '260px',
         height: '20px',
         background: 'linear-gradient(to right, #1a0a2e, #2e1a4e)',
         border: '2px solid #e94560',
@@ -32,13 +32,13 @@ function WallOverlay() {
         pointerEvents: 'none'
       }} />
 
-      {/* 오른쪽 깔대기: center(552.8,925), 262×20, rotate(-35deg)
-          top: 925 - 10 = 915, left: 552.8 - 131 = 421.8 */}
+      {/* 오른쪽 깔대기: center(540,925), 220×20, rotate(-35deg)
+          top: 925 - 10 = 915, left: 540 - 110 = 430 */}
       <div style={{
         position: 'absolute',
         top: '915px',
-        left: '421.8px',
-        width: '262px',
+        left: '430px',
+        width: '220px',
         height: '20px',
         background: 'linear-gradient(to left, #1a0a2e, #2e1a4e)',
         border: '2px solid #e94560',

@@ -154,9 +154,12 @@ function Pinball({ onReady }) {
     }
   };
 
-  // 터치 디바이스 감지
+  // 터치 디바이스 감지 (터치 지원 + 모바일 화면 너비 768px 이하)
   useEffect(() => {
-    setIsTouchDevice(navigator.maxTouchPoints > 0);
+    const check = () => setIsTouchDevice(navigator.maxTouchPoints > 0 && window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   // 마운트 시 세션 복원
