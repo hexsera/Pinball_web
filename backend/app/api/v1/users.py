@@ -5,7 +5,7 @@ from typing import List
 from typing import Optional
 from fastapi import Query
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
 from app.core.security import hash_password
 from app.schemas.user import (
     UserCreateRequest,
@@ -86,7 +86,8 @@ def get_user(
 def update_user(
     user_id: int,
     user_update: UserUpdateRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """사용자 정보 수정"""
     user = db.query(User).filter(User.id == user_id).first()
@@ -123,7 +124,8 @@ def update_user(
 @router.delete("/{user_id}", response_model=DeleteResponse)
 def delete_user(
     user_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """사용자 삭제"""
     user = db.query(User).filter(User.id == user_id).first()

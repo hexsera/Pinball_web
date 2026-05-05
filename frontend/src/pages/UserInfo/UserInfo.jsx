@@ -14,7 +14,7 @@ import {
   Container,
 } from '@mui/material';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import api from '../../lib/api';
 import DashboardHeader from '../Dashboard/DashboardHeader';
 import DashboardSidebar from '../Dashboard/DashboardSidebar';
 
@@ -48,9 +48,7 @@ function UserInfo() {
     const fetchUserInfo = async () => {
       console.log('회원 정보 API 호출 시작');
       try {
-        const response = await axios.get(`/api/v1/users/${user.id}`, {
-          headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
-        });
+        const response = await api.get(`/users/${user.id}`);
         console.log('회원 정보 API 호출 성공:', response.data);
         setUserInfo({
           email: response.data.email,
@@ -102,13 +100,7 @@ function UserInfo() {
 
       console.log('회원 정보 수정 API 호출 시작:', updateData);
 
-      const response = await axios.put(
-        `/api/v1/users/${user.id}`,
-        updateData,
-        {
-          headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
-        }
-      );
+      const response = await api.put(`/users/${user.id}`, updateData);
 
       console.log('회원 정보 수정 API 호출 성공:', response.data);
 
@@ -153,9 +145,7 @@ function UserInfo() {
     try {
       // 회원 삭제 (DELETE /api/v1/users/{user_id})
       console.log('회원 삭제 API 호출 시작');
-      await axios.delete(`/api/v1/users/${user.id}`, {
-        headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
-      });
+      await api.delete(`/users/${user.id}`);
       console.log('회원 삭제 API 호출 성공');
 
       // 로그아웃 및 메인 페이지 이동

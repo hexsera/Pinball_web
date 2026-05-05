@@ -71,8 +71,10 @@ function Register() {
           // 성공: 201 상태코드와 LoginResponse 반환
           if (response.status === 201) {
             const data = response.data;
-            login({ id: data.user_id, name: data.nickname, role: data.role, email: data.email });
-            localStorage.setItem('access_token', data.access_token);
+            login(
+              { id: data.user_id, name: data.nickname, role: data.role, email: data.email },
+              data.access_token
+            );
             navigate('/');
           }
         } catch (error) {

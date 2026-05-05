@@ -70,6 +70,43 @@ def client(db_session):
 
 
 @pytest.fixture(scope="function")
+def auth_client(db_session):
+    """JWT 토큰이 자동 부착되는 테스트용 클라이언트"""
+    from models import User
+    from datetime import date
+    from app.core.security import hash_password, create_access_token
+    from app.api.deps import get_current_user
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    # 테스트용 유저 생성
+    test_user = User(
+        email="auth_test@test.com",
+        nickname="AuthTestUser",
+        password=hash_password("testpass"),
+        birth_date=date(2000, 1, 1),
+        role="user",
+    )
+    db_session.add(test_user)
+    db_session.commit()
+    db_session.refresh(test_user)
+
+    token = create_access_token({"sub": str(test_user.id), "email": test_user.email, "role": test_user.role})
+
+    # get_current_user 의존성을 테스트 유저로 고정
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: test_user
+
+    with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
 def sample_users(db_session):
     """테스트용 사용자 2명 생성"""
     from models import User

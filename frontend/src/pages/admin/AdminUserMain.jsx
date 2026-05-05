@@ -3,7 +3,7 @@ import { Box, Toolbar, Container, Typography, IconButton, Dialog, DialogTitle, D
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
-import axios from 'axios';
+import api from '../../lib/api';
 
 const drawerWidth = 260;
 
@@ -17,7 +17,7 @@ function AdminUserMain() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('/api/v1/users');
+      const response = await api.get('/users');
       setUsers(response.data);
       console.log(response.data);
     } catch (error) {
@@ -30,7 +30,7 @@ function AdminUserMain() {
   const handleEditClick = async (user) => {
     setSelectedUser(user);
     try {
-      const response = await axios.get(`/api/v1/users/${user.id}`);
+      const response = await api.get(`/users/${user.id}`);
       const data = response.data;
       setEditForm({ nickname: data.nickname, birth_date: data.birth_date, password: '', role: data.role });
     } catch (error) {
@@ -60,9 +60,7 @@ function AdminUserMain() {
     const body = { ...editForm };
     if (!body.password) delete body.password;
     try {
-      await axios.put(`/api/v1/users/${selectedUser.id}`, body, {
-        headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
-      });
+      await api.put(`/users/${selectedUser.id}`, body);
       handleDialogClose();
       await fetchUsers();
     } catch (error) {
@@ -73,9 +71,7 @@ function AdminUserMain() {
   const handleDelete = async () => {
     if (!selectedUser) return;
     try {
-      await axios.delete(`/api/v1/users/${selectedUser.id}`, {
-        headers: { 'X-API-Key': 'hexsera-secret-api-key-2026' }
-      });
+      await api.delete(`/users/${selectedUser.id}`);
       handleDeleteDialogClose();
       await fetchUsers();
     } catch (error) {

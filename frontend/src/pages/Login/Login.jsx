@@ -31,13 +31,10 @@ function Login() {
           code: codeResponse.code,
         });
         if (res.status === 200) {
-          login({
-            id: res.data.user_id,
-            name: res.data.nickname,
-            role: res.data.role,
-            email: res.data.email,
-          });
-          localStorage.setItem('access_token', res.data.access_token);
+          login(
+            { id: res.data.user_id, name: res.data.nickname, role: res.data.role, email: res.data.email },
+            res.data.access_token
+          );
           navigate(res.data.role === 'admin' ? '/admin' : '/');
         }
       } catch (error) {
@@ -61,8 +58,10 @@ function Login() {
       // 로그인 성공
       if (response.status === 200) {
         console.log('로그인 성공:', response.data);
-        login({ id: response.data.user_id, name: response.data.nickname, role: response.data.role, email: response.data.email });
-        localStorage.setItem('access_token', response.data.access_token);
+        login(
+          { id: response.data.user_id, name: response.data.nickname, role: response.data.role, email: response.data.email },
+          response.data.access_token
+        );
         setLoginError(false);
 
         // role 기반 페이지 이동

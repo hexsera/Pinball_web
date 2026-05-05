@@ -1,9 +1,9 @@
 import sys
 sys.path.insert(0, '/code')
-from models import Notice
+from models import Notice, User
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
 from app.schemas.notices import (
     NoticeCreateRequest, NoticeResponse, NoticeListResult
 )
@@ -26,9 +26,14 @@ def get_notice(notice_id: int, db: Session = Depends(get_db)):
     return notice
 
 
+
 @router.post("", response_model=NoticeResponse)
-def create_notice(body: NoticeCreateRequest, db: Session = Depends(get_db)):
-    notice = Notice(title=body.title, content=body.content, author_id=1)
+def create_notice(
+    body: NoticeCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    notice = Notice(title=body.title, content=body.content, author_id=current_user.id)
     db.add(notice)
     db.commit()
     db.refresh(notice)
@@ -36,7 +41,11 @@ def create_notice(body: NoticeCreateRequest, db: Session = Depends(get_db)):
 
 
 @router.delete("/{notice_id}")
-def delete_notice(notice_id: int, db: Session = Depends(get_db)):
+def delete_notice(
+    notice_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     notice = db.query(Notice).filter(Notice.id == notice_id).first()
     if not notice:
         raise HTTPException(status_code=404, detail="Notice not found")

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
 
 export const AuthContext = createContext();
 
@@ -7,7 +8,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 페이지 로드할 때 로그인 정보 확인
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -17,19 +17,18 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  // 로그인 함수
-  const login = (userData) => {
+  const login = (userData, accessToken) => {
     setUser(userData);
     setIsLoggedIn(true);
     localStorage.setItem('user', JSON.stringify(userData));
+    useAuthStore.getState().setAccessToken(accessToken);
   };
 
-  // 로그아웃 함수
   const logout = () => {
     setUser(null);
     setIsLoggedIn(false);
     localStorage.removeItem('user');
-    localStorage.removeItem('access_token');
+    useAuthStore.getState().clearAccessToken();
   };
 
   return (
