@@ -84,7 +84,7 @@ docker cp frontend/dist/. nginx-server:/etc/nginx/html/
 
 ### 주요 설계 결정
 
-**인증**: localStorage 기반 세션. 로그인 시 `{user_id, email, nickname, role}` 반환.
+**인증**: JWT Bearer + HttpOnly Refresh Token 쿠키 방식. Access Token은 메모리(Zustand)에만 저장, Refresh Token은 Redis + HttpOnly 쿠키로 관리. 앱 시작 시 `/auth/refresh`로 Access Token 복원. `get_current_user`는 DB 조회 없이 JWT 서명 검증만 수행(Stateless), payload에 `{sub, email, role, nickname}` 포함.
 
 **HTTPS / 리다이렉트 문제**: Mixed Content 오류 방지를 위해 FastAPI에 `redirect_slashes=False` 설정, 모든 라우터 경로를 `"/"`가 아닌 `""`로 지정해 307 리다이렉트를 차단.
 

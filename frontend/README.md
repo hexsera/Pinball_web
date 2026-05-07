@@ -59,13 +59,13 @@ src/
 ├── main.jsx                   # Vite 엔트리포인트
 │
 ├── store/
-│   └── authStore.js           # Zustand Access Token 스토어 (localStorage 백업, getState()로 인터셉터에서 접근)
+│   └── authStore.js           # Zustand Access Token 스토어 (메모리 전용, getState()로 인터셉터에서 접근)
 │
 ├── lib/
-│   └── api.js                 # axios 공용 인스턴스 — Bearer 토큰 자동 부착, 401 시 /auth/refresh 후 재시도
+│   └── api.js                 # axios 공용 인스턴스 — Bearer 토큰 자동 부착, 401 시 /auth/refresh 후 재시도 (동시 401 큐잉으로 중복 refresh 방지)
 │
 ├── contexts/
-│   ├── AuthContext.jsx        # 전역 인증 상태 (isLoggedIn, user, login, logout). useAuth() 훅
+│   ├── AuthContext.jsx        # 전역 인증 상태 (isLoggedIn, user, login, logout). 앱 시작 시 /auth/refresh로 Access Token 복원. useAuth() 훅
 │   └── index.js               # AuthContext 단축 export
 │
 ├── components/

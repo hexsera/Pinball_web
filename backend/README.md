@@ -49,10 +49,10 @@ app/
 ├── __init__.py
 ├── redis_client.py      # Redis 연결 클라이언트 (host: redis-server, port: 6379, decode_responses=True)
 ├── api/
-│   ├── deps.py          # get_db() — DB 세션 의존성; get_current_user() — JWT Bearer 검증 의존성
+│   ├── deps.py          # get_db() — DB 세션 의존성; get_current_user() — JWT 서명 검증 후 payload dict 반환 (Stateless, DB 조회 없음)
 │   └── v1/
 │       ├── __init__.py  # 모든 v1 라우터 export
-│       ├── auth.py      # POST /api/v1/login, /register, /auth/refresh, /auth/logout
+│       ├── auth.py      # POST /api/v1/login, /register, /auth/refresh, /auth/logout — Access Token payload에 nickname 포함
 │       ├── users.py     # CRUD /api/v1/users (PUT·DELETE는 JWT 인증 필요)
 │       ├── monthly_scores.py  # /api/v1/monthly-scores (월간 점수, Redis Sorted Set 캐시)
 │       ├── game_visits.py     # /api/v1/game_visits (방문 기록)
