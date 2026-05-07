@@ -58,6 +58,12 @@ src/
 ├── App.jsx                    # 라우팅 정의, AuthProvider 래핑
 ├── main.jsx                   # Vite 엔트리포인트
 │
+├── store/
+│   └── authStore.js           # Zustand Access Token 스토어 (localStorage 백업, getState()로 인터셉터에서 접근)
+│
+├── lib/
+│   └── api.js                 # axios 공용 인스턴스 — Bearer 토큰 자동 부착, 401 시 /auth/refresh 후 재시도
+│
 ├── contexts/
 │   ├── AuthContext.jsx        # 전역 인증 상태 (isLoggedIn, user, login, logout). useAuth() 훅
 │   └── index.js               # AuthContext 단축 export
@@ -143,6 +149,7 @@ src/
 
 ## 주의사항
 
+- 인증이 필요한 API 요청은 반드시 `src/lib/api.js`의 `api` 인스턴스 사용 — `axios` 직접 호출 시 Bearer 토큰 미부착
 - MUI v7은 Grid v2 방식: `item xs md` 대신 `size={{ xs: 12, md: 6 }}` 사용
 - `@mui/x-data-grid`는 CSS import 문제로 Vitest에서 mock 처리 필요
 - Aurora(`ogl` WebGL)는 Vitest 환경에서 mock 처리 필요
