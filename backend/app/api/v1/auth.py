@@ -28,7 +28,7 @@ REFRESH_TTL = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
 
 
 def _create_login_response(user, response: Response) -> LoginResponse:
-    access_token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
+    access_token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role, "nickname": user.nickname})
 
     refresh_token = create_refresh_token()
     redis_client.setex(f"refresh:{refresh_token}", REFRESH_TTL, str(user.id))
@@ -174,7 +174,7 @@ def refresh_access_token(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    new_access = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
+    new_access = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role, "nickname": user.nickname})
     return {"access_token": new_access, "token_type": "bearer"}
 
 
