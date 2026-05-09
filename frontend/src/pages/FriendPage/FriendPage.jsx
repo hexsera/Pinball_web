@@ -14,6 +14,7 @@ import {
   Container,
 } from '@mui/material';
 import axios from 'axios';
+import api from '../../lib/api';
 import DashboardHeader from '../Dashboard/DashboardHeader';
 import DashboardSidebar from '../Dashboard/DashboardSidebar';
 
@@ -151,7 +152,7 @@ function FriendPage() {
     setSearchError(null);
     setHasSearched(false);
     try {
-      const response = await axios.get('/api/v1/users', {
+      const response = await api.get('/users', {
         params: { nickname: searchNickname }
       });
       setSearchResults(response.data);

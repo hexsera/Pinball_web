@@ -5,12 +5,11 @@ from typing import Optional
 
 
 class UserCreateRequest(BaseModel):
-    """범용 사용자 생성 요청 (role 포함)"""
+    """회원가입 요청"""
     email: str
     nickname: str
     password: str
     birth_date: date
-    role: str
 
 
 class UserRegisterRequest(BaseModel):

@@ -5,7 +5,7 @@ from typing import List
 from typing import Optional
 from fastapi import Query
 
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, require_self_or_admin
 from app.core.security import hash_password
 from app.schemas.user import (
     UserCreateRequest,
@@ -27,7 +27,7 @@ def create_user(
     user: UserCreateRequest,
     db: Session = Depends(get_db)
 ):
-    """범용 사용자 생성 엔드포인트 (role 지정 가능)"""
+    """회원가입"""
     # 이메일 중복 검증
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -42,7 +42,7 @@ def create_user(
         nickname=user.nickname,
         password=hash_password(user.password),
         birth_date=user.birth_date,
-        role=user.role
+        role="user",
     )
     db.add(db_user)
     db.commit()
@@ -54,7 +54,8 @@ def create_user(
 @router.get("", response_model=List[UserResponse])
 def get_all_users(
     nickname: Optional[str] = Query(None, description="검색할 닉네임"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _auth: dict = Depends(get_current_user),
 ):
     
     query = db.query(User)
@@ -70,7 +71,8 @@ def get_all_users(
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _auth: dict = Depends(get_current_user),
 ):
     """특정 사용자 조회"""
     user = db.query(User).filter(User.id == user_id).first()
@@ -87,7 +89,7 @@ def update_user(
     user_id: int,
     user_update: UserUpdateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _auth: dict = Depends(require_self_or_admin),
 ):
     """사용자 정보 수정"""
     user = db.query(User).filter(User.id == user_id).first()
@@ -125,7 +127,7 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _auth: dict = Depends(require_self_or_admin),
 ):
     """사용자 삭제"""
     user = db.query(User).filter(User.id == user_id).first()

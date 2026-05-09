@@ -41,3 +41,20 @@ def get_current_user(
     # if not user:
     #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     # return user
+
+
+def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
+    return current_user
+
+
+def require_self_or_admin(
+    user_id: int,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    is_self = int(current_user.get("sub", 0)) == user_id
+    is_admin = current_user.get("role") == "admin"
+    if not (is_self or is_admin):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return current_user

@@ -154,14 +154,17 @@ def delete_user(
 
 ## 완료 체크리스트
 
-- [ ] `POST /api/v1/users` 호출 시 `"role": "admin"`을 포함해도 DB의 role이 `'user'`로 저장된다.
-- [ ] 토큰 없이 `GET /api/v1/users` 호출 시 401 응답이 온다.
-- [ ] 토큰 없이 `GET /api/v1/users/1` 호출 시 401 응답이 온다.
-- [ ] 일반 user 토큰으로 `PUT /api/v1/users/{타인 id}` 호출 시 403 응답이 온다.
-- [ ] 일반 user 토큰으로 `PUT /api/v1/users/{본인 id}` 호출 시 200 응답이 온다.
-- [ ] 일반 user 토큰으로 `DELETE /api/v1/users/{타인 id}` 호출 시 403 응답이 온다.
-- [ ] admin 토큰으로 `PUT /api/v1/users/{타인 id}` 호출 시 200 응답이 온다.
-- [ ] admin 토큰으로 `DELETE /api/v1/users/{타인 id}` 호출 시 200 응답이 온다.
+- [x] `POST /api/v1/users` 호출 시 `"role": "admin"`을 포함해도 DB의 role이 `'user'`로 저장된다.
+- [x] 토큰 없이 `GET /api/v1/users` 호출 시 401 응답이 온다.
+- [x] 토큰 없이 `GET /api/v1/users/1` 호출 시 401 응답이 온다.
+- [x] 일반 user 토큰으로 `PUT /api/v1/users/{타인 id}` 호출 시 403 응답이 온다.
+- [x] 일반 user 토큰으로 `PUT /api/v1/users/{본인 id}` 호출 시 200 응답이 온다.
+- [x] 일반 user 토큰으로 `DELETE /api/v1/users/{타인 id}` 호출 시 403 응답이 온다.
+- [x] admin 토큰으로 `PUT /api/v1/users/{타인 id}` 호출 시 200 응답이 온다.
+- [x] admin 토큰으로 `DELETE /api/v1/users/{타인 id}` 호출 시 200 응답이 온다.
 - [ ] 일반 user 토큰으로 친구 검색(`GET /api/v1/users?nickname=...`) 이 정상 동작한다.
-- [ ] `docker compose exec fastapi pytest` 실행 시 기존 테스트가 깨지지 않는다.
-- [ ] `docker compose logs -f fastapi`에서 500 에러 없이 서버가 정상 기동한다.
+- [x] `docker compose exec fastapi pytest` 실행 시 기존 테스트가 깨지지 않는다.
+- [x] `docker compose logs -f fastapi`에서 500 에러 없이 서버가 정상 기동한다.
+
+
+

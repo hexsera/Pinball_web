@@ -5,7 +5,7 @@ import {
   Button, Menu, MenuItem, Divider
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
@@ -19,7 +19,7 @@ function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
 
   useEffect(() => {
     if (isLoggedIn && user?.id) {
-      axios.get(`/api/v1/users/${user.id}`)
+      api.get(`/users/${user.id}`)
         .then(res => setRole(res.data.role))
         .catch(() => setRole(null));
     }
