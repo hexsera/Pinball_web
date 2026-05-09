@@ -7,6 +7,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import { AdminUserPage, AdminStatisticsPage } from './pages/admin';
+import AdminRoute from './components/AdminRoute';
 import PinballPage from './pages/PinballPage';
 import FriendPage from './pages/FriendPage';
 import UserInfo from './pages/UserInfo';
@@ -30,9 +31,11 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/Register" element={<Register/>} />
             <Route path="/pinball" element={<PinballPage />} />
-            <Route path="/admin" element={<AdminUserPage/>} />
-            <Route path="/admin/users" element={<AdminUserPage/>} />
-            <Route path="/admin/statistics" element={<AdminStatisticsPage/>} />
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminUserPage/>} />
+              <Route path="/admin/users" element={<AdminUserPage/>} />
+              <Route path="/admin/statistics" element={<AdminStatisticsPage/>} />
+            </Route>
             <Route path="/user/friend" element={<FriendPage />} />
             <Route path="/user/account" element={<UserInfo />} />
             <Route path="/notice" element={<NoticeListPage />} />
