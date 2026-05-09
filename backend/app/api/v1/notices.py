@@ -3,7 +3,7 @@ sys.path.insert(0, '/code')
 from models import Notice
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db
 from app.schemas.notices import (
     NoticeCreateRequest, NoticeResponse, NoticeListResult
 )
@@ -31,9 +31,8 @@ def get_notice(notice_id: int, db: Session = Depends(get_db)):
 def create_notice(
     body: NoticeCreateRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
 ):
-    notice = Notice(title=body.title, content=body.content, author_id=int(current_user["sub"]))
+    notice = Notice(title=body.title, content=body.content, author_id=1)
     db.add(notice)
     db.commit()
     db.refresh(notice)
@@ -44,7 +43,6 @@ def create_notice(
 def delete_notice(
     notice_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
 ):
     notice = db.query(Notice).filter(Notice.id == notice_id).first()
     if not notice:

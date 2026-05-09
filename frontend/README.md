@@ -47,9 +47,9 @@ npm test        # Vitest 테스트 실행
 | `/user/account` | `UserInfo` | 회원 정보 조회/수정/탈퇴 (DashboardHeader·DashboardSidebar 직접 조합) |
 | `/login` | `Login` | 로그인 → 성공 시 `/dashboard` 이동 |
 | `/Register` | `Register` | 3단계 회원가입 |
-| `/admin` | `AdminUserPage` | Admin 회원 관리 (진입점, `/admin/users`와 동일) |
-| `/admin/users` | `AdminUserPage` | Admin 회원 관리 |
-| `/admin/statistics` | `AdminStatisticsPage` | Admin 통계 |
+| `/admin` | `AdminUserPage` | Admin 회원 관리 (진입점, `/admin/users`와 동일) — AdminRoute 가드 적용 |
+| `/admin/users` | `AdminUserPage` | Admin 회원 관리 — AdminRoute 가드 적용 |
+| `/admin/statistics` | `AdminStatisticsPage` | Admin 통계 — AdminRoute 가드 적용 |
 
 ## 디렉토리 구조
 
@@ -69,6 +69,7 @@ src/
 │   └── index.js               # AuthContext 단축 export
 │
 ├── components/
+│   ├── AdminRoute.jsx         # 어드민 라우트 가드 — JWT payload 디코딩 후 role=admin만 Outlet 렌더, 비로그인·일반 user → / 리다이렉트
 │   ├── HeaderUserInfo.jsx     # 헤더 우측 유저 정보 (로그인/로그아웃, 아바타 메뉴)
 │   ├── Aurora/
 │   │   └── Aurora.jsx         # WebGL 오로라 배경 애니메이션 (ogl 셰이더). props: colorStops, amplitude, speed, blend
@@ -136,6 +137,7 @@ src/
 │
 └── test/
     ├── setup.js                       # Vitest 전역 설정 (jsdom)
+    ├── AdminRoute.test.jsx            # AdminRoute 가드 테스트 4케이스 (토큰 없음, admin, user, 디코딩 실패)
     ├── AdminUserMain.test.jsx         # AdminUserMain 테스트 17개. @mui/x-data-grid mock 사용
     ├── HomePage.test.jsx              # HomePage 랭킹 API 연동 테스트 4개. Aurora mock 사용
     ├── HeaderUserInfo.test.jsx
@@ -150,6 +152,8 @@ src/
 ## 주의사항
 
 - 인증이 필요한 API 요청은 반드시 `src/lib/api.js`의 `api` 인스턴스 사용 — `axios` 직접 호출 시 Bearer 토큰 미부착
+- `AdminRoute`는 JWT 서명 검증 없이 payload 디코딩만 수행 — 보안 책임은 백엔드에 있음
+- 새로고침 시 `/auth/refresh`로 Access Token 복원 완료 전 `AdminRoute` 가드가 먼저 동작해 `/`로 튕기는 알려진 한계 있음 (후속 작업: 로딩 상태 도입)
 - MUI v7은 Grid v2 방식: `item xs md` 대신 `size={{ xs: 12, md: 6 }}` 사용
 - `@mui/x-data-grid`는 CSS import 문제로 Vitest에서 mock 처리 필요
 - Aurora(`ogl` WebGL)는 Vitest 환경에서 mock 처리 필요

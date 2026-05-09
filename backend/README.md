@@ -49,15 +49,15 @@ app/
 ├── __init__.py
 ├── redis_client.py      # Redis 연결 클라이언트 (host: redis-server, port: 6379, decode_responses=True)
 ├── api/
-│   ├── deps.py          # get_db() — DB 세션 의존성; get_current_user() — JWT 서명 검증 후 payload dict 반환 (Stateless, DB 조회 없음)
+│   ├── deps.py          # get_db() — DB 세션 의존성; get_current_user() — JWT 서명 검증 후 payload dict 반환 (Stateless, DB 조회 없음); require_admin() — admin role 전용; require_self_or_admin() — 본인 또는 admin만 통과
 │   └── v1/
 │       ├── __init__.py  # 모든 v1 라우터 export
 │       ├── auth.py      # POST /api/v1/login, /register, /auth/refresh, /auth/logout — Access Token payload에 nickname 포함
-│       ├── users.py     # CRUD /api/v1/users (PUT·DELETE는 JWT 인증 필요)
+│       ├── users.py     # CRUD /api/v1/users (GET: 로그인 가드; PUT·DELETE: 본인/admin 체크; POST: role 서버 강제 'user' 대입)
 │       ├── monthly_scores.py  # /api/v1/monthly-scores (월간 점수, Redis Sorted Set 캐시)
 │       ├── game_visits.py     # /api/v1/game_visits (방문 기록)
-│       ├── game_sessions.py   # /api/v1/game-sessions (게임 세션, Redis 사용; PUT·DELETE JWT 인증 필요)
-│       ├── notices.py   # CRUD /api/v1/notices (공지사항; POST·DELETE JWT 인증 필요)
+│       ├── game_sessions.py   # /api/v1/game-sessions (게임 세션, Redis 사용; 인증 없음)
+│       ├── notices.py   # CRUD /api/v1/notices (공지사항; 인증 없음, author_id=1 고정)
 │       ├── friends.py   # /api/friend-requests (친구 요청)
 │       ├── chat.py      # GET /api/v1/chat/models, POST /api/v1/chat (Gemini AI 채팅)
 │       └── pinball_ai.py  # POST /api/v1/pinball_ai/playstyle (Gemini 플레이스타일 분석)
@@ -153,16 +153,18 @@ tests/
 | POST | /api/v1/register | 없음 | 일반 회원가입 |
 | POST | /api/v1/auth/refresh | 없음 (쿠키) | Refresh Token으로 Access Token 재발급 |
 | POST | /api/v1/auth/logout | 없음 (쿠키) | Refresh Token Redis 폐기 + 쿠키 삭제 |
-| GET/POST | /api/v1/users | 없음 | 사용자 목록 조회·생성 |
-| GET/PUT/DELETE | /api/v1/users/{user_id} | PUT·DELETE: JWT | 사용자 상세 조회·수정·삭제 |
+| POST | /api/v1/users | 없음 | 회원가입 (role 서버 강제 'user') |
+| GET | /api/v1/users | JWT | 사용자 목록 조회 (로그인 필요) |
+| GET | /api/v1/users/{user_id} | JWT | 사용자 상세 조회 (로그인 필요) |
+| PUT/DELETE | /api/v1/users/{user_id} | 본인/admin | 사용자 수정·삭제 (본인 또는 admin)
 | POST/GET/PUT/DELETE | /api/v1/monthly-scores | 없음 | 월간 점수 관리 (GET: Redis Sorted Set 캐시) |
 | POST/GET/PUT/DELETE | /api/v1/game_visits | 없음 | 게임 방문 기록 |
 | GET | /api/v1/game-sessions/{user_id} | 없음 | 게임 세션 조회 (Redis) |
-| PUT/DELETE | /api/v1/game-sessions/{user_id} | JWT | 게임 세션 저장·삭제 |
+| PUT/DELETE | /api/v1/game-sessions/{user_id} | 없음 | 게임 세션 저장·삭제 |
 | GET | /api/v1/notices | 없음 | 공지사항 목록 조회 |
 | GET | /api/v1/notices/{notice_id} | 없음 | 공지사항 상세 조회 |
-| POST | /api/v1/notices | JWT | 공지사항 작성 |
-| DELETE | /api/v1/notices/{notice_id} | JWT | 공지사항 삭제 |
+| POST | /api/v1/notices | 없음 | 공지사항 작성 (author_id=1 고정) |
+| DELETE | /api/v1/notices/{notice_id} | 없음 | 공지사항 삭제 |
 | POST/GET/PUT/DELETE | /api/friend-requests | 없음 | 친구 요청 관리 |
 | GET | /api/v1/chat/models | 없음 | Gemini 사용 가능 모델 목록 |
 | POST | /api/v1/chat | 없음 | Gemini AI 채팅 (세션 유지) |
