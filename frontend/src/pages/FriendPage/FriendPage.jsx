@@ -15,20 +15,12 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import api from '../../lib/api';
+import { useAuth } from '../../contexts/AuthContext';
 import DashboardHeader from '../Dashboard/DashboardHeader';
 import DashboardSidebar from '../Dashboard/DashboardSidebar';
 
-const getCurrentUser = () => {
-  const userStr = localStorage.getItem('user');
-  if (!userStr) return null;
-  try {
-    return JSON.parse(userStr);
-  } catch (e) {
-    return null;
-  }
-};
-
 function FriendPage() {
+  const { user: currentUser } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // 검색 관련 state
@@ -55,7 +47,7 @@ function FriendPage() {
 
   // 친구 요청 목록 조회 (pending)
   const fetchPendingRequests = async () => {
-    const user = getCurrentUser();
+    const user = currentUser;
     if (!user || !user.id) return;
 
     setPendingLoading(true);
@@ -76,7 +68,7 @@ function FriendPage() {
 
   // 친구 목록 조회 (accepted) + 각 친구의 월간 점수 조회
   const fetchFriendList = async () => {
-    const user = getCurrentUser();
+    const user = currentUser;
     if (!user || !user.id) return;
 
     setFriendLoading(true);
@@ -112,9 +104,10 @@ function FriendPage() {
   };
 
   useEffect(() => {
+    if (!currentUser) return;
     fetchPendingRequests();
     fetchFriendList();
-  }, []);
+  }, [currentUser]);
 
   // 친구 승인 핸들러
   const handleAcceptFriend = async (request) => {
@@ -165,7 +158,6 @@ function FriendPage() {
 
   // 친구추가 버튼 상태 계산
   const getFriendButtonState = (targetUser) => {
-    const currentUser = getCurrentUser();
     if (!currentUser) return { label: '친구추가', disabled: false };
 
     const isAlreadyFriend = friendList.some(
@@ -183,7 +175,6 @@ function FriendPage() {
 
   // 친구 추가 핸들러
   const handleAddFriend = async (targetUser) => {
-    const currentUser = getCurrentUser();
     if (!currentUser) return;
     setActionError(null);
     try {
@@ -198,7 +189,6 @@ function FriendPage() {
     }
   };
 
-  const currentUser = getCurrentUser();
   const receivedRequests = pendingRequests.filter(r => r.receiver_id === currentUser?.id);
 
   return (

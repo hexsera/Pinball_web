@@ -57,9 +57,9 @@ def create_mock_game_visits(db, count=200):
 def main():
     db = SessionLocal()
     try:
-        print("Mock friendships 80건 생성 중...")
-        create_mock_friendships(db, count=80)
-        print("friendships 생성 완료")
+        # print("Mock friendships 80건 생성 중...")
+        # create_mock_friendships(db, count=80)
+        # print("friendships 생성 완료")
 
         print("Mock game_visits 200건 생성 중...")
         create_mock_game_visits(db, count=200)
