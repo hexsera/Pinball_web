@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Grid, Container,
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Typography, Button
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import Aurora from '../../components/Aurora/Aurora';
 import HomeHeader from '../../components/HomeHeader';
@@ -21,18 +21,12 @@ const COLORS = {
 function HomePage() {
   const navigate = useNavigate();
 
-  const [ranking, setRanking] = useState([]);
-  const [rankingError, setRankingError] = useState(false);
-
-  useEffect(() => {
-    axios.get('/api/v1/monthly-scores')
-      .then((res) => {
-        setRanking(res.data.scores.slice(0, 10));
-      })
-      .catch(() => {
-        setRankingError(true);
-      });
-  }, []);
+  const { data: ranking = [], isPending, isError } = useQuery({
+    queryKey: ['monthly-scores'],
+    queryFn: () => axios.get('/api/v1/monthly-scores').then(res => res.data.scores.slice(0, 10)),
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 30,
+  });
 
   return (
     <Box sx={{ position: 'relative', minHeight: '100vh', backgroundColor: COLORS.bg, display: 'flex', flexDirection: 'column' }}>
@@ -80,7 +74,9 @@ function HomePage() {
         <Grid  size={{ xs: 12, md: 4 }}>
           <Paper sx={{ backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}`, p: 3, borderRadius: 2 }}>
             <Typography variant="h6" sx={{ color: COLORS.text, mb: 2 }}>🏆 이번 달 랭킹</Typography>
-            {rankingError ? (
+            {isPending ? (
+              <Typography sx={{ color: COLORS.subText }}>랭킹을 불러오는 중...</Typography>
+            ) : isError ? (
               <Typography sx={{ color: COLORS.subText }}>랭킹을 불러올 수 없습니다.</Typography>
             ) : (
               <TableContainer>
