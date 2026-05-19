@@ -10,8 +10,8 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/traefik.yml:ro
-      - ./acme.json:/acme.json
+      - ./infra/traefik/traefik.yml:/traefik.yml:ro
+      - ./infra/traefik/acme.json:/acme.json
     environment:
       - CF_API_EMAIL=${CF_API_EMAIL}
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
@@ -23,7 +23,7 @@ services:
     image: nginx:latest
     container_name: nginx-server
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - html-data-volume:/etc/nginx/html
     restart: always
     labels:

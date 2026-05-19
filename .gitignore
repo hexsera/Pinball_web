@@ -2,7 +2,7 @@
 .env
 *.pem
 *.key
-acme.json
+infra/traefik/acme.json
 
 # Node.js
 node_modules/
