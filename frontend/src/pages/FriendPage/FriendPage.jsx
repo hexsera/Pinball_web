@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -14,133 +14,119 @@ import {
   Container,
 } from '@mui/material';
 import axios from 'axios';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardHeader from '../Dashboard/DashboardHeader';
 import DashboardSidebar from '../Dashboard/DashboardSidebar';
 
+/**
+ * 친구별 월간 점수 표시 컴포넌트.
+ * 상위에서 관리하면 friendList 갱신마다 전체 점수를 재조회해야 하므로 분리.
+ */
+function FriendScoreItem({ friendId }) {
+  const { data: score } = useQuery({
+    queryKey: ['friendScore', friendId],
+    queryFn: () =>
+      axios.get(`/api/v1/monthly-scores/${friendId}`).then(res => res.data.score),
+    // 404는 점수 미등록 상태가 확정이므로 재시도 불필요
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 404) return false;
+      return failureCount < 3;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+  return (
+    <Typography variant="body2" color="text.secondary">
+      최고점수:{score != null ? score : '-'}
+    </Typography>
+  );
+}
+
 function FriendPage() {
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // 검색 관련 state
   const [searchNickname, setSearchNickname] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchError, setSearchError] = useState(null);
-
-  // 친구 요청 관련 state
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [pendingLoading, setPendingLoading] = useState(false);
-  const [pendingError, setPendingError] = useState(null);
-
-  // 친구 목록 관련 state
-  const [friendList, setFriendList] = useState([]);
-  const [friendLoading, setFriendLoading] = useState(false);
-  const [friendError, setFriendError] = useState(null);
-
-  // 친구 월간 점수 state: { [user_id]: score | null }
-  const [friendScores, setFriendScores] = useState({});
-
-  // 액션 에러 state
   const [actionError, setActionError] = useState(null);
 
   // 친구 요청 목록 조회 (pending)
-  const fetchPendingRequests = async () => {
-    const user = currentUser;
-    if (!user || !user.id) return;
+  const {
+    data: pendingRequests = [],
+    isPending: pendingLoading,
+    isError: isPendingError,
+  } = useQuery({
+    queryKey: ['friendRequests', currentUser?.id, 'pending'],
+    queryFn: () =>
+      axios.get('/api/friend-requests', {
+        params: { user_id: currentUser.id, friend_status: 'pending' },
+      }).then(res => res.data.requests || []),
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 30,
+  });
 
-    setPendingLoading(true);
-    setPendingError(null);
+  // 친구 목록 조회 (accepted)
+  const {
+    data: friendList = [],
+    isPending: friendLoading,
+    isError: isFriendError,
+  } = useQuery({
+    queryKey: ['friendList', currentUser?.id],
+    queryFn: () =>
+      axios.get('/api/friend-requests', {
+        params: { user_id: currentUser.id, friend_status: 'accepted' },
+      }).then(res => res.data.requests || []),
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 30,
+  });
 
-    try {
-      const response = await axios.get('/api/friend-requests', {
-        params: { user_id: user.id, friend_status: 'pending' }
-      });
-      setPendingRequests(response.data.requests || []);
-    } catch (error) {
-      console.error('친구 요청 조회 실패:', error);
-      setPendingError('친구 요청을 불러오는데 실패했습니다');
-    } finally {
-      setPendingLoading(false);
-    }
+  // 승인/거절 후 두 쿼리를 동시에 무효화해 병렬 재조회
+  const invalidateFriendQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['friendRequests', currentUser.id, 'pending'] });
+    queryClient.invalidateQueries({ queryKey: ['friendList', currentUser.id] });
   };
 
-  // 친구 목록 조회 (accepted) + 각 친구의 월간 점수 조회
-  const fetchFriendList = async () => {
-    const user = currentUser;
-    if (!user || !user.id) return;
-
-    setFriendLoading(true);
-    setFriendError(null);
-
-    try {
-      const response = await axios.get('/api/friend-requests', {
-        params: { user_id: user.id, friend_status: 'accepted' }
-      });
-
-      const friends = response.data.requests || [];
-      setFriendList(friends);
-
-      const scores = {};
-      await Promise.all(friends.map(async (friendship) => {
-        const friendId = friendship.receiver_id === user.id
-          ? friendship.requester_id
-          : friendship.receiver_id;
-        try {
-          const scoreRes = await axios.get(`/api/v1/monthly-scores/${friendId}`);
-          scores[friendId] = scoreRes.data.score;
-        } catch {
-          scores[friendId] = null;
-        }
-      }));
-      setFriendScores(scores);
-    } catch (error) {
-      console.error('친구 목록 조회 실패:', error);
-      setFriendError('친구 목록을 불러오는데 실패했습니다');
-    } finally {
-      setFriendLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!currentUser) return;
-    fetchPendingRequests();
-    fetchFriendList();
-  }, [currentUser]);
-
-  // 친구 승인 핸들러
-  const handleAcceptFriend = async (request) => {
-    setActionError(null);
-    try {
-      await axios.post('/api/friend-requests/accept', {
+  const acceptMutation = useMutation({
+    mutationFn: (request) =>
+      axios.post('/api/friend-requests/accept', {
         requester_id: request.requester_id,
-        receiver_id: request.receiver_id
-      });
-      await fetchPendingRequests();
-      await fetchFriendList();
-    } catch (error) {
-      console.error('친구 승인 실패:', error);
-      setActionError(error.response?.data?.detail || '친구 승인에 실패했습니다');
-    }
-  };
+        receiver_id: request.receiver_id,
+      }),
+    onSuccess: invalidateFriendQueries,
+    onError: (error) =>
+      setActionError(error.response?.data?.detail || '친구 승인에 실패했습니다'),
+  });
 
-  // 친구 거절 핸들러
-  const handleRejectFriend = async (request) => {
-    setActionError(null);
-    try {
-      await axios.post('/api/friend-requests/reject', {
+  const rejectMutation = useMutation({
+    mutationFn: (request) =>
+      axios.post('/api/friend-requests/reject', {
         requester_id: request.requester_id,
-        receiver_id: request.receiver_id
-      });
-      await fetchPendingRequests();
-    } catch (error) {
-      console.error('친구 거절 실패:', error);
-      setActionError(error.response?.data?.detail || '친구 거절에 실패했습니다');
-    }
-  };
+        receiver_id: request.receiver_id,
+      }),
+    // 거절은 friendList에 영향 없으므로 pending만 무효화
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['friendRequests', currentUser.id, 'pending'] }),
+    onError: (error) =>
+      setActionError(error.response?.data?.detail || '친구 거절에 실패했습니다'),
+  });
 
-  // 검색 핸들러
+  const addFriendMutation = useMutation({
+    mutationFn: (targetUser) =>
+      axios.post('/api/friend-requests', {
+        requester_id: currentUser.id,
+        receiver_id: targetUser.id,
+      }),
+    // 친구추가는 pending 목록에만 영향
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['friendRequests', currentUser.id, 'pending'] }),
+    onError: (error) =>
+      setActionError(error.response?.data?.detail || '친구 추가에 실패했습니다'),
+  });
+
   const handleSearch = async () => {
     setSearchError(null);
     setHasSearched(false);
@@ -156,7 +142,6 @@ function FriendPage() {
     }
   };
 
-  // 친구추가 버튼 상태 계산
   const getFriendButtonState = (targetUser) => {
     if (!currentUser) return { label: '친구추가', disabled: false };
 
@@ -171,22 +156,6 @@ function FriendPage() {
     if (hasSentRequest) return { label: '요청됨', disabled: true };
 
     return { label: '친구추가', disabled: false };
-  };
-
-  // 친구 추가 핸들러
-  const handleAddFriend = async (targetUser) => {
-    if (!currentUser) return;
-    setActionError(null);
-    try {
-      await axios.post('/api/friend-requests', {
-        requester_id: currentUser.id,
-        receiver_id: targetUser.id
-      });
-      await fetchPendingRequests();
-    } catch (error) {
-      console.error('친구 추가 실패:', error);
-      setActionError(error.response?.data?.detail || '친구 추가에 실패했습니다');
-    }
   };
 
   const receivedRequests = pendingRequests.filter(r => r.receiver_id === currentUser?.id);
@@ -243,8 +212,8 @@ function FriendPage() {
                           <Button
                             variant="outlined"
                             size="small"
-                            disabled={disabled}
-                            onClick={() => handleAddFriend(user)}
+                            disabled={disabled || addFriendMutation.isPending}
+                            onClick={() => addFriendMutation.mutate(user)}
                           >
                             {label}
                           </Button>
@@ -273,15 +242,15 @@ function FriendPage() {
                     친구 요청
                   </Typography>
 
-                  {pendingError && (
-                    <Alert severity="error">{pendingError}</Alert>
+                  {isPendingError && (
+                    <Alert severity="error">친구 요청을 불러오는데 실패했습니다</Alert>
                   )}
 
-                  {!pendingLoading && !pendingError && pendingRequests.length === 0 && (
+                  {!pendingLoading && !isPendingError && receivedRequests.length === 0 && (
                     <Typography color="text.secondary">받은 친구 요청이 없습니다</Typography>
                   )}
 
-                  {!pendingLoading && !pendingError && receivedRequests.length > 0 && (
+                  {!pendingLoading && !isPendingError && receivedRequests.length > 0 && (
                     <List dense>
                       {receivedRequests.map((request) => (
                         <ListItem
@@ -294,7 +263,8 @@ function FriendPage() {
                               variant="contained"
                               size="small"
                               color="success"
-                              onClick={() => handleAcceptFriend(request)}
+                              disabled={acceptMutation.isPending}
+                              onClick={() => acceptMutation.mutate(request)}
                             >
                               승인
                             </Button>
@@ -302,7 +272,8 @@ function FriendPage() {
                               variant="outlined"
                               size="small"
                               color="error"
-                              onClick={() => handleRejectFriend(request)}
+                              disabled={rejectMutation.isPending}
+                              onClick={() => rejectMutation.mutate(request)}
                             >
                               거절
                             </Button>
@@ -321,15 +292,15 @@ function FriendPage() {
                     현재 친구
                   </Typography>
 
-                  {friendError && (
-                    <Alert severity="error">{friendError}</Alert>
+                  {isFriendError && (
+                    <Alert severity="error">친구 목록을 불러오는데 실패했습니다</Alert>
                   )}
 
-                  {!friendLoading && !friendError && friendList.length === 0 && (
+                  {!friendLoading && !isFriendError && friendList.length === 0 && (
                     <Typography color="text.secondary">친구가 없습니다</Typography>
                   )}
 
-                  {!friendLoading && !friendError && friendList.length > 0 && (
+                  {!friendLoading && !isFriendError && friendList.length > 0 && (
                     <List dense>
                       {friendList.map((friendship) => {
                         const isReceiver = friendship.receiver_id === currentUser?.id;
@@ -339,16 +310,11 @@ function FriendPage() {
                         const friendId = isReceiver
                           ? friendship.requester_id
                           : friendship.receiver_id;
-                        const score = friendScores[friendId];
                         return (
                           <ListItem
                             key={friendship.id}
                             sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, mb: 1 }}
-                            secondaryAction={
-                              <Typography variant="body2" color="text.secondary">
-                                최고점수:{score != null ? score : '-'}
-                              </Typography>
-                            }
+                            secondaryAction={<FriendScoreItem friendId={friendId} />}
                           >
                             <ListItemText primary={friendNickname} />
                           </ListItem>
