@@ -9,12 +9,11 @@ vi.mock('axios');
 
 describe('HeaderUserInfo 컴포넌트', () => {
   beforeEach(() => {
-    localStorage.setItem('user', JSON.stringify({ id: 1, name: '테스트유저', email: 'test@example.com' }));
-    axios.get.mockResolvedValue({ data: { role: 'user' } });
+    axios.post.mockResolvedValue({ data: { access_token: btoa(JSON.stringify({})) + '.' + btoa(JSON.stringify({ sub: 1 })) + '.sig' } });
+    axios.get.mockResolvedValue({ data: { id: 1, name: '테스트유저', email: 'test@example.com', role: 'user' } });
   });
 
   afterEach(() => {
-    localStorage.clear();
     vi.clearAllMocks();
   });
 
@@ -28,7 +27,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+      await waitFor(() => screen.getByText('테스트유저'));
 
       const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
@@ -47,7 +46,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+      await waitFor(() => screen.getByText('테스트유저'));
 
       const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
@@ -64,7 +63,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+      await waitFor(() => screen.getByText('테스트유저'));
 
       const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
@@ -88,7 +87,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+      await waitFor(() => screen.getByText('테스트유저'));
 
       const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
@@ -113,7 +112,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+      await waitFor(() => screen.getByText('테스트유저'));
 
       const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
@@ -134,7 +133,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+      await waitFor(() => screen.getByText('테스트유저'));
 
       const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
@@ -159,7 +158,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+      await waitFor(() => screen.getByText('테스트유저'));
 
       const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
@@ -174,8 +173,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
 
   describe('페이지 이동 항목 표시 여부 (role 기반)', () => {
     it('role이 admin인 사용자는 메뉴에 "관리 페이지 이동"이 표시된다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 1, name: '어드민유저', email: 'admin@example.com' }));
-      axios.get.mockResolvedValue({ data: { role: 'admin' } });
+      axios.get.mockResolvedValue({ data: { id: 1, name: '어드민유저', email: 'admin@example.com', role: 'admin' } });
 
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -185,18 +183,14 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
+      await waitFor(() => screen.getByText('어드민유저'));
       const avatarButton = screen.getByText('어드민유저').closest('button');
       fireEvent.click(avatarButton);
 
-      await waitFor(() => {
-        expect(screen.getByText('관리 페이지 이동')).toBeInTheDocument();
-      });
+      expect(screen.getByText('관리 페이지 이동')).toBeInTheDocument();
     });
 
     it('role이 user인 사용자는 메뉴에 페이지 이동 항목이 표시되지 않는다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 2, name: '일반유저', email: 'user@example.com' }));
-      axios.get.mockResolvedValue({ data: { role: 'user' } });
-
       render(
         <MemoryRouter initialEntries={['/']}>
           <AuthProvider>
@@ -205,18 +199,16 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
-      const avatarButton = screen.getByText('일반유저').closest('button');
+      await waitFor(() => screen.getByText('테스트유저'));
+      const avatarButton = screen.getByText('테스트유저').closest('button');
       fireEvent.click(avatarButton);
 
-      await waitFor(() => {
-        expect(screen.queryByText('관리 페이지 이동')).not.toBeInTheDocument();
-        expect(screen.queryByText('메인 페이지 이동')).not.toBeInTheDocument();
-      });
+      expect(screen.queryByText('관리 페이지 이동')).not.toBeInTheDocument();
+      expect(screen.queryByText('메인 페이지 이동')).not.toBeInTheDocument();
     });
 
     it('role이 없는 사용자는 메뉴에 페이지 이동 항목이 표시되지 않는다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 3, name: '롤없는유저', email: 'norole@example.com' }));
-      axios.get.mockResolvedValue({ data: {} });
+      axios.get.mockResolvedValue({ data: { id: 3, name: '롤없는유저', email: 'norole@example.com' } });
 
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -226,20 +218,18 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
+      await waitFor(() => screen.getByText('롤없는유저'));
       const avatarButton = screen.getByText('롤없는유저').closest('button');
       fireEvent.click(avatarButton);
 
-      await waitFor(() => {
-        expect(screen.queryByText('관리 페이지 이동')).not.toBeInTheDocument();
-        expect(screen.queryByText('메인 페이지 이동')).not.toBeInTheDocument();
-      });
+      expect(screen.queryByText('관리 페이지 이동')).not.toBeInTheDocument();
+      expect(screen.queryByText('메인 페이지 이동')).not.toBeInTheDocument();
     });
   });
 
   describe('페이지 이동 문구 변경 (경로 기반)', () => {
     it('admin 유저가 /admin 경로에 있으면 "메인 페이지 이동"이 표시된다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 1, name: '어드민유저', email: 'admin@example.com' }));
-      axios.get.mockResolvedValue({ data: { role: 'admin' } });
+      axios.get.mockResolvedValue({ data: { id: 1, name: '어드민유저', email: 'admin@example.com', role: 'admin' } });
 
       render(
         <MemoryRouter initialEntries={['/admin']}>
@@ -249,18 +239,16 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
+      await waitFor(() => screen.getByText('어드민유저'));
       const avatarButton = screen.getByText('어드민유저').closest('button');
       fireEvent.click(avatarButton);
 
-      await waitFor(() => {
-        expect(screen.getByText('메인 페이지 이동')).toBeInTheDocument();
-        expect(screen.queryByText('관리 페이지 이동')).not.toBeInTheDocument();
-      });
+      expect(screen.getByText('메인 페이지 이동')).toBeInTheDocument();
+      expect(screen.queryByText('관리 페이지 이동')).not.toBeInTheDocument();
     });
 
     it('admin 유저가 /admin 경로가 아니면 "관리 페이지 이동"이 표시된다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 1, name: '어드민유저', email: 'admin@example.com' }));
-      axios.get.mockResolvedValue({ data: { role: 'admin' } });
+      axios.get.mockResolvedValue({ data: { id: 1, name: '어드민유저', email: 'admin@example.com', role: 'admin' } });
 
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -270,39 +258,18 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
+      await waitFor(() => screen.getByText('어드민유저'));
       const avatarButton = screen.getByText('어드민유저').closest('button');
       fireEvent.click(avatarButton);
 
-      await waitFor(() => {
-        expect(screen.getByText('관리 페이지 이동')).toBeInTheDocument();
-        expect(screen.queryByText('메인 페이지 이동')).not.toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('API로 role 가져오기', () => {
-    it('컴포넌트 마운트 시 GET /api/v1/users/{id}를 호출한다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 42, name: '테스트유저', email: 'test@example.com' }));
-      axios.get.mockResolvedValue({ data: { role: 'user' } });
-
-      render(
-        <MemoryRouter>
-          <AuthProvider>
-            <HeaderUserInfo />
-          </AuthProvider>
-        </MemoryRouter>
-      );
-
-      await waitFor(() => {
-        expect(axios.get).toHaveBeenCalledWith('/api/v1/users/42');
-      });
+      expect(screen.getByText('관리 페이지 이동')).toBeInTheDocument();
+      expect(screen.queryByText('메인 페이지 이동')).not.toBeInTheDocument();
     });
   });
 
   describe('페이지 이동 내비게이션', () => {
     it('"관리 페이지 이동" 클릭 시 /admin으로 이동한다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 1, name: '어드민유저', email: 'admin@example.com' }));
-      axios.get.mockResolvedValue({ data: { role: 'admin' } });
+      axios.get.mockResolvedValue({ data: { id: 1, name: '어드민유저', email: 'admin@example.com', role: 'admin' } });
 
       let testLocation;
 
@@ -320,6 +287,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
+      await waitFor(() => screen.getByText('어드민유저'));
       const avatarButton = screen.getByText('어드민유저').closest('button');
       fireEvent.click(avatarButton);
 
@@ -333,8 +301,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
     });
 
     it('"메인 페이지 이동" 클릭 시 /로 이동한다', async () => {
-      localStorage.setItem('user', JSON.stringify({ id: 1, name: '어드민유저', email: 'admin@example.com' }));
-      axios.get.mockResolvedValue({ data: { role: 'admin' } });
+      axios.get.mockResolvedValue({ data: { id: 1, name: '어드민유저', email: 'admin@example.com', role: 'admin' } });
 
       let testLocation;
 
@@ -352,6 +319,7 @@ describe('HeaderUserInfo 컴포넌트', () => {
         </MemoryRouter>
       );
 
+      await waitFor(() => screen.getByText('어드민유저'));
       const avatarButton = screen.getByText('어드민유저').closest('button');
       fireEvent.click(avatarButton);
 

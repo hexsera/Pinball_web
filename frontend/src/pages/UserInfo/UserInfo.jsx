@@ -12,7 +12,9 @@ import {
   Alert,
   Toolbar,
   Container,
+  CircularProgress,
 } from '@mui/material';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import DashboardHeader from '../Dashboard/DashboardHeader';
@@ -20,14 +22,8 @@ import DashboardSidebar from '../Dashboard/DashboardSidebar';
 
 function UserInfo() {
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // 회원 정보 상태
-  const [userInfo, setUserInfo] = useState({
-    email: '',
-    nickname: '',
-    birth_date: ''
-  });
 
   // 회원 정보 수정 상태
   const [editNickname, setEditNickname] = useState('');
@@ -44,92 +40,55 @@ function UserInfo() {
   const [deleteError, setDeleteError] = useState(null);
 
   // 회원 정보 조회
+  const { data: userInfo, isPending, isError } = useQuery({
+    queryKey: ['user', user?.id],
+    queryFn: () => api.get(`/users/${user.id}`).then(res => res.data),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // 조회 결과로 수정 필드 초기값 동기화
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      console.log('회원 정보 API 호출 시작');
-      try {
-        const response = await api.get(`/users/${user.id}`);
-        console.log('회원 정보 API 호출 성공:', response.data);
-        setUserInfo({
-          email: response.data.email,
-          nickname: response.data.nickname,
-          birth_date: response.data.birth_date
-        });
-
-        // 수정 필드에 기본값 설정
-        setEditNickname(response.data.nickname);
-
-        // 생년월일 분리 (YYYY-MM-DD → 연도, 월, 일)
-        const birthDateParts = response.data.birth_date.split('-');
-        setEditBirthYear(birthDateParts[0]);
-        setEditBirthMonth(birthDateParts[1]);
-        setEditBirthDay(birthDateParts[2]);
-      } catch (err) {
-        console.error('회원 정보 API 호출 실패:', err);
-      }
-    };
-
-    if (user && user.id) {
-      fetchUserInfo();
+    if (userInfo) {
+      setEditNickname(userInfo.nickname);
+      const parts = userInfo.birth_date?.split('-') ?? ['', '', ''];
+      setEditBirthYear(parts[0]);
+      setEditBirthMonth(parts[1]);
+      setEditBirthDay(parts[2]);
     }
-  }, [user]);
+  }, [userInfo]);
 
   // 회원 정보 수정
-  const handleUpdate = async () => {
+  const updateMutation = useMutation({
+    mutationFn: (updateData) => api.put(`/users/${user.id}`, updateData),
+    onSuccess: () => {
+      setUpdateSuccess(true);
+      queryClient.invalidateQueries({ queryKey: ['user', user.id] });
+    },
+    onError: (err) => {
+      if (err.response?.status === 400) setUpdateError('이메일이 이미 사용 중입니다.');
+      else if (err.response?.status === 404) setUpdateError('사용자를 찾을 수 없습니다.');
+      else setUpdateError('회원 정보 수정에 실패했습니다.');
+    },
+  });
+
+  const handleUpdate = () => {
     setUpdateError(null);
     setUpdateSuccess(false);
 
-    // 수정할 필드가 하나도 없는지 검증
     if (!editNickname && !editPassword && !editBirthYear && !editBirthMonth && !editBirthDay) {
       setUpdateError('수정할 정보를 입력해주세요.');
       return;
     }
 
-    try {
-      // 입력된 필드만 포함하는 객체 생성
-      const updateData = {};
-      if (editNickname) updateData.nickname = editNickname;
-      if (editPassword) updateData.password = editPassword;
-
-      // 생년월일이 입력된 경우 YYYY-MM-DD 형식으로 변환
-      if (editBirthYear || editBirthMonth || editBirthDay) {
-        const formattedMonth = editBirthMonth.padStart(2, '0');
-        const formattedDay = editBirthDay.padStart(2, '0');
-        updateData.birth_date = `${editBirthYear}-${formattedMonth}-${formattedDay}`;
-      }
-
-      console.log('회원 정보 수정 API 호출 시작:', updateData);
-
-      const response = await api.put(`/users/${user.id}`, updateData);
-
-      console.log('회원 정보 수정 API 호출 성공:', response.data);
-
-      // 성공 시 상태 초기화 및 회원 정보 다시 조회
-      setUpdateSuccess(true);
-      /* setEditNickname('');
-      setEditPassword('');
-      setEditBirthYear('');
-      setEditBirthMonth('');
-      setEditBirthDay(''); */
-
-      // 회원 정보 갱신 (nickname이 변경된 경우 화면에 반영)
-      setUserInfo({
-        email: response.data.email,
-        nickname: response.data.nickname,
-        birth_date: response.data.birth_date
-      });
-
-    } catch (err) {
-      console.error('회원 정보 수정 API 호출 실패:', err);
-
-      if (err.response?.status === 400) {
-        setUpdateError('이메일이 이미 사용 중입니다.');
-      } else if (err.response?.status === 404) {
-        setUpdateError('사용자를 찾을 수 없습니다.');
-      } else {
-        setUpdateError('회원 정보 수정에 실패했습니다.');
-      }
+    const updateData = {};
+    if (editNickname) updateData.nickname = editNickname;
+    if (editPassword) updateData.password = editPassword;
+    if (editBirthYear || editBirthMonth || editBirthDay) {
+      updateData.birth_date = `${editBirthYear}-${editBirthMonth.padStart(2, '0')}-${editBirthDay.padStart(2, '0')}`;
     }
+
+    updateMutation.mutate(updateData);
   };
 
   // 회원 탈퇴
@@ -198,13 +157,22 @@ function UserInfo() {
         <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#1f2937' }}>
           회원 정보
         </Typography>
+        {isPending && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress size={24} />
+          </Box>
+        )}
+        {isError && (
+          <Alert severity="error" sx={{ mt: 2 }}>회원 정보를 불러오지 못했습니다.</Alert>
+        )}
+        {userInfo && (
         <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               이메일
             </Typography>
             <Typography variant="body1" sx={{ color: '#1f2937' }}>
-              {userInfo.email || '로딩 중...'}
+              {userInfo.email}
             </Typography>
           </Box>
           <Box>
@@ -212,7 +180,7 @@ function UserInfo() {
               닉네임
             </Typography>
             <Typography variant="body1" sx={{ color: '#1f2937' }}>
-              {userInfo.nickname || '로딩 중...'}
+              {userInfo.nickname}
             </Typography>
           </Box>
           <Box>
@@ -220,10 +188,11 @@ function UserInfo() {
               생년월일
             </Typography>
             <Typography variant="body1" sx={{ color: '#1f2937' }}>
-              {userInfo.birth_date || '로딩 중...'}
+              {userInfo.birth_date}
             </Typography>
           </Box>
         </Box>
+        )}
       </Paper>
 
       {/* 회원 정보 수정 영역 */}
@@ -285,6 +254,7 @@ function UserInfo() {
           <Button
             variant="contained"
             onClick={handleUpdate}
+            disabled={updateMutation.isPending}
             sx={{ mt: 1 }}
           >
             수정

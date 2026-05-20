@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, IconButton, Avatar, Typography,
   Button, Menu, MenuItem, Divider
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
-import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
@@ -15,15 +14,6 @@ function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarMenu, setAvatarMenu] = useState(false);
-  const [role, setRole] = useState(null);
-
-  useEffect(() => {
-    if (isLoggedIn && user?.id) {
-      api.get(`/users/${user.id}`)
-        .then(res => setRole(res.data.role))
-        .catch(() => setRole(null));
-    }
-  }, [isLoggedIn, user?.id]);
 
   function AvatarButtonClick(event) {
     setAnchorEl(event.currentTarget);
@@ -49,7 +39,7 @@ function HeaderUserInfo({ buttonColor, buttonTextColor, outlinedBorderColor }) {
     handleAvatarMenuClose();
   }
 
-  const isAdmin = role === 'admin';
+  const isAdmin = user?.role === 'admin';
   const pageNavLabel = location.pathname.startsWith('/admin') ? '메인 페이지 이동' : '관리 페이지 이동';
 
   return (

@@ -1,4 +1,4 @@
-# HeaderUserInfo role API 불필요 호출
+# HeaderUserInfo role API 불필요 호출 [해결됨]
 
 ## 현황
 
@@ -26,3 +26,7 @@ const isAdmin = user?.role === 'admin';
 ```
 
 관련 `useEffect`, `role` state도 함께 제거.
+
+## 해결
+
+`HeaderUserInfo.jsx`에서 `role` state, `useEffect`, `api` import 제거 후 `user?.role`을 직접 참조하도록 수정. (2026-05-20)
