@@ -16,75 +16,110 @@
 
 ## 구현 방법
 
-- ACL 테이블 하나로 모든 리소스 권한 관리 (`resource_type` + `resource_id` 조합)
+- 범용 ACL 테이블(`acl_entries`) 생성 — `resource_type`으로 리소스 종류 구분
+- 다른 리소스(점수, 친구 관계 등)에도 재사용 가능
 - `permission` 값은 DB CheckConstraint + Python Enum으로 이중 강제
-- 공지사항 정책: default-allow (모든 사람 read 허용), 작성자만 manage 허용
-- 공지사항 생성 시 acl_entries 레코드 2개를 트랜잭션으로 함께 생성
-- 공지사항 삭제 시 acl_entries 레코드도 함께 삭제 (트랜잭션)
+- FK 없이 `resource_type` + `resource_id` 조합으로 리소스 참조 (ON DELETE CASCADE 불가 — 코드에서 직접 삭제 처리)
+- 공지사항 정책: 작성자는 `manage`, 모든 사람은 `read` (`*` 특수값 사용)
 
-## 구현 단계
+---
 
-### 1. NoticeAcl 모델 추가 (models.py)
+## Phase 1: DB
 
-```python
-class NoticeAcl(Base):
-    __tablename__ = "notice_acl_entries"
+### 구현 단계
 
-    id            = Column(Integer, primary_key=True, index=True)
-    actor_id      = Column(String(50), nullable=False, index=True)  # 유저 id 또는 "*"
-    resource_id   = Column(Integer, ForeignKey('notices.id', ondelete='CASCADE'), nullable=False, index=True)
-    permission    = Column(String(20), nullable=False)
-
-    __table_args__ = (
-        UniqueConstraint('actor_id', 'resource_id', 'permission', name='uq_notice_acl'),
-        CheckConstraint("permission IN ('read', 'manage')", name='ck_notice_acl_permission'),
-    )
-```
-
-- **무엇을 하는가**: 공지사항 전용 ACL 테이블 정의
-- `resource_type` 컬럼을 제거하고 notices 테이블 전용으로 분리 — FK + `ON DELETE CASCADE` 적용 가능
-- `actor_id`를 String으로 선언해 `"*"` 특수값 저장 가능
-- UniqueConstraint로 중복 레코드 방지
-- CheckConstraint로 DB 레벨에서 permission 값 강제
-
-### 2. Permission Enum 추가 (models.py 또는 schemas/notices.py)
+#### 1. AclPermission Enum 추가 (models.py)
 
 ```python
 from enum import Enum
 
-class NoticePermission(str, Enum):
+class AclPermission(str, Enum):
     read   = "read"
-    manage = "manage"  # 수정 + 삭제
+    manage = "manage"  # 수정 + 삭제를 하나로 묶음
 ```
 
 - **무엇을 하는가**: 코드 레벨에서 permission 값 불일치 방지
-- `str` 상속으로 JSON 직렬화 및 DB 저장 시 문자열로 자동 변환
+- `str` 상속으로 DB 저장 시 문자열로 자동 변환
 
-### 3. can() 함수 추가 (app/api/deps.py)
+#### 2. AclEntry 모델 추가 (models.py)
+
+```python
+class AclEntry(Base):
+    __tablename__ = "acl_entries"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    actor_id      = Column(String(50), nullable=False, index=True)
+    resource_type = Column(String(50), nullable=False, index=True)
+    resource_id   = Column(Integer, nullable=False, index=True)
+    permission    = Column(String(20), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('actor_id', 'resource_type', 'resource_id', 'permission', name='uq_acl_entry'),
+        CheckConstraint("permission IN ('read', 'manage')", name='ck_acl_permission'),
+    )
+```
+
+- **무엇을 하는가**: 범용 ACL 테이블 정의 — `resource_type`으로 리소스 종류 구분
+- FK 없이 `resource_type` + `resource_id` 조합으로 여러 리소스 참조 가능
+- `actor_id`를 String으로 선언해 `"*"` 특수값 저장 가능
+- UniqueConstraint로 중복 레코드 방지
+- CheckConstraint로 DB 레벨에서 permission 값 강제
+
+#### 3. Alembic 마이그레이션 생성 및 적용
+
+```bash
+docker compose exec fastapi alembic revision --autogenerate -m "add notice_acl_entries table"
+docker compose exec fastapi alembic upgrade head
+```
+
+- **무엇을 하는가**: `notice_acl_entries` 테이블을 DB에 실제로 생성
+
+### 수정/생성할 파일 목록
+
+| 파일 경로 | 작업 유형 | 변경 내용 |
+|-----------|-----------|-----------|
+| `backend/models.py` | 수정 | `AclPermission` Enum, `AclEntry` 모델 추가 |
+| `backend/alembic/versions/` | 생성 | acl_entries 테이블 마이그레이션 |
+
+### 완료 체크리스트
+
+- [x] `acl_entries` 테이블이 DB에 생성되었는지 확인
+- [x] `permission` 컬럼에 `'read'`, `'manage'` 외 값 삽입 시 오류 발생하는지 확인
+- [x] `actor_id`에 `"*"` 값이 정상 저장되는지 확인
+
+---
+
+## Phase 2: API 연동
+
+### 구현 단계
+
+#### 1. can_notice() 함수 추가 (app/api/deps.py)
 
 ```python
 def can_notice(actor_id: int, permission: str, notice_id: int, db: Session) -> bool:
     # 본인 레코드 먼저 확인 — 명시적 규칙이 * 보다 우선
-    entry = db.query(NoticeAcl).filter(
-        NoticeAcl.actor_id == str(actor_id),
-        NoticeAcl.resource_id == notice_id,
-        NoticeAcl.permission == permission,
+    entry = db.query(AclEntry).filter(
+        AclEntry.actor_id == str(actor_id),
+        AclEntry.resource_type == "notice",
+        AclEntry.resource_id == notice_id,
+        AclEntry.permission == permission,
     ).first()
     if entry:
         return True
 
     # * 레코드 확인
-    return db.query(NoticeAcl).filter(
-        NoticeAcl.actor_id == "*",
-        NoticeAcl.resource_id == notice_id,
-        NoticeAcl.permission == permission,
+    return db.query(AclEntry).filter(
+        AclEntry.actor_id == "*",
+        AclEntry.resource_type == "notice",
+        AclEntry.resource_id == notice_id,
+        AclEntry.permission == permission,
     ).exists()
 ```
 
 - **무엇을 하는가**: 특정 유저가 특정 공지사항에 대해 권한이 있는지 확인
 - 명시적 유저 레코드를 먼저 확인하고, 없으면 `*` 레코드 확인
 
-### 4. create_notice 수정 (app/api/v1/notices.py)
+#### 2. create_notice 수정 (app/api/v1/notices.py)
 
 ```python
 @router.post("", response_model=NoticeResponse)
@@ -98,9 +133,9 @@ def create_notice(
     db.flush()  # notice.id 확보 (커밋 전)
 
     # 모든 사람 읽기 허용
-    db.add(NoticeAcl(actor_id="*", resource_id=notice.id, permission="read"))
+    db.add(AclEntry(actor_id="*", resource_type="notice", resource_id=notice.id, permission="read"))
     # 작성자 수정/삭제 허용
-    db.add(NoticeAcl(actor_id=str(current_user["sub"]), resource_id=notice.id, permission="manage"))
+    db.add(AclEntry(actor_id=str(current_user["sub"]), resource_type="notice", resource_id=notice.id, permission="manage"))
 
     db.commit()
     db.refresh(notice)
@@ -111,7 +146,7 @@ def create_notice(
 - `db.flush()`로 커밋 없이 `notice.id`를 먼저 확보한 뒤 ACL 레코드에 사용
 - `author_id=1` 하드코딩 제거, JWT에서 실제 유저 id 사용
 
-### 5. delete_notice 수정 (app/api/v1/notices.py)
+#### 3. delete_notice 수정 (app/api/v1/notices.py)
 
 ```python
 @router.delete("/{notice_id}")
@@ -133,7 +168,7 @@ def delete_notice(
 
 - **무엇을 하는가**: ACL 체크 후 삭제. `ON DELETE CASCADE`로 acl_entries는 자동 삭제됨
 
-### 6. update_notice 추가 (app/api/v1/notices.py)
+#### 4. update_notice 추가 (app/api/v1/notices.py)
 
 ```python
 @router.put("/{notice_id}", response_model=NoticeResponse)
@@ -158,25 +193,14 @@ def update_notice(
 
 - **무엇을 하는가**: ACL manage 권한 확인 후 공지사항 수정
 
-### 7. Alembic 마이그레이션 생성
-
-```bash
-docker compose exec fastapi alembic revision --autogenerate -m "add notice_acl_entries table"
-docker compose exec fastapi alembic upgrade head
-```
-
-- **무엇을 하는가**: `notice_acl_entries` 테이블을 DB에 실제로 생성
-
-## 수정/생성할 파일 목록
+### 수정/생성할 파일 목록
 
 | 파일 경로 | 작업 유형 | 변경 내용 |
 |-----------|-----------|-----------|
-| `backend/models.py` | 수정 | `NoticeAcl` 모델, `NoticePermission` Enum 추가 |
 | `backend/app/api/deps.py` | 수정 | `can_notice()` 함수 추가 |
 | `backend/app/api/v1/notices.py` | 수정 | create/delete 수정, update 추가, 인증 의존성 추가 |
-| `backend/alembic/versions/` | 생성 | notice_acl_entries 테이블 마이그레이션 |
 
-## 완료 체크리스트
+### 완료 체크리스트
 
 - [ ] 공지사항 생성 시 acl_entries 레코드 2개(`*`/read, 작성자/manage)가 함께 생성되는지 확인
 - [ ] 작성자 본인만 공지사항 수정/삭제가 가능한지 확인

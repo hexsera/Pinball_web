@@ -1,3 +1,4 @@
+from enum import Enum
 from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, UniqueConstraint, CheckConstraint, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
@@ -69,3 +70,21 @@ class Notice(Base):
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
 
+class AclPermission(str, Enum):
+    read   = "read"
+    manage = "manage"
+
+
+class AclEntry(Base):
+    __tablename__ = "acl_entries"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    actor_id      = Column(String(50), nullable=False, index=True)
+    resource_type = Column(String(50), nullable=False, index=True)
+    resource_id   = Column(Integer, nullable=False, index=True)
+    permission    = Column(String(20), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('actor_id', 'resource_type', 'resource_id', 'permission', name='uq_acl_entry'),
+        CheckConstraint("permission IN ('read', 'manage')", name='ck_acl_permission'),
+    )
